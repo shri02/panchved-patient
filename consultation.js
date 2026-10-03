@@ -1,0 +1,1127 @@
+/**
+ * Panchved Patient Portal - Consultations Engine
+ * Handles: Tabs, Search Filtering, Google Meet Copying, View Details Modal,
+ * Medical Prescription Modal, and Booking Modal Flow.
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Navigation & Drawer Elements
+  const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+  const dashboardSidebar = document.getElementById('dashboardSidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMsg');
+
+  // Tabs Elements (Screens 1 & 2)
+  const tabMyAppointments = document.getElementById('tabMyAppointments');
+  const tabAppointmentHistory = document.getElementById('tabAppointmentHistory');
+  const myAppointmentsContent = document.getElementById('myAppointmentsContent');
+  const appointmentHistoryContent = document.getElementById('appointmentHistoryContent');
+
+  // Search & Toolbar Elements
+  const consultSearchInput = document.getElementById('consultSearchInput');
+  const btnBookConsultCTA = document.getElementById('btnBookConsultCTA');
+
+  // Modals Elements
+  // Modal 1: View Appointment History Details (Screen 3)
+  const viewAppointmentModal = document.getElementById('viewAppointmentModal');
+  const closeViewModalBtn = document.getElementById('closeViewModalBtn');
+  const viewDetailId = document.getElementById('viewDetailId');
+  const viewDetailDate = document.getElementById('viewDetailDate');
+  const viewDetailTime = document.getElementById('viewDetailTime');
+  const viewDetailDoctor = document.getElementById('viewDetailDoctor');
+  const viewDetailDuration = document.getElementById('viewDetailDuration');
+  const viewDetailAgenda = document.getElementById('viewDetailAgenda');
+  const btnOpenPrescriptionModal = document.getElementById('btnOpenPrescriptionModal');
+
+  // Modal 2: Medical Prescription Document (Screen 4)
+  const prescriptionModal = document.getElementById('prescriptionModal');
+  const closePrescriptionModalBtn = document.getElementById('closePrescriptionModalBtn');
+  const btnPrintPrescription = document.getElementById('btnPrintPrescription');
+
+  // Modal 3: Online Ayurved Consultation Booking Modal
+  const consultationModal = document.getElementById('consultationModal');
+  const closeConsultationModalBtn = document.getElementById('closeConsultationModalBtn');
+  const consultationBookingForm = document.getElementById('consultationBookingForm');
+  const consultDoctor = document.getElementById('consultDoctor');
+  const consultName = document.getElementById('consultName');
+  const consultMobile = document.getElementById('consultMobile');
+  const consultEmail = document.getElementById('consultEmail');
+  const consultDate = document.getElementById('consultDate');
+  const btnDateCalendar = document.getElementById('btnDateCalendar');
+  const nativeDatePicker = document.getElementById('nativeDatePicker');
+  const consultStartTime = document.getElementById('consultStartTime');
+  const btnStartTimeClock = document.getElementById('btnStartTimeClock');
+  const startTimeDropdown = document.getElementById('startTimeDropdown');
+  const consultEndTime = document.getElementById('consultEndTime');
+  const btnEndTimeClock = document.getElementById('btnEndTimeClock');
+  const endTimeDropdown = document.getElementById('endTimeDropdown');
+  const consultAgenda = document.getElementById('consultAgenda');
+  const submitConsultationBtn = document.getElementById('submitConsultationBtn');
+
+  // Helper: Toast Message
+  const showToast = (message, isError = false) => {
+    if (!toast || !toastMsg) return;
+    toastMsg.textContent = message;
+    toast.style.background = isError ? '#ef4444' : '#1e293b';
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3200);
+  };
+
+  // Helper: Close Any Active Modal
+  const closeAllModals = () => {
+    [viewAppointmentModal, prescriptionModal, consultationModal].forEach(modal => {
+      if (modal) {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+    });
+    document.body.style.overflow = '';
+  };
+
+  // Mobile Menu Drawer Toggle
+  const toggleMobileSidebar = (open) => {
+    if (!dashboardSidebar || !sidebarOverlay) return;
+    const shouldOpen = open !== undefined ? open : !dashboardSidebar.classList.contains('open');
+    if (shouldOpen) {
+      dashboardSidebar.classList.add('open');
+      sidebarOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    } else {
+      dashboardSidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  };
+
+  if (mobileMenuToggle) {
+    mobileMenuToggle.addEventListener('click', () => toggleMobileSidebar());
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => {
+      toggleMobileSidebar(false);
+      closeAllModals();
+    });
+  }
+
+  // Synchronize authenticated user header details
+  const applyUserHeader = (user, patient) => {
+    const fullName = patient?.full_name || user?.full_name;
+    const patientId = patient?.patient_id || ('P00' + (user?.id || 1));
+
+    if (fullName) {
+      const userName = document.getElementById('userName');
+      if (userName) userName.textContent = fullName;
+      const userGreeting = document.getElementById('userGreeting');
+      if (userGreeting) userGreeting.textContent = `Good Morning ${fullName}!`;
+      const upc = document.getElementById('userProfileCard');
+      if (upc) upc.setAttribute('aria-label', `User profile: ${fullName}, Patient ID ${patientId}`);
+      const mua = document.querySelector('.mobile-user-avatar');
+      if (mua) mua.setAttribute('title', `${fullName} (${patientId})`);
+    }
+    if (patientId) {
+      const patientIdEl = document.getElementById('patientId');
+      if (patientIdEl) patientIdEl.textContent = patientId;
+    }
+  };
+
+  let cachedPhone = '';
+  let cachedPatientId = '';
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    if (storedUser || storedPatient) {
+      applyUserHeader(storedUser, storedPatient);
+      cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
+      cachedPatientId = storedPatient?.patient_id || '';
+    }
+  } catch (err) {}
+
+  const syncHeaderFromDB = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (cachedPhone) params.append('phone', cachedPhone);
+      if (cachedPatientId) params.append('patient_id', cachedPatientId);
+      const res = await fetch('api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && (data.patient || data.user)) {
+          applyUserHeader(data.user, data.patient);
+        }
+      }
+    } catch (e) {}
+  };
+  syncHeaderFromDB();
+
+  // Logout Action
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+      try {
+        localStorage.removeItem('panchved_user');
+        localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('panchved_prakruti_result');
+      } catch (e) {}
+      showToast('Logged out successfully.');
+      setTimeout(() => { window.location.href = 'index.html'; }, 350);
+    });
+  }
+
+  // ========================================================
+  // 1. TABS SWITCHING (Screen 1 vs Screen 2)
+  // ========================================================
+  const switchTab = (tabName) => {
+    if (tabName === 'history') {
+      tabMyAppointments?.classList.remove('active');
+      tabMyAppointments?.setAttribute('aria-selected', 'false');
+      tabAppointmentHistory?.classList.add('active');
+      tabAppointmentHistory?.setAttribute('aria-selected', 'true');
+
+      // Remove / Hide Book Consultation CTA on Appointment History view
+      if (btnBookConsultCTA) {
+        btnBookConsultCTA.style.display = 'none';
+      }
+
+      if (myAppointmentsContent) myAppointmentsContent.style.display = 'none';
+      if (appointmentHistoryContent) {
+        appointmentHistoryContent.style.display = 'block';
+        appointmentHistoryContent.style.animation = 'none';
+        void appointmentHistoryContent.offsetWidth;
+        appointmentHistoryContent.style.animation = 'fadeInCard 0.28s ease-out forwards';
+      }
+      history.replaceState(null, '', '#history');
+    } else {
+      tabAppointmentHistory?.classList.remove('active');
+      tabAppointmentHistory?.setAttribute('aria-selected', 'false');
+      tabMyAppointments?.classList.add('active');
+      tabMyAppointments?.setAttribute('aria-selected', 'true');
+
+      // Restore Book Consultation CTA on My Appointments view
+      if (btnBookConsultCTA) {
+        btnBookConsultCTA.style.display = '';
+      }
+
+      if (appointmentHistoryContent) appointmentHistoryContent.style.display = 'none';
+      if (myAppointmentsContent) {
+        myAppointmentsContent.style.display = 'block';
+        myAppointmentsContent.style.animation = 'none';
+        void myAppointmentsContent.offsetWidth;
+        myAppointmentsContent.style.animation = 'fadeInCard 0.28s ease-out forwards';
+      }
+      history.replaceState(null, '', '#my-appointments');
+    }
+  };
+
+  if (tabMyAppointments) {
+    tabMyAppointments.addEventListener('click', () => switchTab('my-appointments'));
+  }
+
+  if (tabAppointmentHistory) {
+    tabAppointmentHistory.addEventListener('click', () => switchTab('history'));
+  }
+
+  // Check initial hash on load
+  if (window.location.hash === '#history' || window.location.hash === '#appointment-history') {
+    switchTab('history');
+  }
+
+  // ========================================================
+  // 2. SEARCH FILTERING
+  // ========================================================
+  if (consultSearchInput) {
+    consultSearchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase().trim();
+      const activeTableBody = (appointmentHistoryContent && appointmentHistoryContent.style.display !== 'none')
+        ? document.getElementById('appointmentHistoryTableBody')
+        : document.getElementById('myAppointmentsTableBody');
+
+      if (!activeTableBody) return;
+
+      const rows = activeTableBody.querySelectorAll('tr');
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(term)) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // ========================================================
+  // 3. DYNAMIC APPOINTMENTS INTEGRATION (UPCOMING & HISTORY)
+  // ========================================================
+  let loadedMyAppts = [];
+  let loadedHistoryAppts = [];
+  let currentMyApptPage = 1;
+  let currentHistoryPage = 1;
+  const itemsPerPage = 5;
+
+  const btnMyApptsPrev = document.getElementById('btnMyApptsPrev');
+  const btnMyApptsNext = document.getElementById('btnMyApptsNext');
+  const myApptsPageLabel = document.getElementById('myApptsPageLabel');
+  const myApptsCountText = document.getElementById('myApptsCountText');
+
+  const btnHistoryPrev = document.getElementById('btnHistoryPrev');
+  const btnHistoryNext = document.getElementById('btnHistoryNext');
+  const historyPageLabel = document.getElementById('historyPageLabel');
+  const historyCountText = document.getElementById('historyCountText');
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '2 Sept 2026';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const parts = dateStr.split('-');
+      const year = parts[0];
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+      const month = months[monthIndex] || parts[1];
+      return `${day} ${month} ${year}`;
+    }
+    return dateStr;
+  };
+
+  const formatDuration = (dur) => {
+    if (!dur) return '45 mins';
+    if (/^\d+$/.test(dur)) return `${dur} mins`;
+    if (typeof dur === 'string' && !dur.toLowerCase().includes('min')) return `${dur} mins`;
+    return dur;
+  };
+
+  const getMeetLink = (doctorName, apptId) => {
+    const cleanDoc = (doctorName || 'consult').toLowerCase().replace(/dr\.?|\s+/g, '').replace(/[^a-z0-9]/g, '');
+    return `https://meet.google.com/abc-${cleanDoc || 'panchved'}-panchved`;
+  };
+
+  const escapeHtml = (str) => {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
+  // Bind copy button for Google Meet links in My Appointments
+  const bindMeetLinkButtons = () => {
+    const meetLinkButtons = document.querySelectorAll('.meet-link-btn');
+    meetLinkButtons.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const link = btn.getAttribute('data-link') || 'https://meet.google.com/panchved-consult';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link)
+            .then(() => showToast('Google Meet link copied to clipboard!'))
+            .catch(() => showToast('Google Meet link: ' + link));
+        } else {
+          showToast('Google Meet link: ' + link);
+        }
+      };
+    });
+  };
+
+  let activeSelectedAppt = null;
+
+  // Bind view details button in Appointment History
+  const bindViewHistoryButtons = () => {
+    const viewHistoryButtons = document.querySelectorAll('.btn-view-history');
+    viewHistoryButtons.forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        const apptDbId = btn.getAttribute('data-db-id') || btn.getAttribute('data-id');
+        const apptCode = btn.getAttribute('data-id');
+
+        // Look up full database record from loadedHistoryAppts
+        const found = loadedHistoryAppts.find(a => String(a.id) === String(apptDbId) || a.appointment_id === apptCode);
+        if (found) {
+          activeSelectedAppt = found;
+        } else {
+          activeSelectedAppt = {
+            id: apptDbId,
+            appointment_id: apptCode,
+            appointment_date: btn.getAttribute('data-date'),
+            appointment_time: btn.getAttribute('data-time'),
+            doctor_name: btn.getAttribute('data-doctor'),
+            duration: btn.getAttribute('data-duration'),
+            agenda: btn.getAttribute('data-agenda'),
+            patient_name: btn.getAttribute('data-patient'),
+            prescription: btn.getAttribute('data-prescription'),
+            notes: btn.getAttribute('data-notes')
+          };
+        }
+
+        const id = activeSelectedAppt.appointment_id || ('APT-' + activeSelectedAppt.id);
+        const date = formatDate(activeSelectedAppt.appointment_date);
+        const time = activeSelectedAppt.appointment_time || '03:00 - 03:45 PM';
+        const doctor = activeSelectedAppt.doctor_name || 'Dr. Rohit Mehra';
+        const duration = formatDuration(activeSelectedAppt.duration);
+        const agenda = activeSelectedAppt.agenda || 'Ayurvedic consultation and pulse diagnostics review';
+
+        if (viewDetailId) viewDetailId.textContent = id;
+        if (viewDetailDate) viewDetailDate.textContent = date;
+        if (viewDetailTime) viewDetailTime.textContent = time;
+        if (viewDetailDoctor) viewDetailDoctor.textContent = doctor;
+        if (viewDetailDuration) viewDetailDuration.textContent = duration;
+        if (viewDetailAgenda) viewDetailAgenda.textContent = agenda;
+
+        if (viewAppointmentModal) {
+          viewAppointmentModal.classList.add('active');
+          viewAppointmentModal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+        }
+      };
+    });
+  };
+
+  // Render Table 1: My Appointments (Upcoming: date & time > now)
+  const renderMyAppointmentsTable = () => {
+    const tableBody = document.getElementById('myAppointmentsTableBody');
+    if (!tableBody) return;
+
+    if (!loadedMyAppts || loadedMyAppts.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 32px; color: #64748b;">
+            No upcoming consultation appointments found.
+          </td>
+        </tr>
+      `;
+      if (myApptsCountText) myApptsCountText.textContent = 'Showing 0 items';
+      if (myApptsPageLabel) myApptsPageLabel.textContent = '1 of 1';
+      if (btnMyApptsPrev) btnMyApptsPrev.disabled = true;
+      if (btnMyApptsNext) btnMyApptsNext.disabled = true;
+      return;
+    }
+
+    const totalItems = loadedMyAppts.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    if (currentMyApptPage > totalPages) currentMyApptPage = totalPages;
+    if (currentMyApptPage < 1) currentMyApptPage = 1;
+
+    const startIdx = (currentMyApptPage - 1) * itemsPerPage;
+    const endIdx = Math.min(startIdx + itemsPerPage, totalItems);
+    const pageItems = loadedMyAppts.slice(startIdx, endIdx);
+
+    tableBody.innerHTML = pageItems.map(appt => {
+      const apptId = appt.appointment_id || ('APT-' + appt.id);
+      const dateFormatted = formatDate(appt.appointment_date);
+      const timeVal = appt.appointment_time || '3:00 PM';
+      const doctorName = appt.doctor_name || 'Dr. Rohit Mishra';
+      const agendaText = appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
+      const durationVal = formatDuration(appt.duration);
+      const meetLink = appt.meet_link || getMeetLink(doctorName, apptId);
+
+      return `
+        <tr>
+          <td class="table-id-cell">${escapeHtml(apptId)}</td>
+          <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
+          <td class="table-time-cell">${escapeHtml(timeVal)}</td>
+          <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
+          <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
+          <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
+          <td class="table-action-cell">
+            <button type="button" class="meet-link-btn" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
+              <span>meet.google...</span>
+              <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (myApptsPageLabel) myApptsPageLabel.textContent = `${currentMyApptPage} of ${totalPages}`;
+    if (myApptsCountText) myApptsCountText.textContent = `Showing ${startIdx + 1} to ${endIdx} of ${totalItems} items`;
+    if (btnMyApptsPrev) btnMyApptsPrev.disabled = currentMyApptPage === 1;
+    if (btnMyApptsNext) btnMyApptsNext.disabled = currentMyApptPage === totalPages;
+
+    bindMeetLinkButtons();
+  };
+
+  // Render Table 2: Appointment History (Past: date & time <= now)
+  const renderAppointmentHistoryTable = () => {
+    const tableBody = document.getElementById('appointmentHistoryTableBody');
+    if (!tableBody) return;
+
+    if (!loadedHistoryAppts || loadedHistoryAppts.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 32px; color: #64748b;">
+            No past consultation history found.
+          </td>
+        </tr>
+      `;
+      if (historyCountText) historyCountText.textContent = 'Showing 0 items';
+      if (historyPageLabel) historyPageLabel.textContent = '1 of 1';
+      if (btnHistoryPrev) btnHistoryPrev.disabled = true;
+      if (btnHistoryNext) btnHistoryNext.disabled = true;
+      return;
+    }
+
+    const totalItems = loadedHistoryAppts.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    if (currentHistoryPage > totalPages) currentHistoryPage = totalPages;
+    if (currentHistoryPage < 1) currentHistoryPage = 1;
+
+    const startIdx = (currentHistoryPage - 1) * itemsPerPage;
+    const endIdx = Math.min(startIdx + itemsPerPage, totalItems);
+    const pageItems = loadedHistoryAppts.slice(startIdx, endIdx);
+
+    tableBody.innerHTML = pageItems.map(appt => {
+      const apptId = appt.appointment_id || ('ABC-' + String(appt.id).padStart(3, '0'));
+      const dateFormatted = formatDate(appt.appointment_date);
+      const timeVal = appt.appointment_time || '3:00 PM';
+      const doctorName = appt.doctor_name || 'Dr. Rohit Mehra';
+      const agendaText = appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics review';
+      const durationVal = formatDuration(appt.duration);
+      const prescriptionData = typeof appt.prescription === 'object' ? JSON.stringify(appt.prescription) : (appt.prescription || '');
+
+      return `
+        <tr>
+          <td class="table-id-cell">${escapeHtml(apptId)}</td>
+          <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
+          <td class="table-time-cell">${escapeHtml(timeVal)}</td>
+          <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
+          <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
+          <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
+          <td class="table-action-cell">
+            <button 
+              type="button" 
+              class="btn-view-history" 
+              data-db-id="${escapeHtml(appt.id)}"
+              data-id="${escapeHtml(apptId)}" 
+              data-date="${escapeHtml(dateFormatted)}" 
+              data-time="${escapeHtml(timeVal)}" 
+              data-doctor="${escapeHtml(doctorName)}" 
+              data-duration="${escapeHtml(durationVal)}" 
+              data-agenda="${escapeHtml(agendaText)}"
+              data-patient="${escapeHtml(appt.patient_name || 'Rahul Sharma')}"
+              data-prescription="${escapeHtml(prescriptionData)}"
+              data-notes="${escapeHtml(appt.notes || '')}"
+            >
+              <span>View</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (historyPageLabel) historyPageLabel.textContent = `${currentHistoryPage} of ${totalPages}`;
+    if (historyCountText) historyCountText.textContent = `Showing ${startIdx + 1} to ${endIdx} of ${totalItems} items`;
+    if (btnHistoryPrev) btnHistoryPrev.disabled = currentHistoryPage === 1;
+    if (btnHistoryNext) btnHistoryNext.disabled = currentHistoryPage === totalPages;
+
+    bindViewHistoryButtons();
+  };
+
+  const loadAppointmentsFromDB = async () => {
+    try {
+      const res = await fetch('api/consultations.php');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          loadedMyAppts = Array.isArray(data.my_appointments) ? data.my_appointments : [];
+          loadedHistoryAppts = Array.isArray(data.history_appointments) ? data.history_appointments : [];
+          
+          currentMyApptPage = 1;
+          currentHistoryPage = 1;
+          renderMyAppointmentsTable();
+          renderAppointmentHistoryTable();
+        }
+      }
+    } catch (err) {
+      console.warn('Notice: Error fetching appointments from DB:', err);
+    }
+  };
+
+  // Fetch appointments dynamically from database on load
+  loadAppointmentsFromDB();
+
+  // Initial binding for static elements if any
+  bindMeetLinkButtons();
+  bindViewHistoryButtons();
+
+  // Pagination Event Listeners
+  if (btnMyApptsPrev) {
+    btnMyApptsPrev.addEventListener('click', () => {
+      if (currentMyApptPage > 1) {
+        currentMyApptPage--;
+        renderMyAppointmentsTable();
+        showToast(`Loaded Page ${currentMyApptPage}`);
+      }
+    });
+  }
+
+  if (btnMyApptsNext) {
+    btnMyApptsNext.addEventListener('click', () => {
+      const totalPages = Math.max(1, Math.ceil((loadedMyAppts.length || 1) / itemsPerPage));
+      if (currentMyApptPage < totalPages) {
+        currentMyApptPage++;
+        renderMyAppointmentsTable();
+        showToast(`Loaded Page ${currentMyApptPage}`);
+      }
+    });
+  }
+
+  if (btnHistoryPrev) {
+    btnHistoryPrev.addEventListener('click', () => {
+      if (currentHistoryPage > 1) {
+        currentHistoryPage--;
+        renderAppointmentHistoryTable();
+        showToast(`Loaded History Page ${currentHistoryPage}`);
+      }
+    });
+  }
+
+  if (btnHistoryNext) {
+    btnHistoryNext.addEventListener('click', () => {
+      const totalPages = Math.max(1, Math.ceil((loadedHistoryAppts.length || 1) / itemsPerPage));
+      if (currentHistoryPage < totalPages) {
+        currentHistoryPage++;
+        renderAppointmentHistoryTable();
+        showToast(`Loaded History Page ${currentHistoryPage}`);
+      }
+    });
+  }
+
+  // ========================================================
+  // 4. MODALS & PRESCRIPTION EVENT HANDLERS
+  // ========================================================
+  if (closeViewModalBtn) {
+    closeViewModalBtn.addEventListener('click', () => {
+      if (viewAppointmentModal) {
+        viewAppointmentModal.classList.remove('active');
+        viewAppointmentModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+
+  // Helper to render prescription data into Prescription Modal
+  const renderDynamicPrescriptionModal = (rx) => {
+    if (!rx) return;
+
+    const rxDate = document.getElementById('rxDate');
+    const rxTime = document.getElementById('rxTime');
+    const rxPatientName = document.getElementById('rxPatientName');
+    const rxGender = document.getElementById('rxGender');
+    const rxAge = document.getElementById('rxAge');
+    const rxMedHistory = document.getElementById('rxMedHistory');
+    const rxSymptoms = document.getElementById('rxSymptoms');
+    const rxDiagnosis = document.getElementById('rxDiagnosis');
+    const rxFindings = document.getElementById('rxFindings');
+    const rxNotes = document.getElementById('rxNotes');
+    const rxReferralDoctor = document.getElementById('rxReferralDoctor');
+    const rxReferralSpecialty = document.getElementById('rxReferralSpecialty');
+    const rxContactText = document.getElementById('rxContactText');
+
+    if (rxDate) rxDate.textContent = formatDate(rx.date || rx.prescription_date) || rx.date || '2 Sept 2026';
+    if (rxTime) rxTime.textContent = rx.time || rx.prescription_time || '07:00 - 07:45 PM';
+    if (rxPatientName) rxPatientName.textContent = rx.patient_name || 'Rahul Sharma';
+    if (rxGender) rxGender.textContent = rx.gender || 'Male';
+    if (rxAge) rxAge.textContent = rx.age || '34';
+
+    if (rxMedHistory) rxMedHistory.textContent = rx.medical_history || 'No Known Significant Medical History';
+    if (rxSymptoms) rxSymptoms.textContent = rx.symptoms || 'Constipation (Severity : Moderate)';
+    if (rxDiagnosis) rxDiagnosis.textContent = rx.diagnosis || 'Migraine (Duration : 3 months)';
+    if (rxFindings) rxFindings.textContent = rx.examination_findings || 'Abdomen Feels Distended';
+    if (rxNotes) rxNotes.textContent = rx.notes || 'Gandhush ( Cow Ghee + Triphala Powder )';
+
+    if (rxReferralDoctor) rxReferralDoctor.textContent = rx.referred_doctor || rx.doctor_name || 'Dr. Ananya Prasad';
+    if (rxReferralSpecialty) rxReferralSpecialty.textContent = rx.referred_specialty || rx.doctor_specialty || 'Ayurvedic Medicine';
+    if (rxContactText) {
+      const phone = rx.support_phone || rx.doctor_phone || '+91 7896543210';
+      const email = rx.support_email || rx.doctor_email || 'panchvedsupport@gmail.com';
+      rxContactText.innerHTML = `${escapeHtml(phone)} &nbsp;|&nbsp; ${escapeHtml(email)}`;
+    }
+
+    // Render Medication Columns/Grid dynamically from database
+    const rxMedGrid = document.getElementById('rxMedicationGrid');
+    if (rxMedGrid) {
+      const meds = Array.isArray(rx.medications) && rx.medications.length > 0 ? rx.medications : [
+        {
+          medication: 'NULL',
+          dose: '1 TABLET',
+          frequency: '1-0-1 BEFORE MEAL',
+          duration: '10 DAYS',
+          remarks: 'TAKE 1 TABLET - TWICE A DAY, BEFORE BREAKFAST AND BEFORE DINNER FOR 10 DAYS'
+        }
+      ];
+
+      rxMedGrid.innerHTML = meds.map(med => {
+        const medNameHtml = escapeHtml(med.medication || 'NULL').replace(/\((.*?)\)/, '<br>($1)');
+        const freqHtml = escapeHtml(med.frequency || '1-0-1 BEFORE MEAL').replace('BEFORE', '<br>BEFORE');
+        return `
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Medication:</p>
+            <p class="rx-med-col-val">${medNameHtml}</p>
+          </div>
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Dose:</p>
+            <p class="rx-med-col-val">${escapeHtml(med.dose || '1 TABLET')}</p>
+          </div>
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Frequency:</p>
+            <p class="rx-med-col-val">${freqHtml}</p>
+          </div>
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Duration:</p>
+            <p class="rx-med-col-val">${escapeHtml(med.duration || '10 DAYS')}</p>
+          </div>
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Remarks:</p>
+            <p class="rx-med-col-val">${escapeHtml(med.remarks || 'TAKE 1 TABLET - TWICE A DAY, BEFORE BREAKFAST AND BEFORE DINNER FOR 10 DAYS')}</p>
+          </div>
+        `;
+      }).join('');
+    }
+  };
+
+  if (btnOpenPrescriptionModal) {
+    btnOpenPrescriptionModal.addEventListener('click', async (e) => {
+      e.preventDefault();
+      // Hide view modal & show prescription modal
+      if (viewAppointmentModal) {
+        viewAppointmentModal.classList.remove('active');
+        viewAppointmentModal.setAttribute('aria-hidden', 'true');
+      }
+
+      if (activeSelectedAppt) {
+        const appt = activeSelectedAppt;
+
+        // If active appointment already has full preloaded prescription_data from DB
+        if (appt.prescription_data) {
+          renderDynamicPrescriptionModal(appt.prescription_data);
+        } else {
+          // Parse embedded JSON prescription or fallback
+          let parsedRx = null;
+          try {
+            if (appt.prescription && typeof appt.prescription === 'object') {
+              parsedRx = appt.prescription;
+            } else if (appt.prescription && typeof appt.prescription === 'string' && appt.prescription.startsWith('{')) {
+              parsedRx = JSON.parse(appt.prescription);
+            }
+          } catch (err) {}
+
+          if (parsedRx) {
+            renderDynamicPrescriptionModal(parsedRx);
+          } else {
+            // Render baseline from appointment object
+            renderDynamicPrescriptionModal({
+              date: appt.appointment_date || appt.date,
+              time: appt.appointment_time || appt.time,
+              patient_name: appt.patient_name || appt.patient,
+              gender: appt.gender || 'Male',
+              age: appt.age || 34,
+              medical_history: 'No Known Significant Medical History',
+              symptoms: 'Constipation (Severity : Moderate)',
+              diagnosis: 'Migraine (Duration : 3 months)',
+              examination_findings: 'Abdomen Feels Distended',
+              notes: appt.notes || 'Gandhush ( Cow Ghee + Triphala Powder )',
+              referred_doctor: appt.doctor_name || appt.doctor || 'Dr. Ananya Prasad',
+              referred_specialty: 'Ayurvedic Medicine',
+              medications: [
+                {
+                  medication: appt.prescription && !appt.prescription.startsWith('{') ? appt.prescription : 'NULL',
+                  dose: '1 TABLET',
+                  frequency: '1-0-1 BEFORE MEAL',
+                  duration: '10 DAYS',
+                  remarks: 'TAKE 1 TABLET - TWICE A DAY, BEFORE BREAKFAST AND BEFORE DINNER FOR 10 DAYS'
+                }
+              ]
+            });
+          }
+        }
+
+        // Also asynchronously fetch from DB endpoint for live verification
+        if (appt.id) {
+          try {
+            const rxRes = await fetch(`api/consultations.php?action=prescription&appointment_id=${appt.id}`);
+            if (rxRes.ok) {
+              const rxJson = await rxRes.json();
+              if (rxJson.success && rxJson.prescription) {
+                appt.prescription_data = rxJson.prescription;
+                renderDynamicPrescriptionModal(rxJson.prescription);
+              }
+            }
+          } catch (fetchErr) {
+            console.warn('Notice: Background prescription fetch err:', fetchErr);
+          }
+        }
+      }
+
+      if (prescriptionModal) {
+        prescriptionModal.classList.add('active');
+        prescriptionModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+  }
+
+  if (closePrescriptionModalBtn) {
+    closePrescriptionModalBtn.addEventListener('click', () => {
+      if (prescriptionModal) {
+        prescriptionModal.classList.remove('active');
+        prescriptionModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+
+  if (btnPrintPrescription) {
+    btnPrintPrescription.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  // ========================================================
+  // 6. MODAL 3: BOOK CONSULTATION MODAL & DYNAMIC DOCTOR FETCH
+  // ========================================================
+  let activeDoctorsList = [];
+
+  // Fetch active doctors dynamically from database schema
+  const fetchDoctorsFromDB = async () => {
+    try {
+      const res = await fetch('api/doctors.php');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.doctors) && data.doctors.length > 0) {
+          activeDoctorsList = data.doctors;
+          renderDoctorSelectOptions(activeDoctorsList);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice: Backend fetch doctors error:', e);
+    }
+    // Fallback if database request had an issue
+    activeDoctorsList = [
+      { id: 1, name: 'Dr. Nidhi Jha', role: 'Ayurveda Physician (Pediatrics & Gynecology)', initials: 'NJ' },
+      { id: 2, name: 'Dr. Rohit Mehra', role: 'Physiotherapist (Pune)', initials: 'RM' },
+      { id: 3, name: 'Dr. Priya Patel', role: 'Panchakarma Specialist', initials: 'PP' },
+      { id: 4, name: 'Dr. Ankit Verma', role: 'Ayurvedic Consultant (Chronic Disease Management)', initials: 'AV' },
+      { id: 5, name: 'Dr. Sneha Kulkarni', role: 'Neuro-Physiotherapist (Neurological Rehab)', initials: 'SK' }
+    ];
+    renderDoctorSelectOptions(activeDoctorsList);
+  };
+
+  const renderDoctorSelectOptions = (doctors) => {
+    if (!consultDoctor) return;
+    consultDoctor.innerHTML = '<option value="" disabled selected>Select Doctor</option>' +
+      doctors.map(doc => `<option value="${doc.name}" data-id="${doc.id}" data-role="${doc.role || doc.expertise || 'Ayurveda Physician'}" data-initials="${doc.initials || 'DR'}">${doc.name}${doc.role ? (' - ' + doc.role) : ''}</option>`).join('');
+    consultDoctor.selectedIndex = 0;
+  };
+
+  fetchDoctorsFromDB();
+
+  // Calendar Picker Integration
+  if (btnDateCalendar && nativeDatePicker && consultDate) {
+    btnDateCalendar.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        if (nativeDatePicker.showPicker) {
+          nativeDatePicker.showPicker();
+        } else {
+          nativeDatePicker.focus();
+        }
+      } catch (err) {
+        nativeDatePicker.focus();
+      }
+    });
+
+    consultDate.addEventListener('click', () => {
+      if (!consultDate.value) {
+        try {
+          if (nativeDatePicker.showPicker) nativeDatePicker.showPicker();
+        } catch (err) {}
+      }
+    });
+
+    nativeDatePicker.addEventListener('change', () => {
+      if (nativeDatePicker.value) {
+        const parts = nativeDatePicker.value.split('-');
+        if (parts.length === 3) {
+          const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          const formatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          consultDate.value = formatted;
+        } else {
+          consultDate.value = nativeDatePicker.value;
+        }
+      }
+    });
+  }
+
+  // Time Slots for Interactive Time Picker
+  const timeSlots = [
+    '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM',
+    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+    '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
+    '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM',
+    '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM', '09:00 PM', '09:30 PM', '10:00 PM'
+  ];
+
+  const setupTimePicker = (inputEl, btnEl, dropdownEl, isStartTime = true) => {
+    if (!inputEl || !btnEl || !dropdownEl) return;
+
+    dropdownEl.innerHTML = timeSlots.map(time => `
+      <div class="time-picker-item" data-time="${time}">
+        <span>${time}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+    `).join('');
+
+    const toggleDropdown = (show) => {
+      const willShow = show !== undefined ? show : !dropdownEl.classList.contains('active');
+      if (willShow) {
+        document.querySelectorAll('.time-picker-dropdown.active').forEach(d => {
+          if (d !== dropdownEl) d.classList.remove('active');
+        });
+        dropdownEl.classList.add('active');
+        const curVal = inputEl.value.trim();
+        dropdownEl.querySelectorAll('.time-picker-item').forEach(item => {
+          if (item.getAttribute('data-time') === curVal) {
+            item.classList.add('selected');
+            item.scrollIntoView({ block: 'nearest' });
+          } else {
+            item.classList.remove('selected');
+          }
+        });
+      } else {
+        dropdownEl.classList.remove('active');
+      }
+    };
+
+    btnEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleDropdown();
+    });
+
+    inputEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown(true);
+    });
+
+    dropdownEl.addEventListener('click', (e) => {
+      const item = e.target.closest('.time-picker-item');
+      if (!item) return;
+      const selectedTime = item.getAttribute('data-time');
+      inputEl.value = selectedTime;
+      toggleDropdown(false);
+
+      // If selecting Start Time and End Time is blank, suggest 45 mins / 1 hour later
+      if (isStartTime && consultEndTime && !consultEndTime.value) {
+        const idx = timeSlots.indexOf(selectedTime);
+        if (idx !== -1 && idx + 1 < timeSlots.length) {
+          consultEndTime.value = timeSlots[idx + 1];
+        }
+      }
+    });
+  };
+
+  setupTimePicker(consultStartTime, btnStartTimeClock, startTimeDropdown, true);
+  setupTimePicker(consultEndTime, btnEndTimeClock, endTimeDropdown, false);
+
+  // Close time dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.time-picker-container')) {
+      document.querySelectorAll('.time-picker-dropdown.active').forEach(d => d.classList.remove('active'));
+    }
+  });
+
+  // Open booking modal ensuring ALL fields remain blank with visible placeholders
+  const openBookingModal = () => {
+    if (!consultationModal) return;
+
+    // Reset all form inputs to blank and reset doctor selection to placeholder
+    if (consultationBookingForm) {
+      consultationBookingForm.reset();
+    }
+    if (consultDoctor) {
+      consultDoctor.selectedIndex = 0;
+    }
+    if (consultName) consultName.value = '';
+    if (consultMobile) consultMobile.value = '';
+    if (consultEmail) consultEmail.value = '';
+    if (consultDate) consultDate.value = '';
+    if (consultStartTime) consultStartTime.value = '';
+    if (consultEndTime) consultEndTime.value = '';
+    if (consultAgenda) consultAgenda.value = '';
+    if (nativeDatePicker) nativeDatePicker.value = '';
+
+    document.querySelectorAll('.time-picker-dropdown.active').forEach(d => d.classList.remove('active'));
+
+    consultationModal.classList.add('active');
+    consultationModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => consultDoctor?.focus(), 80);
+  };
+
+  const closeBookingModal = () => {
+    if (!consultationModal) return;
+    consultationModal.classList.remove('active');
+    consultationModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    document.querySelectorAll('.time-picker-dropdown.active').forEach(d => d.classList.remove('active'));
+  };
+
+  if (btnBookConsultCTA) {
+    btnBookConsultCTA.addEventListener('click', (e) => {
+      e.preventDefault();
+      openBookingModal();
+    });
+  }
+
+  if (closeConsultationModalBtn) {
+    closeConsultationModalBtn.addEventListener('click', () => closeBookingModal());
+  }
+
+  // Booking Form Submission -> Redirect to Checkout
+  if (consultationBookingForm && submitConsultationBtn) {
+    consultationBookingForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const docVal = consultDoctor?.value.trim();
+      const name = consultName?.value.trim();
+      const mobile = consultMobile?.value.trim();
+      const email = consultEmail?.value.trim();
+      const date = consultDate?.value.trim();
+      const startTime = consultStartTime?.value.trim();
+      const endTime = consultEndTime?.value.trim();
+      const agenda = consultAgenda?.value.trim();
+
+      if (!docVal) {
+        showToast('Please select a doctor.', true);
+        consultDoctor?.focus();
+        return;
+      }
+
+      if (!name) {
+        showToast('Please enter your full name.', true);
+        consultName?.focus();
+        return;
+      }
+
+      if (!mobile) {
+        showToast('Please enter your mobile number.', true);
+        consultMobile?.focus();
+        return;
+      }
+
+      if (!email) {
+        showToast('Please enter your email address.', true);
+        consultEmail?.focus();
+        return;
+      }
+
+      if (!date) {
+        showToast('Please select a date for consultation.', true);
+        consultDate?.focus();
+        return;
+      }
+
+      if (!startTime) {
+        showToast('Please select a start time.', true);
+        consultStartTime?.focus();
+        return;
+      }
+
+      if (!endTime) {
+        showToast('Please select an end time.', true);
+        consultEndTime?.focus();
+        return;
+      }
+
+      const selectedDocOption = consultDoctor.options[consultDoctor.selectedIndex];
+      const doctorName = docVal || 'Dr. Nidhi Jha';
+      const doctorRole = selectedDocOption?.getAttribute('data-role') || 'Ayurveda Physician';
+      const doctorInitials = selectedDocOption?.getAttribute('data-initials') || 'DR';
+      const doctorId = selectedDocOption?.getAttribute('data-id') || '1';
+      const timeFormatted = `${startTime} - ${endTime}`;
+
+      // Save consultation booking info to localStorage
+      const bookingData = {
+        isConsultationCheckout: true,
+        doctorName: doctorName,
+        doctorRole: doctorRole,
+        doctorInitials: doctorInitials,
+        doctorId: doctorId,
+        patientName: name,
+        patientEmail: email,
+        patientPhone: mobile,
+        date: date,
+        startTime: startTime,
+        endTime: endTime,
+        time: timeFormatted,
+        slot: timeFormatted,
+        agenda: agenda || `Ayurvedic consultation with ${doctorName}`,
+        fee: '₹500.00'
+      };
+
+      try {
+        localStorage.setItem('panchved_consultation_booking', JSON.stringify(bookingData));
+        localStorage.setItem('panchved_checkout_type', 'consultation');
+      } catch (err) {
+        console.warn('localStorage disabled', err);
+      }
+
+      const originalHtml = submitConsultationBtn.innerHTML;
+      submitConsultationBtn.disabled = true;
+      submitConsultationBtn.style.opacity = '0.85';
+      submitConsultationBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation: spin 0.8s linear infinite;">
+          <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="#ffffff"></path>
+        </svg>
+        <span>Redirecting to Checkout...</span>
+      `;
+
+      setTimeout(() => {
+        submitConsultationBtn.disabled = false;
+        submitConsultationBtn.style.opacity = '1';
+        submitConsultationBtn.innerHTML = originalHtml;
+        closeBookingModal();
+        window.location.href = 'consultation-checkout.html';
+      }, 500);
+    });
+  }
+
+  // Backdrop clicks for closing modals
+  [viewAppointmentModal, prescriptionModal, consultationModal].forEach(modal => {
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeAllModals();
+        }
+      });
+    }
+  });
+
+  // Global ESC Key Close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeAllModals();
+    }
+  });
+
+});
+

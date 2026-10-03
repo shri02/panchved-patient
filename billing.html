@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panchved - Billing & Invoices</title>
+  <meta name="description" content="Panchved Patient Portal - Manage and track billing records, invoices, active package details, and payment receipts.">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Mobile Top Navigation Bar -->
+  <header class="mobile-nav-bar" id="mobileNavBar">
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" title="Toggle menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    <a href="dashboard.html" class="mobile-logo-link">
+      <img src="assets/logo.svg" alt="Panchved Logo" class="mobile-logo-img" />
+    </a>
+    <a href="profile.html" class="mobile-user-avatar" title="Rahul Sharma (P001)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </a>
+  </header>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- Main Dashboard Layout Wrapper -->
+  <div class="dashboard-layout">
+    
+    <!-- Left Sidebar Navigation -->
+    <aside class="dashboard-sidebar" id="dashboardSidebar">
+      <div class="sidebar-brand-header">
+        <a href="dashboard.html" class="brand-logo-link" title="Panchved Complete Ayurved & Physiotherapy Rehab Center">
+          <img src="assets/logo.svg" alt="Panchved Complete Ayurved & Physiotherapy Rehab Center" class="brand-logo-img" width="130" height="145" />
+        </a>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav" aria-label="Main Navigation">
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="dashboard.html" class="nav-link" id="navDashboard">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </span>
+              <span class="nav-label">Dashboard</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a href="package.html" class="nav-link" id="navPackages">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Packages</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="consultation.html" class="nav-link" id="navConsultations">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+              </span>
+              <span class="nav-label">Consultations</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="courses.html" class="nav-link" id="navCourses">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Courses</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="billing.html" class="nav-link active" id="navBilling">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                  <line x1="2" y1="10" x2="22" y2="10"></line>
+                </svg>
+              </span>
+              <span class="nav-label">Billing</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Sidebar Footer (Log Out Button) -->
+      <div class="sidebar-footer">
+        <a href="index.html" class="btn-logout" id="logoutBtn" title="Log out from patient portal">
+          <span class="logout-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </span>
+          <span>Log out</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main-content">
+      
+      <!-- Top Header Section -->
+      <header class="dashboard-top-header">
+        <div class="header-titles">
+          <h1 class="dashboard-heading">Billing</h1>
+          <p class="greeting-subtitle">Manage and track billing records.</p>
+        </div>
+
+        <!-- User Profile Pill -->
+        <a href="profile.html" class="user-profile-card" id="userProfileCard" aria-label="User profile: Rahul Sharma, Patient ID P001">
+          <div class="user-avatar" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="user-meta">
+            <span class="user-name" id="userName">Rahul Sharma</span>
+            <span class="user-patient-id" id="patientId">P001</span>
+          </div>
+        </a>
+      </header>
+
+      <!-- Main Billing Layout Container -->
+      <div class="billing-layout-container">
+        
+        <!-- SCREEN 1 - Top Card: Active Package Detail -->
+        <section class="active-package-card" aria-labelledby="activePkgHeading">
+          <h2 class="active-package-heading" id="activePkgHeading">Active Package Detail</h2>
+          
+          <div class="active-package-meta-header">
+            <h3 class="active-package-title" id="activePkgTitle">Stress & Sleep Balance</h3>
+            <p class="active-package-desc" id="activePkgDesc">Stress management and sleep routine.</p>
+          </div>
+
+          <!-- Highlight Banner Box -->
+          <div class="active-package-banner">
+            <div class="package-banner-item">
+              <span class="banner-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </span>
+              <span id="activePkgPrice">₹5499 / month</span>
+            </div>
+
+            <div class="package-banner-item">
+              <span class="banner-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </span>
+              <span id="activePkgDuration">3 Months</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- SCREEN 1 - Bottom Card: Payment History Table -->
+        <section class="payment-history-card" aria-labelledby="paymentHistoryHeading">
+          <h2 class="payment-history-heading" id="paymentHistoryHeading">Payment History</h2>
+
+          <!-- Search Bar -->
+          <div class="billing-search-wrap">
+            <span class="billing-search-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input 
+              type="text" 
+              id="billingSearchInput" 
+              class="billing-search-input" 
+              placeholder="Search by payment history" 
+              aria-label="Search payment records"
+            />
+          </div>
+
+          <!-- Table Container -->
+          <div class="table-responsive-wrapper" style="margin-top: 6px;">
+            <table class="consultations-data-table" id="billingDataTable">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Duration</th>
+                  <th scope="col">Doctor's Name</th>
+                  <th scope="col">Package Name</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody id="billingTableBody">
+                <!-- Dynamically populated from database via billing.js -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Footer -->
+          <footer class="table-pagination-footer" style="margin: 0 -26px;">
+            <span class="pagination-count" id="billingCountText">Showing 1 to 5 of 20 items</span>
+            <div class="pagination-controls">
+              <span class="pagination-label" id="billingPageLabel">1 of 4</span>
+              <div class="pagination-nav-btns">
+                <button type="button" class="btn-page-nav" id="btnBillingPrev" aria-label="Previous page" disabled>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <button type="button" class="btn-page-nav" id="btnBillingNext" aria-label="Next page">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </footer>
+        </section>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ========================================================
+       SCREEN 2: MODAL — Invoice / Billing Receipt Sheet
+       ======================================================== -->
+  <div class="modal-backdrop" id="receiptModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="receiptModalHeading">
+    <div class="receipt-modal-box">
+      
+      <!-- Close Button -->
+      <button type="button" class="modal-close-btn" id="closeReceiptModalBtn" aria-label="Close invoice receipt">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      <!-- Receipt Top Header -->
+      <header class="receipt-top-header">
+        <div class="receipt-logo-block">
+          <img src="assets/logo.svg" alt="Panchved Logo" class="receipt-logo-img" />
+          <div class="receipt-business-address">
+            <p>Business address</p>
+            <p>City, State, IN - 000 000</p>
+            <p>+91 7896543210</p>
+          </div>
+        </div>
+
+        <div class="receipt-title-block">
+          <h2 class="receipt-main-title" id="receiptModalHeading">RECEIPT</h2>
+          <p class="receipt-date-stamp">Date: <strong id="receiptInvoiceDate">--</strong></p>
+        </div>
+      </header>
+
+      <!-- Billed To & Invoice Meta Row -->
+      <div class="receipt-meta-grid">
+        <div class="receipt-billed-to">
+          <span class="billed-label">Billed To:</span>
+          <span class="billed-name" id="receiptBilledName">--</span>
+          <span id="receiptBilledGender">--</span>
+          <span id="receiptBilledAge">--</span>
+        </div>
+
+        <div class="receipt-invoice-details">
+          <div class="inv-row">
+            <span class="inv-label">Receipt No :</span>
+            <span class="inv-val" id="receiptNumber">--</span>
+          </div>
+          <div class="inv-row">
+            <span class="inv-label">Visit Date :</span>
+            <span class="inv-val" id="receiptVisitDate">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Itemized Service Table -->
+      <div class="receipt-table-wrapper">
+        <table class="receipt-items-table">
+          <thead>
+            <tr>
+              <th scope="col">S.NO</th>
+              <th scope="col">SERVICE</th>
+              <th scope="col">QTY</th>
+              <th scope="col">AMOUNT</th>
+              <th scope="col">DISCOUNT</th>
+              <th scope="col">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody id="receiptItemsTableBody">
+            <!-- Dynamically populated from database via billing.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Totals & Calculations Section -->
+      <div class="receipt-totals-section">
+        <div class="receipt-calc-row">
+          <span>Subtotal</span>
+          <span class="calc-val" id="receiptSubtotal">--</span>
+        </div>
+        <div class="receipt-calc-row">
+          <span>Discount</span>
+          <span class="calc-val" id="receiptDiscount">--</span>
+        </div>
+        <div class="receipt-total-highlight-bar">
+          <span>Total</span>
+          <span id="receiptGrandTotal">--</span>
+        </div>
+      </div>
+
+      <!-- Amount In Words -->
+      <div class="receipt-words-row">
+        <span>Amount In Words: <strong id="receiptAmountWords">--</strong></span>
+      </div>
+
+      <!-- Receipt Footer -->
+      <footer class="receipt-footer-row">
+        <span>Thank you for the purchase.</span>
+        <span>+91 7896543210 &nbsp;|&nbsp; panchved@gmail.com</span>
+      </footer>
+
+      <!-- Actions -->
+      <div class="prescription-actions-row">
+        <button type="button" class="btn-print-rx" id="btnPrintReceipt">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          <span>Print / Save PDF</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toast" class="toast-msg" role="status" aria-live="polite">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span id="toastMsg">Action completed successfully!</span>
+  </div>
+
+  <script src="billing.js"></script>
+</body>
+</html>

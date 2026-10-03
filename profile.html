@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panchved - Patient Profile</title>
+  <meta name="description" content="Panchved Patient Portal - Manage Patient Profile Details">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Mobile Top Navigation Bar -->
+  <header class="mobile-nav-bar" id="mobileNavBar">
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" title="Toggle menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    <a href="dashboard.html" class="mobile-logo-link">
+      <img src="assets/logo.svg" alt="Panchved Logo" class="mobile-logo-img" />
+    </a>
+    <a href="profile.html" class="mobile-user-avatar" title="Rahul Sharma (P001)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </a>
+  </header>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- Main Dashboard / Profile Layout Wrapper -->
+  <div class="dashboard-layout">
+    
+    <!-- Left Sidebar Navigation -->
+    <aside class="dashboard-sidebar" id="dashboardSidebar">
+      <!-- Brand Logo Header -->
+      <div class="sidebar-brand-header">
+        <a href="dashboard.html" class="brand-logo-link" title="Panchved Complete Ayurved & Physiotherapy Rehab Center">
+          <img src="assets/logo.svg" alt="Panchved Complete Ayurved & Physiotherapy Rehab Center" class="brand-logo-img" width="130" height="145" />
+        </a>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav" aria-label="Main Navigation">
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="dashboard.html" class="nav-link" id="navDashboard">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </span>
+              <span class="nav-label">Dashboard</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a href="package.html" class="nav-link" id="navPackages">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Packages</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="consultation.html" class="nav-link" id="navConsultations">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+              </span>
+              <span class="nav-label">Consultations</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="courses.html" class="nav-link" id="navCourses">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Courses</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="billing.html" class="nav-link" id="navBilling">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                  <line x1="2" y1="10" x2="22" y2="10"></line>
+                </svg>
+              </span>
+              <span class="nav-label">Billing</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Sidebar Footer (Log Out Button) -->
+      <div class="sidebar-footer">
+        <a href="index.html" class="btn-logout" id="logoutBtn" title="Log out from patient portal">
+          <span class="logout-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </span>
+          <span>Log out</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main-content">
+      
+      <!-- Top Header Section: Title, Greeting & User Profile Badge -->
+      <header class="dashboard-top-header">
+        <div class="header-titles">
+          <h1 class="dashboard-heading">Dashboard</h1>
+          <p class="greeting-subtitle" id="userGreeting">Good Morning Rahul Sharma!</p>
+        </div>
+
+        <!-- User Profile Pill -->
+        <a href="profile.html" class="user-profile-card active" id="userProfileCard" aria-label="User profile: Rahul Sharma, Patient ID P001">
+          <div class="user-avatar" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="user-meta">
+            <span class="user-name" id="userName">Rahul Sharma</span>
+            <span class="user-patient-id" id="patientId">P001</span>
+          </div>
+        </a>
+      </header>
+
+      <!-- Profile Form Card matching Figma Design -->
+      <section class="profile-settings-card" aria-labelledby="profileSettingsHeading">
+        <form class="profile-settings-form" id="profileSettingsForm" novalidate>
+          
+          <!-- Profile Image Section -->
+          <div class="profile-image-section">
+            <label class="form-section-label">Profile Image</label>
+            <div class="profile-avatar-display" id="profileAvatarDisplay" title="Patient Profile Image">
+              <div class="profile-avatar-circle">
+                <svg width="46" height="46" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 1: Full Name & Date of Birth (2 Columns) -->
+          <div class="profile-form-row">
+            <div class="profile-field-group">
+              <label for="profileFullName" class="profile-field-label">Full Name</label>
+              <input 
+                type="text" 
+                id="profileFullName" 
+                name="fullName" 
+                class="profile-input-field" 
+                value="Rahul Sharma" 
+                placeholder="Full Name" 
+                required 
+              />
+            </div>
+
+            <div class="profile-field-group">
+              <label for="profileDob" class="profile-field-label">Date of Birth</label>
+              <input 
+                type="text" 
+                id="profileDob" 
+                name="dob" 
+                class="profile-input-field" 
+                value="08/05/2002" 
+                placeholder="dd/mm/yyyy" 
+                required 
+              />
+            </div>
+          </div>
+
+          <!-- Row 2: Phone Number & Gender (2 Columns) -->
+          <div class="profile-form-row">
+            <div class="profile-field-group">
+              <label for="profilePhone" class="profile-field-label">Phone Number</label>
+              <input 
+                type="tel" 
+                id="profilePhone" 
+                name="phone" 
+                class="profile-input-field" 
+                value="9876543210" 
+                placeholder="Phone Number" 
+                required 
+              />
+            </div>
+
+            <div class="profile-field-group">
+              <label for="profileGender" class="profile-field-label">Gender</label>
+              <input 
+                type="text" 
+                id="profileGender" 
+                name="gender" 
+                class="profile-input-field" 
+                value="Male" 
+                placeholder="Gender" 
+                required 
+              />
+            </div>
+          </div>
+
+          <!-- Row 3: Email (Full Width) -->
+          <div class="profile-field-group profile-field-full">
+            <label for="profileEmail" class="profile-field-label">Email</label>
+            <input 
+              type="email" 
+              id="profileEmail" 
+              name="email" 
+              class="profile-input-field" 
+              value="rahulsharma@gmail.com" 
+              placeholder="Email Address" 
+              required 
+            />
+          </div>
+
+          <!-- Row 4: Action Button (Aligned to Right) -->
+          <div class="profile-form-actions">
+            <button type="submit" class="btn-update-profile" id="updateProfileBtn">
+              <span>Update</span>
+            </button>
+          </div>
+
+        </form>
+
+        <!-- Change Password Section -->
+        <div class="profile-section-divider"></div>
+        
+        <form class="profile-settings-form" id="changePasswordForm" novalidate>
+          <div class="profile-section-header">
+            <h2 class="profile-section-heading">Change Password</h2>
+          </div>
+
+          <!-- Password Field 1: Old Password -->
+          <div class="profile-form-row">
+            <div class="profile-field-group">
+              <label for="oldPassword" class="profile-field-label">Old Password</label>
+              <div class="profile-password-wrapper">
+                <input 
+                  type="password" 
+                  id="oldPassword" 
+                  name="oldPassword" 
+                  class="profile-input-field" 
+                  placeholder="••••••••" 
+                  autocomplete="current-password" 
+                  required 
+                />
+                <button type="button" class="profile-password-toggle" id="oldPasswordToggleBtn" aria-label="Toggle old password visibility" title="Toggle password visibility">
+                  <svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                  <svg class="eye-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Fields 2 & 3: New Password & Confirm Password (2 Columns) -->
+          <div class="profile-form-row">
+            <div class="profile-field-group">
+              <label for="newPassword" class="profile-field-label">New Password</label>
+              <div class="profile-password-wrapper">
+                <input 
+                  type="password" 
+                  id="newPassword" 
+                  name="newPassword" 
+                  class="profile-input-field" 
+                  placeholder="••••••••" 
+                  autocomplete="new-password" 
+                  required 
+                />
+                <button type="button" class="profile-password-toggle" id="newPasswordToggleBtn" aria-label="Toggle new password visibility" title="Toggle password visibility">
+                  <svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                  <svg class="eye-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="profile-field-group">
+              <label for="confirmPassword" class="profile-field-label">Confirm Password</label>
+              <div class="profile-password-wrapper">
+                <input 
+                  type="password" 
+                  id="confirmPassword" 
+                  name="confirmPassword" 
+                  class="profile-input-field" 
+                  placeholder="••••••••" 
+                  autocomplete="new-password" 
+                  required 
+                />
+                <button type="button" class="profile-password-toggle" id="confirmPasswordToggleBtn" aria-label="Toggle confirm password visibility" title="Toggle password visibility">
+                  <svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                  <svg class="eye-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Action Button (Aligned to Right) -->
+          <div class="profile-form-actions">
+            <button type="submit" class="btn-update-profile" id="changePasswordBtn">
+              <span>Update Password</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toast" class="toast-msg" role="status" aria-live="polite">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span id="toastMsg">Profile updated successfully!</span>
+  </div>
+
+  <script src="profile.js"></script>
+</body>
+</html>
