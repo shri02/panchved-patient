@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       showToast('Opening Patient Dashboard...');
       setTimeout(() => {
-        window.location.href = 'dashboard.html';
+        window.location.href = 'dashboard/dashboard.html';
       }, 300);
     });
   }
@@ -645,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           showToast(result.message || 'Login successful! Welcome to Dashboard.');
           setTimeout(() => {
-            window.location.href = 'dashboard.html';
+            window.location.href = 'dashboard/dashboard.html';
           }, 350);
         } else {
           loginBtn.disabled = false;

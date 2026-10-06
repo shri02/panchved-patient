@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      const res = await fetch('api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
+      const res = await fetch('../api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
@@ -161,14 +161,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+      try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
         localStorage.removeItem('panchved_patient');
         localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
-      setTimeout(() => { window.location.href = 'index.html'; }, 350);
+      setTimeout(() => { window.location.href = '../index.html'; }, 350);
     });
   }
 
@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const loadAppointmentsFromDB = async () => {
     try {
-      const res = await fetch('api/consultations.php');
+      const res = await fetch('../api/consultations.php');
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -751,7 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Also asynchronously fetch from DB endpoint for live verification
         if (appt.id) {
           try {
-            const rxRes = await fetch(`api/consultations.php?action=prescription&appointment_id=${appt.id}`);
+            const rxRes = await fetch(`../api/consultations.php?action=prescription&appointment_id=${appt.id}`);
             if (rxRes.ok) {
               const rxJson = await rxRes.json();
               if (rxJson.success && rxJson.prescription) {
@@ -797,7 +797,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch active doctors dynamically from database schema
   const fetchDoctorsFromDB = async () => {
     try {
-      const res = await fetch('api/doctors.php');
+      const res = await fetch('../api/doctors.php');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.doctors) && data.doctors.length > 0) {

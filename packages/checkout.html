@@ -1,18 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Panchved Patient Portal - Consultation Checkout & Payment" />
-  <title>Panchved - Consultation Checkout</title>
-  
-  <!-- Google Fonts: Inter & Outfit -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  
-  <!-- CSS Styling (Design System) -->
-  <link rel="stylesheet" href="dashboard.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panchved - Checkout & Payment</title>
+  <meta name="description" content="Panchved Patient Portal - Secure consultation booking checkout and payment.">
+  <link rel="stylesheet" href="../dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -25,10 +21,10 @@
         <line x1="3" y1="18" x2="21" y2="18"></line>
       </svg>
     </button>
-    <a href="dashboard.html" class="mobile-logo-link">
-      <img src="assets/logo.svg" alt="Panchved Logo" class="mobile-logo-img" />
+    <a href="../dashboard/dashboard.html" class="mobile-logo-link">
+      <img src="../assets/logo.svg" alt="Panchved Logo" class="mobile-logo-img" />
     </a>
-    <a href="profile.html" class="mobile-user-avatar" title="User Profile">
+    <a href="../profile/profile.html" class="mobile-user-avatar" title="Rahul Sharma (P001)">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
         <circle cx="12" cy="7" r="4"></circle>
@@ -36,18 +32,17 @@
     </a>
   </header>
 
-  <!-- Sidebar Overlay for mobile -->
+  <!-- Sidebar Overlay for Mobile -->
   <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
   <!-- Main Dashboard Layout Wrapper -->
   <div class="dashboard-layout">
-
+    
     <!-- Left Sidebar Navigation -->
     <aside class="dashboard-sidebar" id="dashboardSidebar">
-      <!-- Clinic Brand Logo -->
       <div class="sidebar-brand-header">
-        <a href="dashboard.html" class="brand-logo-link" title="Panchved Complete Ayurved & Physiotherapy Rehab Center">
-          <img src="assets/logo.svg" alt="Panchved Complete Ayurved & Physiotherapy Rehab Center" class="brand-logo-img" width="130" height="145" />
+        <a href="../dashboard/dashboard.html" class="brand-logo-link" title="Panchved Complete Ayurved & Physiotherapy Rehab Center">
+          <img src="../assets/logo.svg" alt="Panchved Complete Ayurved & Physiotherapy Rehab Center" class="brand-logo-img" width="130" height="145" />
         </a>
       </div>
 
@@ -55,7 +50,7 @@
       <nav class="sidebar-nav" aria-label="Main Navigation">
         <ul class="nav-list">
           <li class="nav-item">
-            <a href="dashboard.html" class="nav-link" id="navDashboard">
+            <a href="../dashboard/dashboard.html" class="nav-link" id="navDashboard">
               <span class="nav-icon" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -65,9 +60,9 @@
               <span class="nav-label">Dashboard</span>
             </a>
           </li>
-
+          
           <li class="nav-item">
-            <a href="package.html" class="nav-link" id="navPackages">
+            <a href="package.html" class="nav-link active" id="navPackages">
               <span class="nav-icon" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -81,7 +76,7 @@
           </li>
 
           <li class="nav-item">
-            <a href="consultation.html" class="nav-link active" id="navConsultations">
+            <a href="../consultation/consultation.html" class="nav-link" id="navConsultations">
               <span class="nav-icon" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -95,7 +90,7 @@
           </li>
 
           <li class="nav-item">
-            <a href="courses.html" class="nav-link" id="navCourses">
+            <a href="../courses/courses.html" class="nav-link" id="navCourses">
               <span class="nav-icon" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="9" cy="21" r="1"></circle>
@@ -108,12 +103,11 @@
           </li>
 
           <li class="nav-item">
-            <a href="billing.html" class="nav-link" id="navBilling">
+            <a href="../billing/billing.html" class="nav-link" id="navBilling">
               <span class="nav-icon" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"></path>
-                  <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.8-2.8L15 13"></path>
-                  <circle cx="17" cy="5" r="3"></circle>
+                  <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                  <line x1="2" y1="10" x2="22" y2="10"></line>
                 </svg>
               </span>
               <span class="nav-label">Billing</span>
@@ -124,7 +118,7 @@
 
       <!-- Sidebar Footer (Log Out Button) -->
       <div class="sidebar-footer">
-        <a href="index.html" class="btn-logout" id="logoutBtn" title="Log out from patient portal">
+        <a href="../index.html" class="btn-logout" id="logoutBtn" title="Log out from patient portal">
           <span class="logout-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -144,14 +138,15 @@
       <header class="dashboard-top-header">
         <div class="header-titles">
           <h1 class="dashboard-heading">Checkout</h1>
-          <p class="greeting-subtitle" id="checkoutPageSubtitle">Secure your consultation appointment by completing the payment.</p>
+          <p class="greeting-subtitle" id="checkoutPageSubtitle">Complete your booking by confirming the payment.</p>
         </div>
 
         <!-- User Profile Pill -->
-        <a href="profile.html" class="user-profile-card" id="userProfileCard" aria-label="User profile: Rahul Sharma, Patient ID P001">
+        <a href="../profile/profile.html" class="user-profile-card" id="userProfileCard" aria-label="User profile: Rahul Sharma, Patient ID P001">
           <div class="user-avatar" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </div>
           <div class="user-meta">
@@ -161,29 +156,38 @@
         </a>
       </header>
 
-      <!-- Consultation Checkout Layout (2 Columns: Left Details & Right Payment Summary) -->
+      <!-- SCREEN 4: Checkout Layout (2 Columns: Left Details & Right Payment Summary) -->
       <div class="checkout-layout-grid">
         
         <!-- Left Column: Consultation, Patient, & Payment Method Cards -->
         <div class="checkout-main-column">
           
-          <!-- Card 1: Consultation Details (Doctor, Profession, Date, Time) -->
+          <!-- Card 1: Package Details (Doctor, Profession, Starting Price, Duration) -->
           <section class="checkout-card" aria-labelledby="consultDetailsHeading">
-            <h2 class="checkout-card-title" id="consultDetailsHeading">Consultation Details</h2>
+            <h2 class="checkout-card-title" id="consultDetailsHeading">Reset Your Hormones</h2>
             
             <div class="doctor-badge-card checkout-doctor-row" id="checkoutDoctorBadgeRow">
               <div class="doctor-avatar" aria-hidden="true">
-                <span id="checkoutAvatarText">AM</span>
+                <span id="checkoutAvatarText">NJ</span>
               </div>
               <div class="doctor-info">
-                <h3 class="doctor-name" id="checkoutDoctorName">Dr. Prerna Nikam</h3>
-                <p class="doctor-role" id="checkoutDoctorRole">Ayurveda Physician</p>
+                <h3 class="doctor-name" id="checkoutDoctorName">Dr. Nidhi Jha</h3>
+                <p class="doctor-role" id="checkoutDoctorRole">Ayurveda Physician (Pediatrics & Gynecology)</p>
               </div>
             </div>
 
-            <!-- Timing Info Box (Date & Time) -->
+            <!-- Package Meta Info Box (Starting Price & Duration) -->
             <div class="consultation-timing-card" id="checkoutMetaCard">
-              <div class="timing-item" id="checkoutDateRow">
+              <div class="timing-item" id="checkoutPriceRow">
+                <span class="timing-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                </span>
+                <span class="timing-text" id="checkoutPriceText">Starting at <strong id="checkoutPriceVal">₹7,999</strong> / month</span>
+              </div>
+
+              <div class="timing-item" id="checkoutDurationRow">
                 <span class="timing-icon" aria-hidden="true">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -192,17 +196,7 @@
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                   </svg>
                 </span>
-                <span class="timing-text" id="checkoutDateText"><strong id="checkoutDateVal">2 September 2026</strong></span>
-              </div>
-
-              <div class="timing-item" id="checkoutTimeRow">
-                <span class="timing-icon" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                </span>
-                <span class="timing-text" id="checkoutTimeText"><strong id="checkoutTimeVal">07:00 - 07:45 PM</strong></span>
+                <span class="timing-text" id="checkoutDurationText"><strong id="checkoutDurationVal">3 Months</strong></span>
               </div>
             </div>
           </section>
@@ -212,7 +206,7 @@
             <div class="checkout-card-header">
               <h2 class="checkout-card-title" id="yourDetailsHeading">Your Details</h2>
               <button type="button" class="btn-edit-details" id="editDetailsBtn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 20h9"></path>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
@@ -257,9 +251,9 @@
             <div class="payment-methods-list" role="radiogroup" aria-label="Select Payment Method">
               
               <!-- Option 1: Credit / Debit Card -->
-              <label class="payment-method-item" for="payCard">
+              <label class="payment-method-item active" for="payCard">
                 <div class="payment-radio-left">
-                  <input type="radio" name="paymentMethod" id="payCard" value="card" />
+                  <input type="radio" name="paymentMethod" id="payCard" value="card" checked />
                   <span class="custom-radio"></span>
                   <span class="payment-name">Card</span>
                 </div>
@@ -281,12 +275,10 @@
                 </div>
                 <div class="payment-logo-badge" aria-hidden="true">
                   <!-- UPI Logo Badge -->
-                  <svg width="48" height="24" viewBox="0 0 70 30" fill="none">
-                    <text x="0" y="20" font-family="'Inter', sans-serif" font-weight="900" font-size="22" font-style="italic" fill="#2d3748">UPI</text>
-                    <path d="M48 6L56 15L48 24H52L60 15L52 6H48Z" fill="#008000" />
-                    <path d="M54 6L62 15L54 24H58L66 15L58 6H54Z" fill="#FF7A00" />
-                    <text x="0" y="28" font-family="'Inter', sans-serif" font-weight="600" font-size="5.2" fill="#718096" letter-spacing="0.5">UNIFIED PAYMENTS INTERFACE</text>
-                  </svg>
+                  <div class="upi-badge">
+                    <span class="upi-text">UPI</span>
+                    <span class="upi-arrows">▶</span>
+                  </div>
                 </div>
               </label>
 
@@ -299,9 +291,9 @@
                 </div>
                 <div class="payment-logo-badge" aria-hidden="true">
                   <!-- PayPal Logo -->
-                  <svg width="22" height="26" viewBox="0 0 24 28" fill="none">
-                    <path d="M6 25L9.2 4H18C21.3 4 23 5.8 22.4 9C21.8 12.2 19.3 14 16.3 14H12L10.3 25H6Z" fill="#003087"/>
-                    <path d="M2.5 25L5.7 4H14.5C17.8 4 19.5 5.8 18.9 9C18.3 12.2 15.8 14 12.8 14H8.5L6.8 25H2.5Z" fill="#0079C1" fill-opacity="0.85"/>
+                  <svg width="32" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M7 21L9.5 5H16.5C19 5 20.5 6.5 20 9C19.5 11.5 17.5 13 15 13H11.5L10 21H7Z" fill="#003087"/>
+                    <path d="M4 21L6.5 5H13.5C16 5 17.5 6.5 17 9C16.5 11.5 14.5 13 12 13H8.5L7 21H4Z" fill="#0079C1" fill-opacity="0.8"/>
                   </svg>
                 </div>
               </label>
@@ -318,7 +310,7 @@
 
             <div class="summary-breakdown">
               <div class="summary-row">
-                <span class="summary-label" id="checkoutSummaryFeeLabel">Consultation fee</span>
+                <span class="summary-label" id="checkoutSummaryFeeLabel">Booking fee</span>
                 <span class="summary-amount-teal">₹500.00</span>
               </div>
             </div>
@@ -330,7 +322,7 @@
               <span class="total-amount">₹500.00</span>
             </div>
 
-            <!-- Confirm Payment Button -->
+            <!-- Confirm Payment Button (Triggers Screen 5 Success Modal) -->
             <button type="button" class="btn-confirm-payment" id="confirmPaymentBtn">
               <span>Confirm Payment</span>
             </button>
@@ -342,7 +334,7 @@
     </main>
   </div>
 
-  <!-- Booking Confirmation Success Modal -->
+  <!-- SCREEN 5: Modal — Thankyou for your booking (Success Modal) -->
   <div class="modal-backdrop" id="bookingSuccessModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="successTitle">
     <div class="success-modal-box">
       
@@ -356,7 +348,7 @@
       <!-- Success Heading & Message -->
       <h2 class="success-title" id="successTitle">Thankyou for your booking</h2>
       <p class="success-description" id="successDescription">
-        Your payment of <strong id="successPaymentAmount">₹500.00</strong> has been received successfully. Your consultation appointment is confirmed.
+        Your payment of <strong id="successPaymentAmount">₹500.00</strong> has been received successfully. Your package booking is confirmed.
       </p>
 
       <!-- Booking Receipt Card -->
@@ -365,13 +357,13 @@
           <span class="receipt-label">Booking ID</span>
           <span class="receipt-value" id="receiptBookingId">#123456</span>
         </div>
-        <div class="receipt-row">
-          <span class="receipt-label">Doctor</span>
-          <span class="receipt-value" id="receiptDoctorName">Dr. Prerna Nikam</span>
+        <div class="receipt-row" id="receiptPackageRow">
+          <span class="receipt-label">Package</span>
+          <span class="receipt-value" id="receiptPackageTitle">Reset Your Hormones</span>
         </div>
-        <div class="receipt-row">
-          <span class="receipt-label">Date & Time</span>
-          <span class="receipt-value" id="receiptDateTime">2 September 2026, 07:00 - 07:45 PM</span>
+        <div class="receipt-row" id="receiptWorkshopRow" style="display: none;">
+          <span class="receipt-label">Workshop Details</span>
+          <span class="receipt-value" id="receiptWorkshopTitle">Ayurveda Wellness Workshop</span>
         </div>
         <div class="receipt-row">
           <span class="receipt-label">Amount</span>
@@ -381,8 +373,8 @@
 
       <!-- Continue CTA Button -->
       <div class="success-actions">
-        <button type="button" class="btn-success-continue" id="continueToAppointmentsBtn">
-          <span>Continue to Appointments</span>
+        <button type="button" class="btn-success-continue" id="continueToDashboardBtn">
+          <span>Continue</span>
         </button>
       </div>
 
@@ -398,6 +390,6 @@
     <span id="toastMsg">Action completed successfully!</span>
   </div>
 
-  <script src="consultation-checkout.js"></script>
+  <script src="checkout.js"></script>
 </body>
 </html>

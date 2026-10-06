@@ -1,11 +1,19 @@
 <?php
 /**
  * Panchved Patient Portal - Dashboard API
- * Handles:
- * 1. GET (action: get_dashboard / default) - Fetch comprehensive dashboard statistics,
- *    patient profile, enrolled package progress, health metrics, and dynamic notifications.
- * 2. POST (action: add_reading / save_metrics) - Record patient health parameters (Weight, Abdomen, BP, Sugar)
- *    into MySQL and return updated timeline metrics.
+ *
+ * Dashboard data is read from MySQL only.
+ * No demo/fallback patient, package, health or notification records are created.
+ *
+ * GET:
+ *   dashboard.php
+ *   dashboard.php?action=get_dashboard
+ *   dashboard.php?action=view_diet
+ *
+ * POST:
+ *   dashboard.php
+ *   { "action":"add_reading", "date":"YYYY-MM-DD",
+ *     "weight":..., "abdomen":..., "bp":"120/80", "sugar":... }
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -24,381 +32,740 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/database.php';
 
-// Auto-create health_metrics table if it doesn't already exist
-$createTableQuery = "CREATE TABLE IF NOT EXISTS `health_metrics` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `patient_id` INT(11) DEFAULT NULL,
-  `patient_phone` VARCHAR(20) DEFAULT NULL,
-  `weight` DECIMAL(5,2) DEFAULT NULL,
-  `abdomen` DECIMAL(5,2) DEFAULT NULL,
-  `bp` VARCHAR(30) DEFAULT NULL,
-  `sugar` DECIMAL(5,2) DEFAULT NULL,
-  `timeframe` VARCHAR(20) DEFAULT '6w',
-  `recorded_date` DATE NOT NULL,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_metric_patient` (`patient_id`),
-  KEY `idx_metric_phone` (`patient_phone`),
-  KEY `idx_metric_date` (`recorded_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
-mysqli_query($connection1, $createTableQuery);
-
-// Helper function to return standardized JSON response
-function sendJsonResponse($success, $message, $data = [], $statusCode = 200) {
+function sendJsonResponse($success, $message, $data = [], $statusCode = 200)
+{
     http_response_code($statusCode);
     echo json_encode(array_merge([
-        'success' => $success,
+        'success' => (bool)$success,
         'message' => $message,
         'timestamp' => date('Y-m-d H:i:s')
-    ], $data));
+    ], $data), JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// --------------------------------------------------------------------------
-// 1. GET REQUEST: Comprehensive Dashboard Data
-// --------------------------------------------------------------------------
-if ($_SERVER['REQUEST_METHOD'] === 'GET' || (isset($_GET['action']) && $_GET['action'] === 'get_dashboard')) {
-    $phone = isset($_GET['phone']) ? trim($_GET['phone']) : ($_SESSION['phone_number'] ?? '');
-    $email = isset($_GET['email']) ? trim($_GET['email']) : ($_SESSION['email'] ?? '');
-    $patientId = isset($_GET['patient_id']) ? trim($_GET['patient_id']) : ($_SESSION['patient_id'] ?? '');
+function tableExists($connection, $table)
+{
+    if (!$connection || !preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+        return false;
+    }
 
-    $phoneDigits = preg_replace('/[^\d]/', '', $phone);
+    $tableEscaped = mysqli_real_escape_string($connection, $table);
+    $result = mysqli_query(
+        $connection,
+        "SELECT 1 FROM information_schema.tables
+         WHERE table_schema = DATABASE() AND table_name = '{$tableEscaped}' LIMIT 1"
+    );
+
+    return $result && mysqli_num_rows($result) > 0;
+}
+
+function getMetricDateLabel($dateStr)
+{
+    $time = strtotime($dateStr);
+    if (!$time) {
+        return '';
+    }
+
+    $start = strtotime('monday this week', $time);
+    $end = strtotime('+6 days', $start);
+
+    if (date('M', $start) === date('M', $end)) {
+        return date('d', $start) . '-' . date('d M', $end);
+    }
+
+    return date('d M', $start) . '-' . date('d M', $end);
+}
+
+function formatNumber($value)
+{
+    if ($value === null || $value === '') {
+        return null;
+    }
+
+    $number = (float)$value;
+    return floor($number) == $number ? (string)(int)$number : rtrim(rtrim(number_format($number, 2, '.', ''), '0'), '.');
+}
+
+function getLatestMetricsAndGraphs($connection, $patientId, $phone)
+{
+    $metrics = [
+        'weight' => null,
+        'weight_raw' => null,
+        'abdomen' => null,
+        'abdomen_raw' => null,
+        'bp' => null,
+        'sugar' => null,
+        'sugar_raw' => null
+    ];
+
+    $graphs = [
+        'weight' => [
+            'label' => 'Weight',
+            'unit' => 'kgs',
+            'y_axis' => [100, 80, 60, 40, 20, 0],
+            'max_val' => 100,
+            'color_class' => 'bar-teal',
+            'latest' => null,
+            'timeframes' => ['6w' => [], '3m' => [], '6m' => []]
+        ],
+        'abdomen' => [
+            'label' => 'Abdomen Girth',
+            'unit' => 'cm',
+            'y_axis' => [100, 80, 60, 40, 20, 0],
+            'max_val' => 100,
+            'color_class' => 'bar-plum',
+            'latest' => null,
+            'timeframes' => ['6w' => [], '3m' => [], '6m' => []]
+        ],
+        'bp' => [
+            'label' => 'Blood Pressure',
+            'unit' => 'mm Hg',
+            'y_axis' => [150, 120, 90, 60, 30, 0],
+            'max_val' => 150,
+            'color_class' => 'bar-amber',
+            'latest' => null,
+            'timeframes' => ['6w' => [], '3m' => [], '6m' => []]
+        ],
+        'sugar' => [
+            'label' => 'Blood Sugar',
+            'unit' => 'mg/dL',
+            'y_axis' => [125, 100, 75, 50, 25, 0],
+            'max_val' => 125,
+            'color_class' => 'bar-blue',
+            'latest' => null,
+            'timeframes' => ['6w' => [], '3m' => [], '6m' => []]
+        ]
+    ];
+
+    if (!$connection || !$patientId && !$phone || !tableExists($connection, 'health_metrics')) {
+        return ['latest' => $metrics, 'graphs' => $graphs];
+    }
+
+    $sql = "SELECT id, weight, abdomen, bp, sugar, recorded_date
+            FROM health_metrics
+            WHERE (patient_id = ? AND ? > 0)
+               OR (patient_phone = ? AND ? <> '')
+            ORDER BY recorded_date ASC, id ASC";
+
+    $stmt = mysqli_prepare($connection, $sql);
+    if (!$stmt) {
+        return ['latest' => $metrics, 'graphs' => $graphs];
+    }
+
+    mysqli_stmt_bind_param($stmt, 'iiss', $patientId, $patientId, $phone, $phone);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    $readings = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $readings[] = $row;
+    }
+    mysqli_stmt_close($stmt);
+
+    $now = time();
+    $latestRow = !empty($readings) ? end($readings) : null;
+
+    if ($latestRow) {
+        if ($latestRow['weight'] !== null && $latestRow['weight'] !== '') {
+            $v = (float)$latestRow['weight'];
+            $metrics['weight_raw'] = $v;
+            $metrics['weight'] = formatNumber($v) . ' kgs';
+        }
+
+        if ($latestRow['abdomen'] !== null && $latestRow['abdomen'] !== '') {
+            $v = (float)$latestRow['abdomen'];
+            $metrics['abdomen_raw'] = $v;
+            $metrics['abdomen'] = formatNumber($v) . ' cm';
+        }
+
+        if ($latestRow['bp'] !== null && trim($latestRow['bp']) !== '') {
+            $metrics['bp'] = trim($latestRow['bp']) . (stripos($latestRow['bp'], 'mm') === false ? ' mm Hg' : '');
+        }
+
+        if ($latestRow['sugar'] !== null && $latestRow['sugar'] !== '') {
+            $v = (float)$latestRow['sugar'];
+            $metrics['sugar_raw'] = $v;
+            $metrics['sugar'] = formatNumber($v) . ' mg/dL';
+        }
+    }
+
+    $ranges = [
+        '6w' => strtotime('-6 weeks'),
+        '3m' => strtotime('-3 months'),
+        '6m' => strtotime('-6 months')
+    ];
+
+    foreach ($readings as $row) {
+        $timestamp = strtotime($row['recorded_date']);
+        if (!$timestamp) {
+            continue;
+        }
+
+        $dateLabel = getMetricDateLabel($row['recorded_date']);
+
+        foreach (['weight', 'abdomen', 'sugar'] as $metric) {
+            if ($row[$metric] === null || $row[$metric] === '') {
+                continue;
+            }
+
+            $value = (float)$row[$metric];
+
+            if ($metric === 'weight') {
+                $max = 100;
+            } elseif ($metric === 'abdomen') {
+                $max = 100;
+            } else {
+                $max = 125;
+            }
+
+            $item = [
+                'date_label' => $dateLabel,
+                'val_label' => formatNumber($value),
+                'height_percent' => min(100, max(5, round(($value / $max) * 100, 1))),
+                'value' => $value,
+                'date' => $row['recorded_date']
+            ];
+
+            foreach ($ranges as $timeframe => $start) {
+                if ($timestamp >= $start && $timestamp <= $now) {
+                    $graphs[$metric]['timeframes'][$timeframe][] = $item;
+                }
+            }
+        }
+
+        if ($row['bp'] !== null && trim($row['bp']) !== '') {
+            $bp = trim($row['bp']);
+            $systolic = 0;
+            if (preg_match('/^(\d{2,3})\s*\/\s*(\d{2,3})/', $bp, $match)) {
+                $systolic = (int)$match[1];
+            }
+
+            $item = [
+                'date_label' => $dateLabel,
+                'val_label' => $bp,
+                'height_percent' => $systolic > 0 ? min(100, max(5, round(($systolic / 150) * 100, 1))) : 0,
+                'value' => $bp,
+                'date' => $row['recorded_date']
+            ];
+
+            foreach ($ranges as $timeframe => $start) {
+                if ($timestamp >= $start && $timestamp <= $now) {
+                    $graphs['bp']['timeframes'][$timeframe][] = $item;
+                }
+            }
+        }
+    }
+
+    foreach ($graphs as $key => &$graph) {
+        foreach ($graph['timeframes'] as &$dataset) {
+            // Keep only the most recent 12 readings per chart.
+            if (count($dataset) > 12) {
+                $dataset = array_slice($dataset, -12);
+            }
+        }
+    }
+    unset($graph, $dataset);
+
+    $graphs['weight']['latest'] = $metrics['weight'];
+    $graphs['abdomen']['latest'] = $metrics['abdomen'];
+    $graphs['bp']['latest'] = $metrics['bp'];
+    $graphs['sugar']['latest'] = $metrics['sugar'];
+
+    return ['latest' => $metrics, 'graphs' => $graphs];
+}
+
+function resolvePatient($connection, $phone, $email, $patientId)
+{
+    if (!$connection) {
+        return null;
+    }
+
+    $phoneDigits = preg_replace('/\D+/', '', $phone);
     if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
         $phoneDigits = substr($phoneDigits, 2);
     }
 
-    // A. Query Patient Record
-    $patient = null;
-    $user = null;
+    if ($phone === '' && $phoneDigits === '' && $email === '' && $patientId === '') {
+        return null;
+    }
 
-    if (!empty($phone) || !empty($phoneDigits) || !empty($email) || !empty($patientId)) {
-        $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1";
-        if ($stmt = mysqli_prepare($connection1, $pQuery)) {
-            mysqli_stmt_bind_param($stmt, "ssss", $phone, $phoneDigits, $email, $patientId);
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
-            $patient = mysqli_fetch_assoc($res);
-            mysqli_stmt_close($stmt);
+    $sql = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email,
+                   blood_group, emergency_contact, address, package_name,
+                   total_appointments, status, created_at
+            FROM patients
+            WHERE (phone_number <> '' AND (phone_number = ? OR phone_number = ?))
+               OR (email <> '' AND email = ?)
+               OR (patient_id <> '' AND patient_id = ?)
+            LIMIT 1";
+
+    $stmt = mysqli_prepare($connection, $sql);
+    if (!$stmt) {
+        return null;
+    }
+
+    mysqli_stmt_bind_param($stmt, 'ssss', $phone, $phoneDigits, $email, $patientId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $patient = mysqli_fetch_assoc($result) ?: null;
+    mysqli_stmt_close($stmt);
+
+    return $patient;
+}
+
+function getPackageDetails($connection, $packageName)
+{
+    if (!$connection || $packageName === '' || !tableExists($connection, 'packages')) {
+        return null;
+    }
+
+    $sql = "SELECT * FROM packages
+            WHERE package_name = ? OR package_name LIKE ?
+            LIMIT 1";
+
+    $stmt = mysqli_prepare($connection, $sql);
+    if (!$stmt) {
+        return null;
+    }
+
+    $like = '%' . $packageName . '%';
+    mysqli_stmt_bind_param($stmt, 'ss', $packageName, $like);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $package = mysqli_fetch_assoc($result) ?: null;
+    mysqli_stmt_close($stmt);
+
+    return $package;
+}
+
+function calculatePackageProgress($patient, $package)
+{
+    if (!$patient || empty($patient['package_name'])) {
+        return null;
+    }
+
+    $startDate = !empty($patient['created_at']) && $patient['created_at'] !== '0000-00-00 00:00:00'
+        ? strtotime($patient['created_at'])
+        : false;
+
+    $durationText = trim((string)($package['duration'] ?? ''));
+    $durationDays = null;
+
+    if ($durationText !== '' && preg_match('/(\d+(?:\.\d+)?)\s*(day|days|week|weeks|month|months)/i', $durationText, $m)) {
+        $amount = (float)$m[1];
+        $unit = strtolower($m[2]);
+
+        if (strpos($unit, 'day') !== false) {
+            $durationDays = (int)round($amount);
+        } elseif (strpos($unit, 'week') !== false) {
+            $durationDays = (int)round($amount * 7);
+        } else {
+            $durationDays = (int)round($amount * 30);
         }
     }
 
-    // Default Fallback Patient if not found
-    if (!$patient) {
-        $patient = [
-            'id' => 1,
-            'patient_id' => 'P001',
-            'full_name' => 'Rahul Sharma',
-            'phone_number' => '9876543210',
-            'email' => 'rahulsharma@gmail.com',
-            'package_name' => 'Gut Healing Package',
-            'total_appointments' => 4,
-            'status' => 'Ongoing',
-            'created_at' => date('Y-m-d H:i:s', strtotime('-2 weeks'))
-        ];
+    $percent = 0;
+    $weekInfo = '';
+
+    if ($startDate && $durationDays > 0) {
+        $elapsedDays = max(0, (int)floor((time() - $startDate) / 86400));
+        $percent = min(100, round(($elapsedDays / $durationDays) * 100));
+        $currentWeek = max(1, (int)floor($elapsedDays / 7) + 1);
+        $totalWeeks = max(1, (int)ceil($durationDays / 7));
+        $weekInfo = "Week {$currentWeek} of {$totalWeeks}";
     }
 
-    $patDbId = (int)$patient['id'];
-    $patName = $patient['full_name'];
-    $patPhone = $patient['phone_number'];
+    $startDateFormatted = $startDate ? date('j F Y', $startDate) : '';
 
-    // B. Calculate Upcoming Consultations Count
-    $upcomingCount = 0;
-    $upcomingQuery = "SELECT COUNT(*) as count FROM appointments WHERE (patient_id = ? OR patient_name = ? OR patient_name LIKE ?) AND status IN ('Scheduled', 'Upcoming')";
-    if ($uStmt = mysqli_prepare($connection1, $upcomingQuery)) {
-        $nameLike = '%' . $patName . '%';
-        mysqli_stmt_bind_param($uStmt, "iss", $patDbId, $patName, $nameLike);
-        mysqli_stmt_execute($uStmt);
-        $uRes = mysqli_stmt_get_result($uStmt);
-        $uRow = mysqli_fetch_assoc($uRes);
-        $upcomingCount = (int)($uRow['count'] ?? 0);
-        mysqli_stmt_close($uStmt);
-    }
-    if ($upcomingCount === 0) {
-        $upcomingCount = 4; // realistic dashboard default
-    }
-
-    // C. Calculate Active Packages Count
-    $activePackagesCount = 2;
-    $pkgCountQuery = "SELECT COUNT(*) as count FROM packages WHERE status = 'Active'";
-    $pkgRes = mysqli_query($connection1, $pkgCountQuery);
-    if ($pkgRes) {
-        $pkgRow = mysqli_fetch_assoc($pkgRes);
-        $activePackagesCount = (int)($pkgRow['count'] ?? 2);
-    }
-
-    // D. Unread Messages / Notifications Count
-    $unreadMessagesCount = 3;
-
-    // E. My Package Details & Progress
-    $currentPackageName = $patient['package_name'] ?: 'Gut Healing Package';
-    $packageStartDate = '10 September 2026';
-    if (!empty($patient['created_at']) && $patient['created_at'] !== '0000-00-00 00:00:00') {
-        $packageStartDate = date('j F Y', strtotime($patient['created_at']));
-    }
-
-    // Package details from `packages` table
-    $pkgDetails = null;
-    $pQuery = "SELECT * FROM packages WHERE package_name = ? OR package_name LIKE ? LIMIT 1";
-    if ($pStmt = mysqli_prepare($connection1, $pQuery)) {
-        $pLike = '%' . $currentPackageName . '%';
-        mysqli_stmt_bind_param($pStmt, "ss", $currentPackageName, $pLike);
-        mysqli_stmt_execute($pStmt);
-        $pRes = mysqli_stmt_get_result($pStmt);
-        $pkgDetails = mysqli_fetch_assoc($pRes);
-        mysqli_stmt_close($pStmt);
-    }
-
-    // Fallback search if not matched exactly
-    if (!$pkgDetails && $connection1) {
-        $cleanPkg = trim(preg_replace('/\s*-\s*consultation/i', '', $currentPackageName));
-        $pQuery = "SELECT * FROM packages WHERE package_name LIKE ? OR short_description LIKE ? LIMIT 1";
-        if ($pStmt = mysqli_prepare($connection1, $pQuery)) {
-            $pLike = '%' . $cleanPkg . '%';
-            mysqli_stmt_bind_param($pStmt, "ss", $pLike, $pLike);
-            mysqli_stmt_execute($pStmt);
-            $pRes = mysqli_stmt_get_result($pStmt);
-            $pkgDetails = mysqli_fetch_assoc($pRes);
-            mysqli_stmt_close($pStmt);
-        }
-    }
-
-    $dietHydration = !empty($pkgDetails['diet_hydration']) ? trim($pkgDetails['diet_hydration']) : "Personalized dietary recommendations, food preferences, and daily water intake guidelines based on the patient's assessment.";
-    $overview = !empty($pkgDetails['overview']) ? trim($pkgDetails['overview']) : "Restores digestive fire (Agni) and strengthens gastrointestinal lining with bespoke herbal protocols.";
-    $dinacharya = !empty($pkgDetails['ayurveda_dinacharya']) ? trim($pkgDetails['ayurveda_dinacharya']) : "A customized daily wellness schedule comprising diet, hydration, physical activity, and Ayurvedic practices as per the doctor's protocol.";
-    $benefits = !empty($pkgDetails['benefits']) ? trim($pkgDetails['benefits']) : "Relieves bloating, improves digestion, boosts vitality and enhances nutrient absorption.";
-
-    $dietParagraph1 = $dietHydration . (!empty($overview) ? " " . $overview : "");
-    $dietParagraph2 = $dinacharya . (!empty($benefits) ? " " . $benefits : "");
-
-    $dietPlan = [
-        'package_name' => $pkgDetails['package_name'] ?? $currentPackageName,
-        'category' => $pkgDetails['category'] ?? 'Holistic Health',
-        'diet_hydration' => $dietHydration,
-        'dinacharya' => $dinacharya,
-        'overview' => $overview,
-        'benefits' => $benefits,
-        'paragraph_1' => $dietParagraph1,
-        'paragraph_2' => $dietParagraph2,
-        'paragraphs' => [
-            $dietParagraph1,
-            $dietParagraph2
+    return [
+        'package_name' => $patient['package_name'],
+        'start_date' => $startDateFormatted,
+        'progress_percent' => $percent,
+        'progress_text' => $percent > 0 ? $percent . ' %' : '',
+        'week_info' => $weekInfo,
+        'duration' => $package['duration'] ?? '',
+        'short_description' => $package['short_description'] ?? '',
+        'diet_hydration' => $package['diet_hydration'] ?? '',
+        'diet_plan' => [
+            'package_name' => $package['package_name'] ?? $patient['package_name'],
+            'category' => $package['category'] ?? '',
+            'diet_hydration' => $package['diet_hydration'] ?? '',
+            'dinacharya' => $package['ayurveda_dinacharya'] ?? '',
+            'overview' => $package['overview'] ?? '',
+            'benefits' => $package['benefits'] ?? '',
+            'paragraph_1' => trim(($package['diet_hydration'] ?? '') . ' ' . ($package['overview'] ?? '')),
+            'paragraph_2' => trim(($package['ayurveda_dinacharya'] ?? '') . ' ' . ($package['benefits'] ?? '')),
+            'paragraphs' => [
+                trim(($package['diet_hydration'] ?? '') . ' ' . ($package['overview'] ?? '')),
+                trim(($package['ayurveda_dinacharya'] ?? '') . ' ' . ($package['benefits'] ?? ''))
+            ]
         ]
     ];
+}
 
-    if (isset($_GET['action']) && in_array($_GET['action'], ['view_diet', 'get_diet', 'diet'])) {
-        sendJsonResponse(true, 'Diet plan fetched successfully from database.', [
-            'package_name' => $currentPackageName,
-            'patient_name' => $patName,
-            'diet_plan' => $dietPlan
-        ]);
+function getNotifications($connection, $patient)
+{
+    if (!$connection || !$patient || !tableExists($connection, 'appointments')) {
+        return [];
     }
 
-    $packageProgress = [
-        'package_name' => $currentPackageName,
-        'start_date' => $packageStartDate,
-        'progress_percent' => 50,
-        'progress_text' => '50 %',
-        'week_info' => 'Week 2 of 4',
-        'duration' => $pkgDetails['duration'] ?? '3 Months',
-        'short_description' => $pkgDetails['short_description'] ?? 'Suitable for holistic gastrointestinal and metabolic wellbeing.',
-        'diet_hydration' => $dietHydration,
-        'diet_plan' => $dietPlan
-    ];
+    $patientDbId = (int)$patient['id'];
+    $patientName = (string)($patient['full_name'] ?? '');
 
-    // F. Latest Health Metrics Readings
-    $latestMetrics = [
-        'weight' => '58 kgs',
-        'weight_raw' => 58.0,
-        'abdomen' => '82 cm',
-        'abdomen_raw' => 82.0,
-        'bp' => '118/78 mm Hg',
-        'sugar' => '92 mg/dL',
-        'sugar_raw' => 92.0
-    ];
+    $sql = "SELECT id, appointment_id, doctor_name, appointment_date, appointment_time,
+                   service_type, agenda, status, created_at
+            FROM appointments
+            WHERE patient_id = ?
+               OR (? <> '' AND (patient_name = ? OR patient_name LIKE ?))
+            ORDER BY id DESC
+            LIMIT 10";
 
-    $mQuery = "SELECT * FROM health_metrics WHERE patient_id = ? OR patient_phone = ? ORDER BY id DESC LIMIT 1";
-    if ($mStmt = mysqli_prepare($connection1, $mQuery)) {
-        mysqli_stmt_bind_param($mStmt, "is", $patDbId, $patPhone);
-        mysqli_stmt_execute($mStmt);
-        $mRes = mysqli_stmt_get_result($mStmt);
-        $mRow = mysqli_fetch_assoc($mRes);
-        if ($mRow) {
-            if (!empty($mRow['weight'])) {
-                $latestMetrics['weight'] = (float)$mRow['weight'] . ' kgs';
-                $latestMetrics['weight_raw'] = (float)$mRow['weight'];
-            }
-            if (!empty($mRow['abdomen'])) {
-                $latestMetrics['abdomen'] = (float)$mRow['abdomen'] . ' cm';
-                $latestMetrics['abdomen_raw'] = (float)$mRow['abdomen'];
-            }
-            if (!empty($mRow['bp'])) {
-                $latestMetrics['bp'] = $mRow['bp'] . ' mm Hg';
-            }
-            if (!empty($mRow['sugar'])) {
-                $latestMetrics['sugar'] = (float)$mRow['sugar'] . ' mg/dL';
-                $latestMetrics['sugar_raw'] = (float)$mRow['sugar'];
-            }
-        }
-        mysqli_stmt_close($mStmt);
+    $stmt = mysqli_prepare($connection, $sql);
+    if (!$stmt) {
+        return [];
     }
 
-    // G. Dynamic Notifications from Appointments
+    $nameLike = '%' . $patientName . '%';
+    mysqli_stmt_bind_param($stmt, 'isss', $patientDbId, $patientName, $patientName, $nameLike);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
     $notifications = [];
-    $notifQuery = "SELECT id, appointment_id, doctor_name, appointment_date, appointment_time, service_type, agenda, status, created_at FROM appointments WHERE patient_id = ? OR patient_name = ? OR patient_name LIKE ? ORDER BY id DESC LIMIT 4";
-    if ($nStmt = mysqli_prepare($connection1, $notifQuery)) {
-        $nameLike = '%' . $patName . '%';
-        mysqli_stmt_bind_param($nStmt, "iss", $patDbId, $patName, $nameLike);
-        mysqli_stmt_execute($nStmt);
-        $nRes = mysqli_stmt_get_result($nStmt);
-        while ($nRow = mysqli_fetch_assoc($nRes)) {
-            $formattedApptDate = date('j F Y', strtotime($nRow['appointment_date']));
-            $timeDisplay = $nRow['appointment_time'] ?: '3:00 PM';
-            
-            // Calculate time ago
-            $timeDiff = time() - strtotime($nRow['created_at']);
-            $agoText = 'Just Now';
-            if ($timeDiff >= 86400) {
-                $days = floor($timeDiff / 86400);
-                $agoText = $days . ' Day' . ($days > 1 ? 's' : '') . ' Ago';
-            } elseif ($timeDiff >= 3600) {
-                $hours = floor($timeDiff / 3600);
-                $agoText = $hours . ' Hour' . ($hours > 1 ? 's' : '') . ' Ago';
-            } elseif ($timeDiff >= 60) {
-                $mins = floor($timeDiff / 60);
-                $agoText = $mins . ' Mins Ago';
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $date = !empty($row['appointment_date']) ? date('j F Y', strtotime($row['appointment_date'])) : '';
+        $time = !empty($row['appointment_time']) ? date('g:i A', strtotime($row['appointment_time'])) : '';
+
+        $createdAt = !empty($row['created_at']) ? strtotime($row['created_at']) : false;
+        $ago = '';
+
+        if ($createdAt) {
+            $diff = max(0, time() - $createdAt);
+            if ($diff >= 86400) {
+                $days = floor($diff / 86400);
+                $ago = $days . ' Day' . ($days > 1 ? 's' : '') . ' Ago';
+            } elseif ($diff >= 3600) {
+                $hours = floor($diff / 3600);
+                $ago = $hours . ' Hour' . ($hours > 1 ? 's' : '') . ' Ago';
+            } elseif ($diff >= 60) {
+                $mins = floor($diff / 60);
+                $ago = $mins . ' Mins Ago';
+            } else {
+                $ago = 'Just Now';
             }
-
-            $notifications[] = [
-                'id' => (int)$nRow['id'],
-                'appointment_id' => $nRow['appointment_id'],
-                'title' => 'Appointment Scheduled',
-                'description' => "Consultation with {$nRow['doctor_name']}",
-                'datetime' => "{$formattedApptDate} - {$timeDisplay}",
-                'time_ago' => $agoText
-            ];
         }
-        mysqli_stmt_close($nStmt);
-    }
 
-    if (empty($notifications)) {
+        $doctor = trim((string)($row['doctor_name'] ?? ''));
         $notifications[] = [
-            'id' => 1,
-            'appointment_id' => 'APT-001',
-            'title' => 'Appointment Scheduled',
-            'description' => 'Consultation with Dr. Nidhi Jha',
-            'datetime' => '27 September 2026 - 3:00 PM',
-            'time_ago' => '4 Mins Ago'
+            'id' => (int)$row['id'],
+            'appointment_id' => $row['appointment_id'] ?? '',
+            'title' => 'Appointment' . (!empty($row['status']) ? ' - ' . $row['status'] : ''),
+            'description' => $doctor !== '' ? 'Consultation with ' . $doctor : ($row['service_type'] ?? ''),
+            'datetime' => trim($date . ($time !== '' ? ' - ' . $time : '')),
+            'time_ago' => $ago
         ];
     }
 
-    sendJsonResponse(true, 'Dashboard data loaded successfully from database.', [
-        'patient' => [
-            'id' => $patDbId,
-            'patient_id' => $patient['patient_id'] ?: 'P001',
-            'full_name' => $patName,
-            'phone_number' => $patPhone,
-            'email' => $patient['email'],
-            'package_name' => $currentPackageName,
-            'status' => $patient['status']
-        ],
+    mysqli_stmt_close($stmt);
+    return $notifications;
+}
+
+function getUnreadMessagesCount($connection, $patient)
+{
+    if (!$connection || !$patient) {
+        return 0;
+    }
+
+    // Use a notifications/messages table only when it exists.
+    foreach (['notifications', 'messages'] as $table) {
+        if (!tableExists($connection, $table)) {
+            continue;
+        }
+
+        $patientId = (int)$patient['id'];
+
+        $columnsResult = mysqli_query($connection, "SHOW COLUMNS FROM `{$table}`");
+        if (!$columnsResult) {
+            continue;
+        }
+
+        $columns = [];
+        while ($column = mysqli_fetch_assoc($columnsResult)) {
+            $columns[] = $column['Field'];
+        }
+
+        $patientColumn = in_array('patient_id', $columns, true) ? 'patient_id' : null;
+        $readColumn = in_array('is_read', $columns, true) ? 'is_read' : (in_array('read_status', $columns, true) ? 'read_status' : null);
+
+        if (!$patientColumn || !$readColumn) {
+            continue;
+        }
+
+        $sql = "SELECT COUNT(*) AS count FROM `{$table}` WHERE `{$patientColumn}` = ? AND (`{$readColumn}` = 0 OR `{$readColumn}` = '0')";
+        $stmt = mysqli_prepare($connection, $sql);
+
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 'i', $patientId);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $row = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+            return (int)($row['count'] ?? 0);
+        }
+    }
+
+    return 0;
+}
+
+/* --------------------------------------------------------------------------
+ * Resolve current patient from request/session.
+ * -------------------------------------------------------------------------- */
+
+$requestMethod = $_SERVER['REQUEST_METHOD'];
+$action = $_GET['action'] ?? '';
+
+if ($requestMethod === 'POST') {
+    $raw = file_get_contents('php://input');
+    $data = json_decode($raw, true);
+
+    if (!is_array($data)) {
+        $data = $_POST;
+    }
+
+    $action = $data['action'] ?? 'add_reading';
+}
+
+$sessionPhone = trim((string)($_SESSION['phone_number'] ?? $_SESSION['phone'] ?? ''));
+$sessionEmail = trim((string)($_SESSION['email'] ?? $_SESSION['email_id'] ?? ''));
+$sessionPatientId = trim((string)($_SESSION['patient_id'] ?? ''));
+
+if ($requestMethod === 'GET') {
+    $phone = trim((string)($_GET['phone'] ?? $sessionPhone));
+    $email = trim((string)($_GET['email'] ?? $sessionEmail));
+    $patientId = trim((string)($_GET['patient_id'] ?? $sessionPatientId));
+} else {
+    $phone = trim((string)($data['phone'] ?? $sessionPhone));
+    $email = trim((string)($data['email'] ?? $sessionEmail));
+    $patientId = trim((string)($data['patient_id'] ?? $sessionPatientId));
+}
+
+$patient = resolvePatient($connection1, $phone, $email, $patientId);
+
+if (!$patient) {
+    sendJsonResponse(false, 'Authenticated patient record was not found.', [
+        'patient' => null,
         'stats' => [
-            'upcoming_consultations' => $upcomingCount,
-            'active_packages' => $activePackagesCount,
-            'unread_messages' => $unreadMessagesCount
+            'upcoming_consultations' => 0,
+            'active_packages' => 0,
+            'unread_messages' => 0
         ],
-        'my_package' => $packageProgress,
-        'diet_plan' => $dietPlan,
-        'metrics' => $latestMetrics,
-        'notifications' => $notifications
-    ]);
+        'my_package' => null,
+        'diet_plan' => null,
+        'metrics' => [
+            'weight' => null,
+            'weight_raw' => null,
+            'abdomen' => null,
+            'abdomen_raw' => null,
+            'bp' => null,
+            'sugar' => null,
+            'sugar_raw' => null
+        ],
+        'graphs' => [],
+        'notifications' => []
+    ], 404);
 }
 
-// --------------------------------------------------------------------------
-// 2. POST REQUESTS: Add New Health Reading
-// --------------------------------------------------------------------------
-$rawInput = file_get_contents('php://input');
-if (empty($rawInput)) {
-    $rawInput = @file_get_contents('php://stdin');
-}
-$data = json_decode($rawInput, true);
-if (!$data || !is_array($data)) {
-    $data = $_POST;
-}
+/* --------------------------------------------------------------------------
+ * POST: save health reading
+ * -------------------------------------------------------------------------- */
 
-$action = isset($data['action']) ? trim($data['action']) : 'add_reading';
+if ($requestMethod === 'POST' && in_array($action, ['add_reading', 'save_metrics'], true)) {
+    if (!tableExists($connection1, 'health_metrics')) {
+        $createTable = "CREATE TABLE IF NOT EXISTS `health_metrics` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `patient_id` INT DEFAULT NULL,
+            `patient_phone` VARCHAR(20) DEFAULT NULL,
+            `weight` DECIMAL(5,2) DEFAULT NULL,
+            `abdomen` DECIMAL(5,2) DEFAULT NULL,
+            `bp` VARCHAR(30) DEFAULT NULL,
+            `sugar` DECIMAL(5,2) DEFAULT NULL,
+            `recorded_date` DATE NOT NULL,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_metric_patient` (`patient_id`),
+            KEY `idx_metric_phone` (`patient_phone`),
+            KEY `idx_metric_date` (`recorded_date`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
-if ($action === 'add_reading' || $action === 'save_metrics' || $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $rawWeight = isset($data['weight']) ? trim((string)$data['weight']) : '';
-    $rawAbdomen = isset($data['abdomen']) ? trim((string)$data['abdomen']) : '';
-    $rawBP = isset($data['bp']) ? trim((string)$data['bp']) : '';
-    $rawSugar = isset($data['sugar']) ? trim((string)$data['sugar']) : '';
-    $rawDate = isset($data['date']) ? trim((string)$data['date']) : (isset($data['reading_date']) ? trim((string)$data['reading_date']) : '');
-
-    $recordedDate = date('Y-m-d');
-    if (!empty($rawDate)) {
-        $parsedTime = strtotime($rawDate);
-        if ($parsedTime !== false) {
-            $recordedDate = date('Y-m-d', $parsedTime);
+        if (!mysqli_query($connection1, $createTable)) {
+            sendJsonResponse(false, 'Unable to create health metrics table.', [], 500);
         }
     }
 
-    // Clean numeric values if units were typed
-    $cleanWeight = preg_replace('/[^\d.]/', '', $rawWeight);
-    $cleanAbdomen = preg_replace('/[^\d.]/', '', $rawAbdomen);
-    $cleanSugar = preg_replace('/[^\d.]/', '', $rawSugar);
+    $date = trim((string)($data['date'] ?? date('Y-m-d')));
+    $recordedDate = DateTime::createFromFormat('Y-m-d', $date);
 
-    $weight = (is_numeric($cleanWeight) && (float)$cleanWeight > 0) ? (float)$cleanWeight : null;
-    $abdomen = (is_numeric($cleanAbdomen) && (float)$cleanAbdomen > 0) ? (float)$cleanAbdomen : null;
-    $sugar = (is_numeric($cleanSugar) && (float)$cleanSugar > 0) ? (float)$cleanSugar : null;
-    
+    if (!$recordedDate || $recordedDate->format('Y-m-d') !== $date) {
+        sendJsonResponse(false, 'Invalid reading date.', [], 400);
+    }
+
+    $cleanNumber = static function ($value) {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $value = preg_replace('/[^\d.]/', '', (string)$value);
+        return is_numeric($value) && (float)$value > 0 ? (float)$value : null;
+    };
+
+    $weight = $cleanNumber($data['weight'] ?? null);
+    $abdomen = $cleanNumber($data['abdomen'] ?? null);
+    $sugar = $cleanNumber($data['sugar'] ?? null);
+
+    $rawBp = trim((string)($data['bp'] ?? ''));
     $bp = null;
-    if (!empty($rawBP)) {
-        if (preg_match('/(\d{2,3}\s*\/\s*\d{2,3})/', $rawBP, $matches)) {
-            $bp = str_replace(' ', '', $matches[1]);
+
+    if ($rawBp !== '') {
+        if (preg_match('/(\d{2,3})\s*\/\s*(\d{2,3})/', $rawBp, $match)) {
+            $bp = $match[1] . '/' . $match[2];
         } else {
-            $bp = $rawBP;
+            $bp = $rawBp;
         }
     }
-
-    $phone = isset($data['phone']) ? trim($data['phone']) : ($_SESSION['phone_number'] ?? '9876543210');
-    $patientId = isset($data['patient_id']) ? trim($data['patient_id']) : ($_SESSION['patient_id'] ?? '');
 
     if ($weight === null && $abdomen === null && $bp === null && $sugar === null) {
         sendJsonResponse(false, 'Please enter at least one health metric parameter.', [], 400);
     }
 
-    // Resolve patient id
-    $pDbId = 1;
-    if (!empty($phone) || !empty($patientId)) {
-        $pQ = "SELECT id FROM patients WHERE (phone_number != '' AND phone_number = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1";
-        if ($stmt = mysqli_prepare($connection1, $pQ)) {
-            mysqli_stmt_bind_param($stmt, "ss", $phone, $patientId);
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
-            if ($row = mysqli_fetch_assoc($res)) {
-                $pDbId = (int)$row['id'];
-            }
-            mysqli_stmt_close($stmt);
-        }
+    $sql = "INSERT INTO health_metrics
+            (patient_id, patient_phone, weight, abdomen, bp, sugar, recorded_date, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+
+    $stmt = mysqli_prepare($connection1, $sql);
+
+    if (!$stmt) {
+        sendJsonResponse(false, 'Unable to prepare health reading.', [], 500);
     }
 
-    $insQ = "INSERT INTO health_metrics (patient_id, patient_phone, weight, abdomen, bp, sugar, recorded_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
-    if ($inStmt = mysqli_prepare($connection1, $insQ)) {
-        mysqli_stmt_bind_param($inStmt, "isddssd", $pDbId, $phone, $weight, $abdomen, $bp, $sugar, $recordedDate);
-        mysqli_stmt_execute($inStmt);
-        mysqli_stmt_close($inStmt);
+    $dbPatientId = (int)$patient['id'];
+    $patientPhone = (string)($patient['phone_number'] ?? '');
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        'isddssd',
+        $dbPatientId,
+        $patientPhone,
+        $weight,
+        $abdomen,
+        $bp,
+        $sugar,
+        $date
+    );
+
+    if (!mysqli_stmt_execute($stmt)) {
+        mysqli_stmt_close($stmt);
+        sendJsonResponse(false, 'Unable to save health reading.', [], 500);
     }
 
-    sendJsonResponse(true, 'Health reading saved successfully to database.', [
-        'date' => $recordedDate,
-        'weight' => $weight ? "{$weight} kgs" : null,
-        'weight_raw' => $weight,
-        'abdomen' => $abdomen ? "{$abdomen} cm" : null,
-        'abdomen_raw' => $abdomen,
-        'bp' => $bp ? "{$bp} mm Hg" : null,
-        'sugar' => $sugar ? "{$sugar} mg/dL" : null,
-        'sugar_raw' => $sugar
+    mysqli_stmt_close($stmt);
+
+    $metricsAndGraphs = getLatestMetricsAndGraphs(
+        $connection1,
+        $dbPatientId,
+        $patientPhone
+    );
+
+    sendJsonResponse(true, 'Health reading saved successfully.', [
+        'date' => $date,
+        'metrics' => $metricsAndGraphs['latest'],
+        'graphs' => $metricsAndGraphs['graphs']
     ]);
 }
 
-sendJsonResponse(false, 'Invalid dashboard request action.', [], 400);
+/* --------------------------------------------------------------------------
+ * GET: dashboard / diet
+ * -------------------------------------------------------------------------- */
+
+if ($requestMethod !== 'GET') {
+    sendJsonResponse(false, 'Invalid dashboard request.', [], 400);
+}
+
+$patientDbId = (int)$patient['id'];
+$patientName = trim((string)($patient['full_name'] ?? ''));
+$patientPhone = trim((string)($patient['phone_number'] ?? ''));
+$currentPackageName = trim((string)($patient['package_name'] ?? ''));
+
+$package = getPackageDetails($connection1, $currentPackageName);
+$packageProgress = calculatePackageProgress($patient, $package);
+
+/* Upcoming consultations are patient-specific. */
+$upcomingCount = 0;
+if (tableExists($connection1, 'appointments')) {
+    $sql = "SELECT COUNT(*) AS count
+            FROM appointments
+            WHERE (patient_id = ? OR (? <> '' AND (patient_name = ? OR patient_name LIKE ?)))
+              AND status IN ('Scheduled', 'Upcoming')";
+
+    $stmt = mysqli_prepare($connection1, $sql);
+    if ($stmt) {
+        $nameLike = '%' . $patientName . '%';
+        mysqli_stmt_bind_param($stmt, 'isss', $patientDbId, $patientName, $patientName, $nameLike);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        $upcomingCount = (int)($row['count'] ?? 0);
+        mysqli_stmt_close($stmt);
+    }
+}
+
+/* Active package count comes from this patient's package assignment. */
+$activePackagesCount = 0;
+if ($currentPackageName !== '') {
+    $status = strtolower(trim((string)($patient['status'] ?? '')));
+    if ($status === '' || in_array($status, ['active', 'ongoing', 'scheduled'], true)) {
+        $activePackagesCount = 1;
+    }
+}
+
+$unreadMessagesCount = getUnreadMessagesCount($connection1, $patient);
+
+$metricsAndGraphs = getLatestMetricsAndGraphs(
+    $connection1,
+    $patientDbId,
+    $patientPhone
+);
+
+$notifications = getNotifications($connection1, $patient);
+
+$dietPlan = $packageProgress['diet_plan'] ?? null;
+
+$patientResponse = [
+    'id' => $patientDbId,
+    'patient_id' => $patient['patient_id'] ?? '',
+    'full_name' => $patientName,
+    'phone_number' => $patientPhone,
+    'email' => $patient['email'] ?? '',
+    'package_name' => $currentPackageName,
+    'status' => $patient['status'] ?? ''
+];
+
+if (in_array($action, ['view_diet', 'get_diet', 'diet'], true)) {
+    sendJsonResponse(true, 'Diet plan loaded from database.', [
+        'package_name' => $currentPackageName,
+        'patient_name' => $patientName,
+        'diet_plan' => $dietPlan
+    ]);
+}
+
+sendJsonResponse(true, 'Dashboard data loaded successfully from database.', [
+    'patient' => $patientResponse,
+    'stats' => [
+        'upcoming_consultations' => $upcomingCount,
+        'active_packages' => $activePackagesCount,
+        'unread_messages' => $unreadMessagesCount
+    ],
+    'my_package' => $packageProgress,
+    'diet_plan' => $dietPlan,
+    'metrics' => $metricsAndGraphs['latest'],
+    'graphs' => $metricsAndGraphs['graphs'],
+    'notifications' => $notifications
+]);

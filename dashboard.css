@@ -822,6 +822,23 @@ body {
   border-color: #cbd5e1;
 }
 
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-empty-msg {
+  width: 100%;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 36px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .notification-item {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -4181,6 +4198,154 @@ body {
 .btn-register-workshop:active {
   background-color: var(--primary-teal-active);
   transform: translateY(0);
+}
+
+/* ========================================================
+   Empty State Component for Courses & Packages
+   ======================================================== */
+.courses-empty-state,
+.packages-empty-state {
+  grid-column: 1 / -1;
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-card);
+  padding: 56px 28px;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0 24px;
+  animation: fadeInCard 0.35s ease-out forwards;
+}
+
+.courses-empty-icon-wrap,
+.packages-empty-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--primary-teal-light);
+  color: var(--primary-teal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px var(--primary-teal-glow);
+}
+
+.courses-empty-title,
+.packages-empty-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.courses-empty-desc,
+.packages-empty-desc {
+  font-size: 14.5px;
+  color: var(--text-muted);
+  max-width: 460px;
+  line-height: 1.6;
+  margin: 0 auto 24px;
+}
+
+.courses-empty-action-btn,
+.packages-empty-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--primary-teal);
+  color: #ffffff;
+  padding: 11px 22px;
+  border-radius: var(--radius-btn);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 2px 6px var(--primary-teal-glow);
+}
+
+.courses-empty-action-btn:hover,
+.packages-empty-action-btn:hover {
+  background-color: var(--primary-teal-hover);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 10px var(--primary-teal-glow);
+}
+
+.courses-empty-action-btn:active,
+.packages-empty-action-btn:active {
+  background-color: var(--primary-teal-active);
+  transform: translateY(0);
+}
+
+/* ========================================================
+   Page Loader Overlay Component
+   ======================================================== */
+.page-loader-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(248, 250, 252, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s ease;
+}
+
+.page-loader-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.page-loader-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 34px 44px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1), 0 8px 15px -5px rgba(0, 0, 0, 0.04);
+  transform: scale(1);
+  transition: transform 0.3s ease;
+}
+
+.page-loader-overlay.hidden .page-loader-card {
+  transform: scale(0.92);
+}
+
+.page-loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--primary-teal-light);
+  border-top-color: var(--primary-teal);
+  border-radius: 50%;
+  animation: pageLoaderSpin 0.75s linear infinite;
+}
+
+@keyframes pageLoaderSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.page-loader-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: 0.2px;
 }
 
 /* ========================================================

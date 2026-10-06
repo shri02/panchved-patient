@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      const res = await fetch('api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
+      const res = await fetch('../api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
@@ -130,14 +130,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+      try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
         localStorage.removeItem('panchved_patient');
         localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
-      setTimeout(() => { window.location.href = 'index.html'; }, 350);
+      setTimeout(() => { window.location.href = '../index.html'; }, 350);
     });
   }
 
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
           amount: 500.00
         };
 
-        const res = await fetch('api/consultations.php', {
+        const res = await fetch('../api/consultations.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

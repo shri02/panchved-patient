@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      const res = await fetch('api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
+      const res = await fetch('../api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
@@ -139,14 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+      try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
         localStorage.removeItem('panchved_patient');
         localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
-      setTimeout(() => { window.location.href = 'index.html'; }, 350);
+      setTimeout(() => { window.location.href = '../index.html'; }, 350);
     });
   }
 
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const res = await fetch(`api/packages.php?action=details&${queryParam}`);
+      const res = await fetch(`../api/packages.php?action=details&${queryParam}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.package) {
@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
           amount: 500.00
         };
 
-        const res = await fetch('api/packages.php', {
+        const res = await fetch('../api/packages.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -509,9 +509,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isPackageCheckout) {
         window.location.href = 'package.html';
       } else if (isWorkshopCheckout) {
-        window.location.href = 'courses.html#my-workshops';
+        window.location.href = '../courses/courses.html#my-workshops';
       } else {
-        window.location.href = 'dashboard.html';
+        window.location.href = '../dashboard/dashboard.html';
       }
     });
   }

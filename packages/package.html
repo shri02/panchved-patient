@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panchved - Health Packages</title>
+  <meta name="description" content="Panchved Patient Portal - View and purchase tailored Ayurvedic and Physiotherapy health packages.">
+  <link rel="stylesheet" href="../dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Page Loader Overlay -->
+  <div class="page-loader-overlay" id="pageLoader" role="status" aria-live="polite">
+    <div class="page-loader-card">
+      <div class="page-loader-spinner"></div>
+      <p class="page-loader-text">Loading packages...</p>
+    </div>
+  </div>
+
+  <!-- Mobile Top Navigation Bar -->
+  <header class="mobile-nav-bar" id="mobileNavBar">
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" title="Toggle menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    <a href="../dashboard/dashboard.html" class="mobile-logo-link">
+      <img src="../assets/logo.svg" alt="Panchved Logo" class="mobile-logo-img" />
+    </a>
+    <a href="../profile/profile.html" class="mobile-user-avatar" title="Rahul Sharma (P001)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </a>
+  </header>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- Main Dashboard Layout Wrapper -->
+  <div class="dashboard-layout">
+    
+    <!-- Left Sidebar Navigation -->
+    <aside class="dashboard-sidebar" id="dashboardSidebar">
+      <div class="sidebar-brand-header">
+        <a href="../dashboard/dashboard.html" class="brand-logo-link" title="Panchved Complete Ayurved & Physiotherapy Rehab Center">
+          <img src="../assets/logo.svg" alt="Panchved Complete Ayurved & Physiotherapy Rehab Center" class="brand-logo-img" width="130" height="145" />
+        </a>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav" aria-label="Main Navigation">
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="../dashboard/dashboard.html" class="nav-link" id="navDashboard">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </span>
+              <span class="nav-label">Dashboard</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a href="package.html" class="nav-link active" id="navPackages">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Packages</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="../consultation/consultation.html" class="nav-link" id="navConsultations">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+              </span>
+              <span class="nav-label">Consultations</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="../courses/courses.html" class="nav-link" id="navCourses">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Courses</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="../billing/billing.html" class="nav-link" id="navBilling">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                  <line x1="2" y1="10" x2="22" y2="10"></line>
+                </svg>
+              </span>
+              <span class="nav-label">Billing</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Sidebar Footer (Log Out Button) -->
+      <div class="sidebar-footer">
+        <a href="../index.html" class="btn-logout" id="logoutBtn" title="Log out from patient portal">
+          <span class="logout-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </span>
+          <span>Log out</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main-content">
+      
+      <!-- Top Header Section -->
+      <header class="dashboard-top-header">
+        <div class="header-titles">
+          <h1 class="dashboard-heading" id="pageHeading">Packages</h1>
+          <p class="greeting-subtitle" id="pageSubtitle">View and purchase health packages.</p>
+        </div>
+
+        <!-- User Profile Pill -->
+        <a href="../profile/profile.html" class="user-profile-card" id="userProfileCard" aria-label="User profile: Rahul Sharma, Patient ID P001">
+          <div class="user-avatar" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="user-meta">
+            <span class="user-name" id="userName">Rahul Sharma</span>
+            <span class="user-patient-id" id="patientId">P001</span>
+          </div>
+        </a>
+      </header>
+
+      <!-- SCREEN 1: Packages Grid (List View) -->
+      <section class="packages-grid" id="packagesListSection" aria-label="Available Health Packages">
+        
+
+      </section>
+
+      <!-- SCREEN 2: Package Details View (Figma Match) -->
+      <section class="package-detail-container" id="packageDetailSection" aria-label="Package Details" style="display: none;">
+        
+        <!-- Back Navigation Link -->
+        <div class="package-detail-nav">
+          <button type="button" class="btn-back-to-packages" id="backToPackagesBtn" title="Back to All Packages">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Packages</span>
+          </button>
+        </div>
+
+        <!-- Package Hero Row (Image + Meta + Book Consultation CTA) -->
+        <div class="package-detail-hero">
+          <div class="package-detail-image-wrapper">
+            <img src="../assets/gut-healing-pkg.jpg" alt="Gut Healing Package - Panchved Ayurved & Physiotherapy" class="package-detail-img" id="detailPkgImg" />
+          </div>
+
+          <div class="package-detail-summary">
+            <h2 class="package-detail-title" id="detailPkgTitle">Gut Healing Package</h2>
+            <p class="package-detail-subtitle" id="detailPkgSubtitle">Suitable for IBS, Hyperacidity, constipation & piles.</p>
+
+            <div class="package-detail-meta-list">
+              <div class="package-detail-meta-item">
+                <span class="meta-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                </span>
+                <span>Starting at <strong id="detailPkgPrice">₹7999</strong> / month</span>
+              </div>
+
+              <div class="package-detail-meta-item">
+                <span class="meta-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </span>
+                <span><strong id="detailPkgDuration">3 Months</strong></span>
+              </div>
+
+              <div class="package-detail-meta-item">
+                <span class="meta-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </span>
+                <span><strong id="detailPkgBatch">18 Patient Batch</strong></span>
+              </div>
+            </div>
+
+            <!-- Book Consultation CTA (Opens Screen 3 Modal) -->
+            <button type="button" class="btn-book-consultation" id="bookConsultationBtn">
+              <span>Book Package (₹500)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 1: ABOUT THE PACKAGE -->
+        <div class="package-detail-section">
+          <h3 class="package-section-heading">ABOUT THE PACKAGE</h3>
+          <p class="package-section-desc" id="detailPkgDescription">
+            Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet.
+          </p>
+        </div>
+
+        <!-- Section 2: ABOUT THE DOCTOR -->
+        <div class="package-detail-section">
+          <h3 class="package-section-heading">ABOUT THE DOCTOR</h3>
+          
+          <div class="doctor-badge-card">
+            <div class="doctor-avatar" aria-hidden="true">
+              <span id="doctorAvatarText">AM</span>
+            </div>
+            <div class="doctor-info">
+              <h4 class="doctor-name" id="doctorName">Dr. Ananya Mehta</h4>
+              <p class="doctor-role" id="doctorRole">Ayurveda Physician</p>
+            </div>
+          </div>
+
+          <p class="package-section-desc doctor-desc" id="doctorDescription">
+            Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet.
+          </p>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toast" class="toast-msg" role="status" aria-live="polite">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span id="toastMsg">Action completed successfully!</span>
+  </div>
+
+  <script src="package.js"></script>
+</body>
+</html>

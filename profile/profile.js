@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
 
-      const queryUrl = 'api/profile.php' + (params.toString() ? `?${params.toString()}` : '');
+      const queryUrl = '../api/profile.php' + (params.toString() ? `?${params.toString()}` : '');
 
       const response = await fetch(queryUrl, {
         method: 'GET',
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
 
       try {
-        const response = await fetch('api/profile.php', {
+        const response = await fetch('../api/profile.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
 
       try {
-        const response = await fetch('api/profile.php', {
+        const response = await fetch('../api/profile.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       try {
-        await fetch('api/logout.php', { method: 'POST' });
+        await fetch('../api/logout.php', { method: 'POST' });
       } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => {
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
       }, 350);
     });
   }

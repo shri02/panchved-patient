@@ -4,6 +4,18 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Page Loader Overlay Logic
+  const pageLoader = document.getElementById('pageLoader');
+  const hidePageLoader = () => {
+    if (!pageLoader) return;
+    pageLoader.classList.add('hidden');
+    setTimeout(() => {
+      pageLoader.style.display = 'none';
+    }, 450);
+  };
+  // Fallback safety timeout for page loader
+  setTimeout(hidePageLoader, 2500);
+
   // Navigation & Elements
   const mobileMenuToggle = document.getElementById('mobileMenuToggle');
   const dashboardSidebar = document.getElementById('dashboardSidebar');
@@ -110,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      const res = await fetch('api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
+      const res = await fetch('../api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
@@ -126,14 +138,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+      try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
         localStorage.removeItem('panchved_patient');
         localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
-      setTimeout(() => { window.location.href = 'index.html'; }, 350);
+      setTimeout(() => { window.location.href = '../index.html'; }, 350);
     });
   }
 
@@ -154,7 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (detailPkgImg) {
-      detailPkgImg.src = pkg.image_url || 'assets/gut-healing-pkg.jpg';
+      const rawImg = pkg.image_url || 'assets/gut-healing-pkg.jpg';
+      detailPkgImg.src = (rawImg.startsWith('http') || rawImg.startsWith('../')) ? rawImg : '../' + rawImg;
       detailPkgImg.alt = `${pkg.package_name || 'Package'} - Panchved Ayurved & Physiotherapy`;
     }
 
@@ -215,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (queryParam) {
       try {
-        const res = await fetch(`api/packages.php?action=details&${queryParam}`);
+        const res = await fetch(`../api/packages.php?action=details&${queryParam}`);
         if (res.ok) {
           const resJson = await res.json();
           if (resJson.success && resJson.package) {
@@ -242,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         duration: '3 Months',
         batch_text: '18 Patient Batch',
         overview: cardSubtitle || 'A personalized, multi-dimensional Ayurvedic and rehabilitation wellness protocol tailored to your dosha.',
-        image_url: 'assets/gut-healing-pkg.jpg',
+        image_url: '../assets/gut-healing-pkg.jpg',
         doctor: {
           name: 'Dr. Nidhi Jha',
           role: 'Ayurveda Physician',
@@ -306,7 +319,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render Packages dynamically from MySQL Database
   const renderPackagesList = (packages) => {
-    if (!packagesListSection || !packages || packages.length === 0) return;
+    if (!packagesListSection) return;
+
+    if (!packages || packages.length === 0) {
+      packagesListSection.innerHTML = `
+        <div class="packages-empty-state" role="status">
+          <div class="packages-empty-icon-wrap" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <h3 class="packages-empty-title">No Health Packages Found</h3>
+          <p class="packages-empty-desc">There are currently no health packages available. Please check back shortly or explore our live workshops and expert consultations.</p>
+          <a href="../courses/courses.html" class="packages-empty-action-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <span>Browse Workshops</span>
+          </a>
+        </div>
+      `;
+      return;
+    }
 
     packagesListSection.innerHTML = packages.map(pkg => `
       <article class="package-card" id="pkg_${pkg.package_id || pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-id="${pkg.id}" data-package="${pkg.package_name}">
@@ -362,17 +401,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch Packages List from PHP Backend
   const fetchPackagesFromDB = async () => {
     try {
-      const res = await fetch('api/packages.php?action=list');
+      const res = await fetch('../api/packages.php?action=list');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.packages) && data.packages.length > 0) {
           loadedPackages = data.packages;
           renderPackagesList(loadedPackages);
           return loadedPackages;
+        } else {
+          loadedPackages = [];
+          renderPackagesList([]);
+          return [];
         }
+      } else {
+        loadedPackages = [];
+        renderPackagesList([]);
       }
     } catch (e) {
       console.warn('Notice: Backend fetch packages error:', e);
+      loadedPackages = [];
+      renderPackagesList([]);
+    } finally {
+      hidePageLoader();
     }
     return loadedPackages;
   };

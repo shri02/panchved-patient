@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      const res = await fetch('api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
+      const res = await fetch('../api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
@@ -132,14 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+      try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
         localStorage.removeItem('panchved_patient');
         localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
-      setTimeout(() => { window.location.href = 'index.html'; }, 350);
+      setTimeout(() => { window.location.href = '../index.html'; }, 350);
     });
   }
 
@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wsId) q.append('workshop_id', wsId);
         if (wsTitle) q.append('title', wsTitle);
 
-        const res = await fetch(`api/workshops.php?${q.toString()}`);
+        const res = await fetch(`../api/workshops.php?${q.toString()}`);
         if (res.ok) {
           const apiData = await res.json();
           if (apiData.success && apiData.workshop) {
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
           time: timeText
         };
 
-        const res = await fetch('api/workshops.php', {
+        const res = await fetch('../api/workshops.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -406,6 +406,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (receiptDateTime) receiptDateTime.textContent = `${dateText}, ${timeText}`;
       if (receiptAmount) receiptAmount.textContent = feeText;
       if (successPaymentAmount) successPaymentAmount.textContent = feeText;
+
+      // Save to registered workshops array in localStorage
+      try {
+        const storedList = JSON.parse(localStorage.getItem('panchved_registered_workshops') || '[]');
+        const newWorkshopItem = {
+          id: generatedBookingId,
+          booking_id: generatedBookingId,
+          title: wsTitle,
+          price: feeText,
+          date: dateText,
+          time: timeText,
+          meet_link: 'https://meet.google.com/abc-xyz-pqrs',
+          image_url: currentWorkshop?.image_url || '../assets/courses/course_pre_pregnancy.jpg'
+        };
+        storedList.unshift(newWorkshopItem);
+        localStorage.setItem('panchved_registered_workshops', JSON.stringify(storedList));
+      } catch (err) {}
 
       // Show Success Modal
       if (bookingSuccessModal) {

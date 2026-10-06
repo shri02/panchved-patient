@@ -1,10 +1,23 @@
 /**
  * Panchved Patient Portal - Dashboard Engine
  * Dynamic PHP & MySQL Database Backend Integration
+ * Full Dynamic Cards, Metrics, Graphs & Notifications
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Elements
+  // Page Loader Overlay Logic
+  const pageLoader = document.getElementById('pageLoader');
+  const hidePageLoader = () => {
+    if (!pageLoader) return;
+    pageLoader.classList.add('hidden');
+    setTimeout(() => {
+      pageLoader.style.display = 'none';
+    }, 450);
+  };
+  // Fallback safety timeout for page loader
+  setTimeout(hidePageLoader, 2500);
+
+  // Navigation & DOM Elements
   const mobileMenuToggle = document.getElementById('mobileMenuToggle');
   const dashboardSidebar = document.getElementById('dashboardSidebar');
   const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -16,12 +29,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewDietBtn = document.getElementById('viewDietBtn');
   const dietModalOverlay = document.getElementById('dietModalOverlay');
   const closeDietModalBtn = document.getElementById('closeDietModalBtn');
-  const dietPlanContent = document.getElementById('dietPlanContent');
   const dietPlanPara1 = document.getElementById('dietPlanPara1');
   const dietPlanPara2 = document.getElementById('dietPlanPara2');
   const logoutBtn = document.getElementById('logoutBtn');
 
+  // Memory Stores
+  let cachedDashboardData = null;
   let cachedDietPlan = null;
+  const activeTimeframes = {
+    weight: '6w',
+    abdomen: '6w',
+    bp: '6w',
+    sugar: '6w'
+  };
 
   const toast = document.getElementById('toast');
   const toastMsg = document.getElementById('toastMsg');
@@ -61,14 +81,26 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarOverlay.addEventListener('click', () => toggleMobileSidebar(false));
   }
 
+  // Time-aware greeting
+  const getTimeGreeting = (fullName) => {
+    const hour = new Date().getHours();
+    let period = 'Good Morning';
+    if (hour >= 12 && hour < 17) {
+      period = 'Good Afternoon';
+    } else if (hour >= 17) {
+      period = 'Good Evening';
+    }
+    return `${period} ${fullName}!`;
+  };
+
   // Update UI with authenticated patient details
   const applyDashboardPatient = (user, patient) => {
-    const fullName = patient?.full_name || user?.full_name;
+    const fullName = patient?.full_name || user?.full_name || 'Patient';
     const patientId = patient?.patient_id || ('P00' + (user?.id || 1));
 
     if (fullName) {
       const userGreeting = document.getElementById('userGreeting');
-      if (userGreeting) userGreeting.textContent = `Good Morning ${fullName}!`;
+      if (userGreeting) userGreeting.textContent = getTimeGreeting(fullName);
       const userName = document.getElementById('userName');
       if (userName) userName.textContent = fullName;
       const upc = document.getElementById('userProfileCard');
@@ -80,18 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const patientIdEl = document.getElementById('patientId');
       if (patientIdEl) patientIdEl.textContent = patientId;
     }
-    if (patient?.package_name) {
-      const myPackageNameEl = document.querySelector('.my-package-card .package-name');
-      if (myPackageNameEl) {
-        myPackageNameEl.textContent = patient.package_name;
-      }
-    }
   };
 
   // Animated Counter on Metric Cards
   const animateDashboardMetrics = () => {
     document.querySelectorAll('.stat-card-value').forEach(el => {
-      const target = parseInt(el.getAttribute('data-target') || el.textContent, 10);
+      const target = parseInt(el.getAttribute('data-target') || '0', 10);
       if (isNaN(target)) return;
       let startTimestamp = null;
       const duration = 650;
@@ -110,17 +136,60 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  // Render Dynamic Bar Chart for a specific metric and timeframe
+  const renderChart = (metricKey, timeframe = '6w') => {
+    const container = document.getElementById(`${metricKey}BarsArea`);
+    if (!container) return;
+
+    const metricGraph = cachedDashboardData?.graphs?.[metricKey];
+    if (!metricGraph) {
+      container.innerHTML = '<div class="chart-empty-msg">No data available</div>';
+      return;
+    }
+
+    const colorClass = metricGraph.color_class || 'bar-teal';
+    const dataset = metricGraph.timeframes?.[timeframe] || metricGraph.timeframes?.['6w'] || [];
+
+    if (!Array.isArray(dataset) || dataset.length === 0) {
+      container.innerHTML = '<div class="chart-empty-msg">No readings recorded for this timeframe</div>';
+      return;
+    }
+
+    container.innerHTML = dataset.map(item => `
+      <div class="chart-col" title="${item.date_label || ''}: ${item.val_label || ''} ${metricGraph.unit || ''}">
+        <span class="bar-val-label">${item.val_label}</span>
+        <div class="bar-track">
+          <div class="bar-fill ${colorClass}" style="height: ${item.height_percent || 0}%;"></div>
+        </div>
+        <span class="bar-date-label">${item.date_label || ''}</span>
+      </div>
+    `).join('');
+  };
+
+  // Render All 4 Health Metric Charts
+  const renderAllCharts = () => {
+    ['weight', 'abdomen', 'bp', 'sugar'].forEach(metricKey => {
+      renderChart(metricKey, activeTimeframes[metricKey] || '6w');
+    });
+  };
+
   // Render Dynamic Notifications
   const renderNotifications = (notifications) => {
-    const notifSection = document.querySelector('.notifications-card');
-    if (!notifSection || !notifications || notifications.length === 0) return;
+    const notifContainer = document.getElementById('notificationsList');
+    if (!notifContainer) return;
 
-    const heading = notifSection.querySelector('h2');
-    const headingHtml = heading ? heading.outerHTML : '<h2 id="notificationsHeading" class="section-card-title">Notifications</h2>';
+    if (!notifications || !Array.isArray(notifications) || notifications.length === 0) {
+      notifContainer.innerHTML = `
+        <div class="chart-empty-msg" style="padding: 24px 0; font-size: 13.5px;">
+          No new notifications at this time.
+        </div>
+      `;
+      return;
+    }
 
-    const itemsHtml = notifications.map(n => `
+    notifContainer.innerHTML = notifications.map(n => `
       <div class="notification-item">
-        <div class="notification-icon-badge">
+        <div class="notification-icon-badge" aria-hidden="true">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
@@ -128,13 +197,36 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="notification-content">
           <h3 class="notification-title">${n.title || 'Appointment Scheduled'}</h3>
-          <p class="notification-time">${n.datetime || 'Today'}</p>
+          <p class="notification-time">${n.description ? (n.description + ' &bull; ') : ''}${n.datetime || 'Today'}</p>
         </div>
         <span class="notification-ago">${n.time_ago || 'Recent'}</span>
       </div>
     `).join('');
+  };
 
-    notifSection.innerHTML = headingHtml + itemsHtml;
+  // Render My Package Card Details
+  const renderMyPackage = (pkgData) => {
+    const nameEl = document.getElementById('myPackageName');
+    const startEl = document.getElementById('myPackageStartDate');
+    const fillEl = document.getElementById('myPackageProgressFill');
+    const percentEl = document.getElementById('myPackageProgressPercent');
+    const weekEl = document.getElementById('myPackageWeekInfo');
+
+    if (!pkgData) {
+      if (nameEl) nameEl.textContent = 'No Active Package';
+      if (startEl) startEl.textContent = 'Explore our tailored wellness packages';
+      if (fillEl) fillEl.style.width = '0%';
+      if (percentEl) percentEl.textContent = '0 %';
+      if (weekEl) weekEl.textContent = 'Enroll today';
+      return;
+    }
+
+    if (nameEl) nameEl.textContent = pkgData.package_name || 'Gut Healing Package';
+    if (startEl) startEl.textContent = pkgData.start_date ? `Started on ${pkgData.start_date}` : 'Ongoing Health Program';
+    const percent = pkgData.progress_percent !== undefined ? pkgData.progress_percent : 50;
+    if (fillEl) fillEl.style.width = `${percent}%`;
+    if (percentEl) percentEl.textContent = pkgData.progress_text || `${percent} %`;
+    if (weekEl) weekEl.textContent = pkgData.week_info || 'Week 2 of 4';
   };
 
   // Step 1: Populate from cached session immediately
@@ -159,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
 
-      const queryUrl = 'api/dashboard.php' + (params.toString() ? `?${params.toString()}` : '');
+      const queryUrl = '../api/dashboard.php' + (params.toString() ? `?${params.toString()}` : '');
       const res = await fetch(queryUrl, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
@@ -168,6 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
+          cachedDashboardData = data;
+
           // 1. Patient & Header
           if (data.patient) {
             applyDashboardPatient(null, data.patient);
@@ -176,19 +270,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // 2. Metric Statistics Cards
           if (data.stats) {
-            const consultCard = document.querySelector('#cardConsultations .stat-card-value');
+            const consultCard = document.getElementById('valConsultations');
             if (consultCard && data.stats.upcoming_consultations !== undefined) {
               consultCard.setAttribute('data-target', data.stats.upcoming_consultations);
               consultCard.textContent = data.stats.upcoming_consultations;
             }
 
-            const pkgCard = document.querySelector('#cardPackages .stat-card-value');
+            const pkgCard = document.getElementById('valPackages');
             if (pkgCard && data.stats.active_packages !== undefined) {
               pkgCard.setAttribute('data-target', data.stats.active_packages);
               pkgCard.textContent = data.stats.active_packages;
             }
 
-            const msgCard = document.querySelector('#cardMessages .stat-card-value');
+            const msgCard = document.getElementById('valMessages');
             if (msgCard && data.stats.unread_messages !== undefined) {
               msgCard.setAttribute('data-target', data.stats.unread_messages);
               msgCard.textContent = data.stats.unread_messages;
@@ -198,77 +292,66 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           // 3. My Package Section
-          if (data.my_package) {
-            const pkgNameEl = document.querySelector('.my-package-card .package-name');
-            if (pkgNameEl && data.my_package.package_name) {
-              pkgNameEl.textContent = data.my_package.package_name;
-            }
-
-            const startDateEl = document.querySelector('.my-package-card .package-start-date');
-            if (startDateEl && data.my_package.start_date) {
-              startDateEl.textContent = `Started on ${data.my_package.start_date}`;
-            }
-
-            const progressFillEl = document.querySelector('.my-package-card .package-progress-fill');
-            if (progressFillEl && data.my_package.progress_percent) {
-              progressFillEl.style.width = `${data.my_package.progress_percent}%`;
-            }
-
-            const progressTextEl = document.querySelector('.my-package-card .package-progress-percent');
-            if (progressTextEl && data.my_package.progress_text) {
-              progressTextEl.textContent = data.my_package.progress_text;
-            }
-
-            const weekInfoEl = document.querySelector('.my-package-card .package-week-info');
-            if (weekInfoEl && data.my_package.week_info) {
-              weekInfoEl.textContent = data.my_package.week_info;
-            }
-
-            if (data.diet_plan || data.my_package?.diet_plan) {
-              cachedDietPlan = data.diet_plan || data.my_package?.diet_plan;
-              populateDietUI(cachedDietPlan);
-            }
+          renderMyPackage(data.my_package);
+          if (data.diet_plan || data.my_package?.diet_plan) {
+            cachedDietPlan = data.diet_plan || data.my_package?.diet_plan;
+            populateDietUI(cachedDietPlan);
           }
 
-          // 4. Health Metrics
+          // 4. Latest Health Metric Badges
           if (data.metrics) {
-            if (data.metrics.weight) {
-              const weightVal = document.querySelector('#cardWeight .metric-value');
-              if (weightVal) weightVal.textContent = data.metrics.weight;
-            }
-            if (data.metrics.abdomen) {
-              const abdVal = document.querySelector('#cardAbdomen .metric-value');
-              if (abdVal) abdVal.textContent = data.metrics.abdomen;
-            }
-            if (data.metrics.bp) {
-              const bpVal = document.querySelector('#cardBP .metric-value');
-              if (bpVal) bpVal.textContent = data.metrics.bp;
-            }
-            if (data.metrics.sugar) {
-              const sugarVal = document.querySelector('#cardSugar .metric-value');
-              if (sugarVal) sugarVal.textContent = data.metrics.sugar;
-            }
+            const weightVal = document.getElementById('weightMetricValue');
+            if (weightVal && data.metrics.weight) weightVal.textContent = data.metrics.weight;
+
+            const abdVal = document.getElementById('abdomenMetricValue');
+            if (abdVal && data.metrics.abdomen) abdVal.textContent = data.metrics.abdomen;
+
+            const bpVal = document.getElementById('bpMetricValue');
+            if (bpVal && data.metrics.bp) bpVal.textContent = data.metrics.bp;
+
+            const sugarVal = document.getElementById('sugarMetricValue');
+            if (sugarVal && data.metrics.sugar) sugarVal.textContent = data.metrics.sugar;
           }
 
-          // 5. Notifications
-          if (data.notifications && Array.isArray(data.notifications)) {
-            renderNotifications(data.notifications);
+          // 5. Render Dynamic Graphs
+          if (data.graphs) {
+            renderAllCharts();
           }
+
+          // 6. Notifications List
+          renderNotifications(data.notifications);
         }
       }
     } catch (e) {
-      console.warn('Dashboard profile dynamic fetch notice:', e);
+      console.warn('Dashboard dynamic fetch error:', e);
+    } finally {
+      hidePageLoader();
     }
   };
 
   fetchDashboardData();
-  animateDashboardMetrics();
+
+  // Timeframe Dropdown Select Filter Handlers
+  document.querySelectorAll('.metric-filter-select').forEach(select => {
+    select.addEventListener('change', (e) => {
+      const metric = select.getAttribute('data-metric') || 'weight';
+      const timeframe = e.target.value;
+      activeTimeframes[metric] = timeframe;
+      renderChart(metric, timeframe);
+      showToast(`Showing ${timeframe.toUpperCase()} trend for ${metric.toUpperCase()}`);
+    });
+  });
 
   // Modal Dialog Handlers for Add New Reading
   const openReadingModal = () => {
     if (readingModalOverlay) {
       readingModalOverlay.style.display = 'flex';
       document.body.style.overflow = 'hidden';
+      // Default to today's date if empty
+      const readingDateInput = document.getElementById('readingDate');
+      if (readingDateInput && !readingDateInput.value) {
+        readingDateInput.value = new Date().toISOString().split('T')[0];
+      }
       document.getElementById('readingWeight')?.focus();
     }
   };
@@ -352,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
           sugar: sugarInput || null
         };
 
-        const res = await fetch('api/dashboard.php', {
+        const res = await fetch('../api/dashboard.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -364,23 +447,55 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           const resData = await res.json();
           if (resData.success) {
-            if (resData.weight) {
-              const weightVal = document.querySelector('#cardWeight .metric-value');
-              if (weightVal) weightVal.textContent = resData.weight;
+            // Update badges from server response
+            if (resData.metrics) {
+              if (resData.metrics.weight) {
+                const el = document.getElementById('weightMetricValue');
+                if (el) el.textContent = resData.metrics.weight;
+              }
+              if (resData.metrics.abdomen) {
+                const el = document.getElementById('abdomenMetricValue');
+                if (el) el.textContent = resData.metrics.abdomen;
+              }
+              if (resData.metrics.bp) {
+                const el = document.getElementById('bpMetricValue');
+                if (el) el.textContent = resData.metrics.bp;
+              }
+              if (resData.metrics.sugar) {
+                const el = document.getElementById('sugarMetricValue');
+                if (el) el.textContent = resData.metrics.sugar;
+              }
+            } else {
+              if (resData.weight) {
+                const el = document.getElementById('weightMetricValue');
+                if (el) el.textContent = resData.weight;
+              }
+              if (resData.abdomen) {
+                const el = document.getElementById('abdomenMetricValue');
+                if (el) el.textContent = resData.abdomen;
+              }
+              if (resData.bp) {
+                const el = document.getElementById('bpMetricValue');
+                if (el) el.textContent = resData.bp;
+              }
+              if (resData.sugar) {
+                const el = document.getElementById('sugarMetricValue');
+                if (el) el.textContent = resData.sugar;
+              }
             }
-            if (resData.abdomen) {
-              const abdVal = document.querySelector('#cardAbdomen .metric-value');
-              if (abdVal) abdVal.textContent = resData.abdomen;
+
+            // Update graphs in memory and re-render charts immediately
+            if (resData.graphs) {
+              if (!cachedDashboardData) cachedDashboardData = {};
+              cachedDashboardData.graphs = resData.graphs;
+              renderAllCharts();
+            } else {
+              // Refresh dashboard data to update charts
+              fetchDashboardData();
             }
-            if (resData.bp) {
-              const bpVal = document.querySelector('#cardBP .metric-value');
-              if (bpVal) bpVal.textContent = resData.bp;
-            }
-            if (resData.sugar) {
-              const sugarVal = document.querySelector('#cardSugar .metric-value');
-              if (sugarVal) sugarVal.textContent = resData.sugar;
-            }
+
             showToast('Health reading recorded successfully!');
+            closeReadingModal();
           } else {
             showToast(resData.message || 'Failed to record health reading.', true);
           }
@@ -394,40 +509,8 @@ document.addEventListener('DOMContentLoaded', () => {
           updateBtn.innerHTML = origBtnText;
         }
       }
-
-      // Optimistic update
-      if (weightInput) {
-        const cleanW = weightInput.replace(/[^\d.]/g, '');
-        const weightVal = document.querySelector('#cardWeight .metric-value');
-        if (weightVal && cleanW) weightVal.textContent = `${cleanW} kgs`;
-      }
-      if (abdomenInput) {
-        const cleanA = abdomenInput.replace(/[^\d.]/g, '');
-        const abdVal = document.querySelector('#cardAbdomen .metric-value');
-        if (abdVal && cleanA) abdVal.textContent = `${cleanA} cm`;
-      }
-      if (bpInput) {
-        const bpVal = document.querySelector('#cardBP .metric-value');
-        if (bpVal) bpVal.textContent = bpInput.includes('mm') ? bpInput : `${bpInput} mm Hg`;
-      }
-      if (sugarInput) {
-        const cleanS = sugarInput.replace(/[^\d.]/g, '');
-        const sugarVal = document.querySelector('#cardSugar .metric-value');
-        if (sugarVal && cleanS) sugarVal.textContent = `${cleanS} mg/dL`;
-      }
-
-      closeReadingModal();
     });
   }
-
-  // Timeframe Dropdown Select Filter Handlers
-  document.querySelectorAll('.metric-filter-select').forEach(select => {
-    select.addEventListener('change', (e) => {
-      const parentCard = select.closest('.health-metric-card');
-      const label = parentCard?.querySelector('.metric-label')?.textContent || 'Metric';
-      showToast(`Updated ${label} timeframe to: ${e.target.options[e.target.selectedIndex].text}`);
-    });
-  });
 
   // Dynamic Diet Plan UI Population
   const populateDietUI = (dietData) => {
@@ -443,27 +526,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Open & Close View Diet Modal (Screen shown in Reference Image)
+  // Open & Close View Diet Modal
   const openDietModal = async () => {
     if (!dietModalOverlay) return;
 
-    // 1. If cached diet data is available, populate immediately
     if (cachedDietPlan) {
       populateDietUI(cachedDietPlan);
     }
 
-    // 2. Open Modal overlay
     dietModalOverlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    // 3. Dynamic Fetch directly from database backend
     try {
       const params = new URLSearchParams();
       params.append('action', 'view_diet');
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
 
-      const res = await fetch(`api/dashboard.php?${params.toString()}`);
+      const res = await fetch(`../api/dashboard.php?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.diet_plan) {
@@ -483,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // View Diet Action - Opens Reference Modal
+  // View Diet Action
   if (viewDietBtn) {
     viewDietBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -519,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       try {
-        await fetch('api/logout.php', { method: 'POST' });
+        await fetch('../api/logout.php', { method: 'POST' });
       } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
@@ -528,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => {
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
       }, 350);
     });
   }

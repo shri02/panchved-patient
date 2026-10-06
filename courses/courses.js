@@ -35,6 +35,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const workshopDoctorDesc = document.getElementById('workshopDoctorDesc');
   const workshopDoctorAvatar = document.getElementById('workshopDoctorAvatar');
   const btnRegisterWorkshop = document.getElementById('btnRegisterWorkshop');
+  const pageLoader = document.getElementById('pageLoader');
+
+  // Page Loader Controller
+  const hidePageLoader = () => {
+    if (!pageLoader) return;
+    pageLoader.classList.add('hidden');
+    setTimeout(() => {
+      pageLoader.style.display = 'none';
+    }, 400);
+  };
+
+  // Safety fallback to dismiss loader after max 2.5 seconds
+  setTimeout(hidePageLoader, 2500);
 
   // Memory store for DB patient workshops
   let loadedWorkshops = [];
@@ -117,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      const res = await fetch('api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
+      const res = await fetch('../api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
@@ -133,14 +146,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+      try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
         localStorage.removeItem('panchved_patient');
         localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
-      setTimeout(() => { window.location.href = 'index.html'; }, 350);
+      setTimeout(() => { window.location.href = '../index.html'; }, 350);
     });
   }
 
@@ -227,13 +240,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ws) return;
     currentSelectedWorkshop = ws;
 
+    const resolveCourseImg = (u) => !u ? '../assets/courses/course_ayurveda_herbs.jpg' : (u.startsWith('http') || u.startsWith('../') ? u : '../' + u);
     const title = ws.title || 'Ayurveda Workshop';
     const subtitle = ws.subtitle || 'Holistic Health & Ayurveda Insights';
     const priceFormatted = ws.fee_formatted || (ws.fee ? `₹${ws.fee}/-` : '₹499/-');
     const duration = ws.duration_text || '90 mins';
     const date = ws.formatted_date || ws.date || '3 September, Wednesday';
     const time = ws.time || '8:00 AM';
-    const img = ws.image_url || 'assets/courses/course_ayurveda_herbs.jpg';
+    const img = resolveCourseImg(ws.image_url);
     const about = ws.about || subtitle || 'A comprehensive interactive workshop covering authentic Ayurvedic health strategies, nutrition guides, and lifestyle routines.';
     const speaker = ws.speaker || ws.instructor || ws.assign_speaker || 'Dr. Rajesh Varma';
     const role = ws.speaker_role || 'Ayurveda Physician';
@@ -297,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
           duration_text: wsOrCard.getAttribute('data-type') || '90 mins',
           formatted_date: wsOrCard.getAttribute('data-date') || '3 September, Wednesday',
           time: wsOrCard.getAttribute('data-time') || '8:00 AM',
-          image_url: wsOrCard.getAttribute('data-img') || 'assets/courses/course_ayurveda_herbs.jpg',
+          image_url: wsOrCard.getAttribute('data-img') || '../assets/courses/course_ayurveda_herbs.jpg',
           about: wsOrCard.getAttribute('data-about') || '',
           speaker: wsOrCard.getAttribute('data-doctor-name') || 'Dr. Rajesh Varma',
           speaker_role: wsOrCard.getAttribute('data-doctor-role') || 'Ayurveda Physician',
@@ -348,21 +362,45 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ========================================================
-  // 4. RENDER ALL WORKSHOPS LIST (Strictly attendee_type = 'Patient')
+  // 4A. RENDER ALL WORKSHOPS LIST (Strictly attendee_type = 'Patient')
   // ========================================================
   const renderAllWorkshopsList = (workshops) => {
-    if (!allWorkshopsSection || !Array.isArray(workshops) || workshops.length === 0) return;
+    if (!allWorkshopsSection) return;
 
     // Filter strictly to guarantee only Patient attendee workshops are rendered
-    const patientWorkshops = workshops.filter(ws => {
+    const patientWorkshops = (Array.isArray(workshops) ? workshops : []).filter(ws => {
       const att = (ws.attendee_type || '').toLowerCase().trim();
       return att === 'patient' && att !== 'doctor';
     });
 
-    if (patientWorkshops.length === 0) return;
+    if (patientWorkshops.length === 0) {
+      allWorkshopsSection.innerHTML = `
+        <div class="courses-empty-state" role="status">
+          <div class="courses-empty-icon-wrap" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <h3 class="courses-empty-title">No Workshops Found</h3>
+          <p class="courses-empty-desc">There are currently no active patient workshops available. Please check back soon or explore our personalized wellness packages.</p>
+          <a href="../packages/package.html" class="courses-empty-action-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Explore Packages</span>
+          </a>
+        </div>
+      `;
+      return;
+    }
 
     allWorkshopsSection.innerHTML = patientWorkshops.map(ws => {
-      const img = ws.image_url || 'assets/courses/course_ayurveda_herbs.jpg';
+      const rawImg = ws.image_url || 'assets/courses/course_ayurveda_herbs.jpg';
+      const img = (rawImg.startsWith('http') || rawImg.startsWith('../')) ? rawImg : '../' + rawImg;
       const priceText = ws.fee_formatted || (ws.fee ? `₹${ws.fee}/-` : '₹499/-');
       const duration = ws.duration_text || '90 mins';
       const dateText = ws.formatted_date || ws.date || '3 September, Wednesday';
@@ -457,11 +495,149 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ========================================================
+  // 4B. RENDER MY WORKSHOPS (Registered Workshops with Meet Links)
+  // ========================================================
+  const renderMyWorkshopsList = () => {
+    if (!myWorkshopsSection) return;
+
+    let registered = [];
+    try {
+      const storedList = JSON.parse(localStorage.getItem('panchved_registered_workshops') || '[]');
+      if (Array.isArray(storedList)) registered = storedList;
+    } catch (e) {}
+
+    // Check single booking from checkout if not already in list
+    try {
+      const singleBooking = JSON.parse(localStorage.getItem('panchved_workshop_booking') || 'null');
+      if (singleBooking && (singleBooking.workshopTitle || singleBooking.title)) {
+        const t = singleBooking.workshopTitle || singleBooking.title;
+        const already = registered.some(r => r.title === t || (r.id && r.id == singleBooking.id));
+        if (!already) {
+          registered.unshift({
+            id: singleBooking.id || 1,
+            title: t,
+            price: singleBooking.fee || '₹499/-',
+            date: singleBooking.date || '3 September, Wednesday',
+            time: singleBooking.time || '8:00 AM',
+            meet_link: 'https://meet.google.com/abc-xyz-pqrs',
+            image_url: singleBooking.image_url || '../assets/courses/course_pre_pregnancy.jpg'
+          });
+        }
+      }
+    } catch (e) {}
+
+    if (registered.length === 0) {
+      myWorkshopsSection.innerHTML = `
+        <div class="courses-empty-state" role="status">
+          <div class="courses-empty-icon-wrap" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <h3 class="courses-empty-title">No Registered Workshops Found</h3>
+          <p class="courses-empty-desc">You have not enrolled in any live workshops yet. Explore available workshops to join interactive sessions with expert Ayurveda doctors.</p>
+          <button type="button" class="courses-empty-action-btn" id="btnBrowseWorkshopsEmpty">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Browse Available Workshops</span>
+          </button>
+        </div>
+      `;
+      const btnBrowse = document.getElementById('btnBrowseWorkshopsEmpty');
+      if (btnBrowse) {
+        btnBrowse.addEventListener('click', (e) => {
+          e.preventDefault();
+          switchTab('all');
+        });
+      }
+      return;
+    }
+
+    myWorkshopsSection.innerHTML = registered.map(ws => {
+      const rawImg = ws.image_url || 'assets/courses/course_ayurveda_herbs.jpg';
+      const img = (rawImg.startsWith('http') || rawImg.startsWith('../')) ? rawImg : '../' + rawImg;
+      const priceText = ws.price || ws.fee_formatted || '₹499/-';
+      const dateText = ws.date || ws.formatted_date || '3 September, Wednesday';
+      const timeText = ws.time || '8:00 AM';
+      const meetLink = ws.meet_link || 'https://meet.google.com/abc-xyz-pqrs';
+      const cleanMeet = meetLink.replace(/^https?:\/\//, '');
+
+      return `
+        <article class="workshop-card">
+          <div class="workshop-card-img-wrap">
+            <img src="${img}" alt="${ws.title}" class="workshop-card-img" />
+          </div>
+          <div class="workshop-card-content">
+            <div class="workshop-card-header">
+              <h2 class="workshop-title">${ws.title}</h2>
+            </div>
+
+            <div class="workshop-meta-list">
+              <div class="workshop-meta-item">
+                <span class="meta-icon" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                </span>
+                <span><strong>${priceText}</strong></span>
+              </div>
+              <div class="workshop-meta-item">
+                <span class="meta-icon" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </span>
+                <span><strong>${dateText}</strong></span>
+              </div>
+              <div class="workshop-meta-item">
+                <span class="meta-icon" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </span>
+                <span><strong>${timeText}</strong></span>
+              </div>
+            </div>
+
+            <div class="workshop-meet-link-box">
+              <span class="workshop-meet-link-text">${cleanMeet}</span>
+              <button type="button" class="btn-copy-meet-mini" data-link="${meetLink}" title="Copy Google Meet link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+            </div>
+
+            <button type="button" class="btn-join-meet" data-link="${meetLink}">
+              <span>Join with Google Meet</span>
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    bindMeetLinkEvents();
+  };
+
+  // ========================================================
   // 5. FETCH WORKSHOPS DYNAMICALLY FROM DATABASE
   // ========================================================
   const fetchPatientWorkshopsFromDB = async () => {
     try {
-      const res = await fetch('api/workshops.php?attendee_type=Patient');
+      const res = await fetch('../api/workshops.php?attendee_type=Patient');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.workshops)) {
@@ -471,10 +647,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return att === 'patient' && att !== 'doctor';
           });
           renderAllWorkshopsList(loadedWorkshops);
+        } else {
+          renderAllWorkshopsList([]);
         }
+      } else {
+        renderAllWorkshopsList([]);
       }
     } catch (err) {
       console.warn('Notice: Error fetching workshops from DB:', err);
+      renderAllWorkshopsList([]);
+    } finally {
+      renderMyWorkshopsList();
+      hidePageLoader();
     }
   };
 
