@@ -133,11 +133,61 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   syncHeaderFromDB();
 
-  // Logout Action
+  // Logout Modal Handlers
   const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const closeLogoutModalBtn = document.getElementById('closeLogoutModalBtn');
+  const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+  const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+  const openLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.add('active');
+      logoutModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  const closeLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.remove('active');
+      logoutModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  };
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
+    logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      openLogoutModal();
+    });
+  }
+
+  if (closeLogoutModalBtn) closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+  if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+
+  if (logoutModal) {
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) closeLogoutModal();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('active')) {
+      closeLogoutModal();
+    }
+  });
+
+  if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', async () => {
+      confirmLogoutBtn.disabled = true;
+      confirmLogoutBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite; margin-right: 6px;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path>
+        </svg>
+        <span>Logging out...</span>
+      `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');

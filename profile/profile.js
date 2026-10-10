@@ -20,9 +20,109 @@ document.addEventListener('DOMContentLoaded', () => {
   // Input Elements
   const fnInput = document.getElementById('profileFullName');
   const dobInput = document.getElementById('profileDob');
+  const profileDobCalendarBtn = document.getElementById('profileDobCalendarBtn');
+  const profileDobNativePicker = document.getElementById('profileDobNativePicker');
   const phInput = document.getElementById('profilePhone');
   const gInput = document.getElementById('profileGender');
   const emInput = document.getElementById('profileEmail');
+
+  // Name Input Validation: Restrict numbers (0-9)
+  const restrictNameInput = (inputEl) => {
+    if (!inputEl) return;
+    inputEl.addEventListener('keydown', (e) => {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+      }
+    });
+    inputEl.addEventListener('input', () => {
+      inputEl.value = inputEl.value.replace(/[0-9]/g, '');
+    });
+  };
+  restrictNameInput(fnInput);
+
+  // Phone Input: Restrict to 10 digits
+  if (phInput) {
+    phInput.addEventListener('input', () => {
+      phInput.value = phInput.value.replace(/\D/g, '').slice(0, 10);
+    });
+  }
+
+  // Date of Birth: Restrict calendar picker to current date (disable future dates)
+  const setProfileDobMaxDate = () => {
+    if (profileDobNativePicker) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      profileDobNativePicker.max = `${yyyy}-${mm}-${dd}`;
+    }
+  };
+  setProfileDobMaxDate();
+
+  if (dobInput) {
+    dobInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length > 8) val = val.substring(0, 8);
+
+      let formatted = '';
+      if (val.length > 0) formatted += val.substring(0, 2);
+      if (val.length > 2) formatted += '/' + val.substring(2, 4);
+      if (val.length > 4) formatted += '/' + val.substring(4, 8);
+
+      dobInput.value = formatted;
+    });
+  }
+
+  // Calendar Icon Button Handler for Date of Birth
+  if (profileDobCalendarBtn && profileDobNativePicker) {
+    profileDobCalendarBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setProfileDobMaxDate();
+
+      // Sync current text input value into native date picker if valid
+      if (dobInput && dobInput.value) {
+        const textVal = dobInput.value.trim();
+        const parts = textVal.split('/');
+        if (parts.length === 3 && parts[2].length === 4) {
+          const d = parts[0].padStart(2, '0');
+          const m = parts[1].padStart(2, '0');
+          const y = parts[2];
+          const isoDate = `${y}-${m}-${d}`;
+          if (!profileDobNativePicker.max || isoDate <= profileDobNativePicker.max) {
+            profileDobNativePicker.value = isoDate;
+          }
+        }
+      }
+
+      try {
+        if (typeof profileDobNativePicker.showPicker === 'function') {
+          profileDobNativePicker.showPicker();
+        } else {
+          profileDobNativePicker.focus();
+          profileDobNativePicker.click();
+        }
+      } catch (err) {
+        profileDobNativePicker.focus();
+        profileDobNativePicker.click();
+      }
+    });
+
+    profileDobNativePicker.addEventListener('change', () => {
+      if (!profileDobNativePicker.value) return;
+      if (profileDobNativePicker.max && profileDobNativePicker.value > profileDobNativePicker.max) {
+        profileDobNativePicker.value = profileDobNativePicker.max;
+      }
+      const parts = profileDobNativePicker.value.split('-'); // YYYY-MM-DD
+      if (parts.length === 3) {
+        const year = parts[0];
+        const month = parts[1];
+        const day = parts[2];
+        if (dobInput) {
+          dobInput.value = `${day}/${month}/${year}`;
+        }
+      }
+    });
+  }
 
   // Header Elements
   const unEl = document.getElementById('userName');
@@ -97,7 +197,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     if (gender && gInput) {
-      gInput.value = gender;
+      const matchOpt = Array.from(gInput.options || []).find(
+        opt => opt.value.toLowerCase() === gender.toLowerCase()
+      );
+      if (matchOpt) {
+        gInput.value = matchOpt.value;
+      } else {
+        gInput.value = gender;
+      }
     }
     if (patientId && pidEl) {
       pidEl.textContent = patientId;
@@ -181,6 +288,50 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (/\d/.test(fullName)) {
+        showToast('Full name should not contain numbers.', true);
+        fnInput?.focus();
+        return;
+      }
+
+      if (!dob) {
+        showToast('Please enter your date of birth.', true);
+        dobInput?.focus();
+        return;
+      }
+
+      // Check for future date in DOB
+      if (dob) {
+        let dobDate = null;
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dob)) {
+          const [d, m, y] = dob.split('/');
+          dobDate = new Date(`${y}-${m}-${d}`);
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+          dobDate = new Date(dob);
+        }
+        if (dobDate && !isNaN(dobDate.getTime())) {
+          const today = new Date();
+          today.setHours(23, 59, 59, 999);
+          if (dobDate > today) {
+            showToast('Date of birth cannot be in the future.', true);
+            dobInput?.focus();
+            return;
+          }
+        }
+      }
+
+      if (!phone) {
+        showToast('Please enter your phone number.', true);
+        phInput?.focus();
+        return;
+      }
+
+      if (!gender) {
+        showToast('Please select your gender.', true);
+        gInput?.focus();
+        return;
+      }
+
       if (!email) {
         showToast('Please enter your email address.', true);
         emInput?.focus();
@@ -222,12 +373,37 @@ document.addEventListener('DOMContentLoaded', () => {
         updateBtn.innerHTML = originalHtml;
 
         if (response.ok && result.success) {
+          const freshUser = result.user || { full_name: fullName, email: email, phone_number: phone };
+          const freshPatient = result.patient || { full_name: fullName, email: email, phone_number: phone, dob: dob, gender: gender };
+
           if (result.user) {
             try { localStorage.setItem('panchved_user', JSON.stringify(result.user)); } catch (e) {}
+          } else {
+            try { localStorage.setItem('panchved_user', JSON.stringify(freshUser)); } catch (e) {}
           }
           if (result.patient) {
             try { localStorage.setItem('panchved_patient', JSON.stringify(result.patient)); } catch (e) {}
+          } else {
+            try { localStorage.setItem('panchved_patient', JSON.stringify(freshPatient)); } catch (e) {}
           }
+
+          // Update booking storage caches so package checkout page immediately gets the updated user details
+          try {
+            const consultStored = JSON.parse(localStorage.getItem('panchved_consultation_booking') || '{}');
+            if (consultStored && typeof consultStored === 'object' && Object.keys(consultStored).length > 0) {
+              consultStored.patientName = fullName;
+              consultStored.patientEmail = email;
+              consultStored.patientPhone = phone;
+              localStorage.setItem('panchved_consultation_booking', JSON.stringify(consultStored));
+            }
+            const workshopStored = JSON.parse(localStorage.getItem('panchved_workshop_booking') || '{}');
+            if (workshopStored && typeof workshopStored === 'object' && Object.keys(workshopStored).length > 0) {
+              workshopStored.patientName = fullName;
+              workshopStored.patientEmail = email;
+              workshopStored.patientPhone = phone;
+              localStorage.setItem('panchved_workshop_booking', JSON.stringify(workshopStored));
+            }
+          } catch (e) {}
 
           if (unEl) unEl.textContent = fullName;
           if (ugEl) ugEl.textContent = `Good Morning ${fullName}!`;
@@ -353,10 +529,60 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Logout Handler
+  // Logout Modal Handlers
+  const logoutModal = document.getElementById('logoutModal');
+  const closeLogoutModalBtn = document.getElementById('closeLogoutModalBtn');
+  const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+  const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+  const openLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.add('active');
+      logoutModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  const closeLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.remove('active');
+      logoutModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  };
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
+    logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      openLogoutModal();
+    });
+  }
+
+  if (closeLogoutModalBtn) closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+  if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+
+  if (logoutModal) {
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) closeLogoutModal();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('active')) {
+      closeLogoutModal();
+    }
+  });
+
+  if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', async () => {
+      confirmLogoutBtn.disabled = true;
+      confirmLogoutBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite; margin-right: 6px;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path>
+        </svg>
+        <span>Logging out...</span>
+      `;
       try {
         await fetch('../api/logout.php', { method: 'POST' });
       } catch (err) {}
@@ -371,4 +597,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 350);
     });
   }
+
+  // Real-time synchronization when updated from Checkout or other tabs
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'panchved_user' || e.key === 'panchved_patient') {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        if (storedUser || storedPatient) {
+          applyProfileData(storedUser, storedPatient);
+        }
+      } catch (err) {}
+    }
+  });
+
+  // Re-sync on window focus / tab visibility
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        if (storedUser || storedPatient) {
+          applyProfileData(storedUser, storedPatient);
+        }
+      } catch (err) {}
+      fetchProfileFromDatabase();
+    }
+  });
 });

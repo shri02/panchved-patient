@@ -42,6 +42,46 @@ if (!$data || !is_array($data)) {
     $data = $_POST;
 }
 
+// Phone availability check endpoint
+if (isset($_GET['check_phone']) || (isset($data['action']) && $data['action'] === 'check_phone')) {
+    $checkPhone = isset($_GET['check_phone']) ? trim($_GET['check_phone']) : (isset($data['phone']) ? trim($data['phone']) : '');
+    $phoneDigits = preg_replace('/[^\d]/', '', $checkPhone);
+    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+        $phoneDigits = substr($phoneDigits, 2);
+    }
+
+    if (strlen($phoneDigits) === 10) {
+        $uCheck = mysqli_prepare($connection1, "SELECT id FROM users WHERE phone_number = ? LIMIT 1");
+        if ($uCheck) {
+            mysqli_stmt_bind_param($uCheck, "s", $phoneDigits);
+            mysqli_stmt_execute($uCheck);
+            $uRes = mysqli_stmt_get_result($uCheck);
+            $uFound = mysqli_fetch_assoc($uRes);
+            mysqli_stmt_close($uCheck);
+
+            if ($uFound) {
+                sendJsonResponse(false, 'This phone number is already registered. Please log in or use a different number.', ['exists' => true]);
+            }
+        }
+
+        $pCheck = mysqli_prepare($connection1, "SELECT id FROM patients WHERE phone_number = ? LIMIT 1");
+        if ($pCheck) {
+            mysqli_stmt_bind_param($pCheck, "s", $phoneDigits);
+            mysqli_stmt_execute($pCheck);
+            $pRes = mysqli_stmt_get_result($pCheck);
+            $pFound = mysqli_fetch_assoc($pRes);
+            mysqli_stmt_close($pCheck);
+
+            if ($pFound) {
+                sendJsonResponse(false, 'This phone number is already registered. Please log in or use a different number.', ['exists' => true]);
+            }
+        }
+
+        sendJsonResponse(true, 'Phone number is available.', ['exists' => false]);
+    }
+    sendJsonResponse(true, 'Phone number required.', ['exists' => false]);
+}
+
 // Step 1: Personal Details
 $fullName = isset($data['fullName']) ? trim($data['fullName']) : (isset($data['full_name']) ? trim($data['full_name']) : '');
 $dobRaw = isset($data['dob']) ? trim($data['dob']) : '';
@@ -66,6 +106,14 @@ $confirmPassword = isset($data['confirmPassword']) ? $data['confirmPassword'] : 
 // Basic validations
 if (empty($fullName)) {
     sendJsonResponse(false, 'Please enter your full name.', [], 400);
+}
+
+if (empty($email)) {
+    sendJsonResponse(false, 'Please enter your email address.', [], 400);
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    sendJsonResponse(false, 'Please provide a valid email address.', [], 400);
 }
 
 if (empty($password)) {
@@ -194,64 +242,52 @@ $newPatientId = 'P' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
 // Password Bcrypt Hash
 $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
-// 1. Insert or Update `users` table
-$checkUser = "SELECT id, username FROM users WHERE phone_number = ? OR email = ? LIMIT 1";
-$uCheckStmt = mysqli_prepare($connection1, $checkUser);
-mysqli_stmt_bind_param($uCheckStmt, "ss", $phoneDigits, $email);
+// Check if phone number is already registered
+$checkPhoneUser = "SELECT id, username FROM users WHERE phone_number = ? LIMIT 1";
+$uCheckStmt = mysqli_prepare($connection1, $checkPhoneUser);
+mysqli_stmt_bind_param($uCheckStmt, "s", $phoneDigits);
 mysqli_stmt_execute($uCheckStmt);
 $uCheckRes = mysqli_stmt_get_result($uCheckStmt);
-$existingUser = mysqli_fetch_assoc($uCheckRes);
+$existingPhoneUser = mysqli_fetch_assoc($uCheckRes);
 mysqli_stmt_close($uCheckStmt);
 
-$userId = null;
-
-if ($existingUser) {
-    $userId = $existingUser['id'];
-    $updateUser = "UPDATE users SET full_name = ?, phone_number = ?, password_hash = ?, last_login = NOW() WHERE id = ?";
-    $uUpStmt = mysqli_prepare($connection1, $updateUser);
-    mysqli_stmt_bind_param($uUpStmt, "sssi", $fullName, $phoneDigits, $passwordHash, $userId);
-    mysqli_stmt_execute($uUpStmt);
-    mysqli_stmt_close($uUpStmt);
-} else {
-    $insertUser = "INSERT INTO users (username, full_name, email, phone_number, password_hash, role, status, last_login) VALUES (?, ?, ?, ?, ?, 'Patient', 'Active', NOW())";
-    $uInStmt = mysqli_prepare($connection1, $insertUser);
-    if ($uInStmt) {
-        mysqli_stmt_bind_param($uInStmt, "sssss", $username, $fullName, $email, $phoneDigits, $passwordHash);
-        mysqli_stmt_execute($uInStmt);
-        $userId = mysqli_insert_id($connection1);
-        mysqli_stmt_close($uInStmt);
-    }
+if ($existingPhoneUser) {
+    sendJsonResponse(false, 'This phone number is already registered. Please log in or use a different number.', ['phone_exists' => true], 409);
 }
 
-// 2. Insert or Update `patients` table
-$checkPat = "SELECT id, patient_id FROM patients WHERE phone_number = ? OR email = ? LIMIT 1";
-$pCheckStmt = mysqli_prepare($connection1, $checkPat);
-mysqli_stmt_bind_param($pCheckStmt, "ss", $phoneDigits, $email);
+$checkPhonePat = "SELECT id, patient_id FROM patients WHERE phone_number = ? LIMIT 1";
+$pCheckStmt = mysqli_prepare($connection1, $checkPhonePat);
+mysqli_stmt_bind_param($pCheckStmt, "s", $phoneDigits);
 mysqli_stmt_execute($pCheckStmt);
 $pCheckRes = mysqli_stmt_get_result($pCheckStmt);
-$existingPatient = mysqli_fetch_assoc($pCheckRes);
+$existingPhonePat = mysqli_fetch_assoc($pCheckRes);
 mysqli_stmt_close($pCheckStmt);
 
+if ($existingPhonePat) {
+    sendJsonResponse(false, 'This phone number is already registered. Please log in or use a different number.', ['phone_exists' => true], 409);
+}
+
+// 1. Insert into `users` table
+$userId = null;
+$insertUser = "INSERT INTO users (username, full_name, email, phone_number, password_hash, role, status, last_login) VALUES (?, ?, ?, ?, ?, 'Patient', 'Active', NOW())";
+$uInStmt = mysqli_prepare($connection1, $insertUser);
+if ($uInStmt) {
+    mysqli_stmt_bind_param($uInStmt, "sssss", $username, $fullName, $email, $phoneDigits, $passwordHash);
+    mysqli_stmt_execute($uInStmt);
+    $userId = mysqli_insert_id($connection1);
+    mysqli_stmt_close($uInStmt);
+}
+
+// 2. Insert into `patients` table
 $patientRecordId = null;
 $finalPatientId = $newPatientId;
-
-if ($existingPatient) {
-    $patientRecordId = $existingPatient['id'];
-    $finalPatientId = $existingPatient['patient_id'];
-    $updatePat = "UPDATE patients SET full_name = ?, dob = ?, age = ?, gender = ?, phone_number = ?, email = ? WHERE id = ?";
-    $pUpStmt = mysqli_prepare($connection1, $updatePat);
-    mysqli_stmt_bind_param($pUpStmt, "ssisssi", $fullName, $formattedDob, $age, $gender, $phoneDigits, $email, $patientRecordId);
-    mysqli_stmt_execute($pUpStmt);
-    mysqli_stmt_close($pUpStmt);
-} else {
-    $insertPat = "INSERT INTO patients (patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Ayurveda Holistic Care', 0, 'Ongoing')";
-    $pInStmt = mysqli_prepare($connection1, $insertPat);
-    if ($pInStmt) {
-        mysqli_stmt_bind_param($pInStmt, "sssisss", $newPatientId, $fullName, $formattedDob, $age, $phoneDigits, $gender, $email);
-        mysqli_stmt_execute($pInStmt);
-        $patientRecordId = mysqli_insert_id($connection1);
-        mysqli_stmt_close($pInStmt);
-    }
+$insertPat = "INSERT INTO patients (patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Ayurveda Holistic Care', 0, 'Ongoing')";
+$pInStmt = mysqli_prepare($connection1, $insertPat);
+if ($pInStmt) {
+    mysqli_stmt_bind_param($pInStmt, "sssisss", $newPatientId, $fullName, $formattedDob, $age, $phoneDigits, $gender, $email);
+    mysqli_stmt_execute($pInStmt);
+    $patientRecordId = mysqli_insert_id($connection1);
+    mysqli_stmt_close($pInStmt);
 }
 
 // 3. Set Session Variables

@@ -156,11 +156,61 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   syncHeaderFromDB();
 
-  // Logout Action
+  // Logout Modal Handlers
   const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const closeLogoutModalBtn = document.getElementById('closeLogoutModalBtn');
+  const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+  const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+  const openLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.add('active');
+      logoutModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  const closeLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.remove('active');
+      logoutModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  };
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
+    logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      openLogoutModal();
+    });
+  }
+
+  if (closeLogoutModalBtn) closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+  if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+
+  if (logoutModal) {
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) closeLogoutModal();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('active')) {
+      closeLogoutModal();
+    }
+  });
+
+  if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', async () => {
+      confirmLogoutBtn.disabled = true;
+      confirmLogoutBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite; margin-right: 6px;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path>
+        </svg>
+        <span>Logging out...</span>
+      `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
@@ -195,6 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appointmentHistoryContent.style.animation = 'fadeInCard 0.28s ease-out forwards';
       }
       history.replaceState(null, '', '#history');
+      applySearchFilter();
     } else {
       tabAppointmentHistory?.classList.remove('active');
       tabAppointmentHistory?.setAttribute('aria-selected', 'false');
@@ -214,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         myAppointmentsContent.style.animation = 'fadeInCard 0.28s ease-out forwards';
       }
       history.replaceState(null, '', '#my-appointments');
+      applySearchFilter();
     }
   };
 
@@ -231,29 +283,179 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ========================================================
-  // 2. SEARCH FILTERING
+  // 2. SEARCH FILTERING (Shows "No records found" on 0 matches)
   // ========================================================
-  if (consultSearchInput) {
-    consultSearchInput.addEventListener('input', (e) => {
-      const term = e.target.value.toLowerCase().trim();
-      const activeTableBody = (appointmentHistoryContent && appointmentHistoryContent.style.display !== 'none')
-        ? document.getElementById('appointmentHistoryTableBody')
-        : document.getElementById('myAppointmentsTableBody');
+  const applySearchFilter = () => {
+    const term = consultSearchInput ? consultSearchInput.value.toLowerCase().trim() : '';
+    const isHistoryTab = (appointmentHistoryContent && appointmentHistoryContent.style.display !== 'none');
 
-      if (!activeTableBody) return;
+    if (isHistoryTab) {
+      const tableBody = document.getElementById('appointmentHistoryTableBody');
+      if (!tableBody) return;
 
-      const rows = activeTableBody.querySelectorAll('tr');
-      let visibleCount = 0;
+      if (!term) {
+        renderAppointmentHistoryTable();
+        return;
+      }
 
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        if (text.includes(term)) {
-          row.style.display = '';
-          visibleCount++;
-        } else {
-          row.style.display = 'none';
-        }
+      const filtered = (loadedHistoryAppts || []).filter(appt => {
+        const apptId = (appt.appointment_id || ('ABC-' + String(appt.id).padStart(3, '0'))).toLowerCase();
+        const dateFormatted = formatDate(appt.appointment_date).toLowerCase();
+        const timeVal = (appt.appointment_time || '').toLowerCase();
+        const doctorName = (appt.doctor_name || '').toLowerCase();
+        const agendaText = (appt.agenda || appt.service_type || '').toLowerCase();
+        const durationVal = formatDuration(appt.duration).toLowerCase();
+
+        return apptId.includes(term) ||
+               dateFormatted.includes(term) ||
+               timeVal.includes(term) ||
+               doctorName.includes(term) ||
+               agendaText.includes(term) ||
+               durationVal.includes(term);
       });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `
+          <tr class="no-records-row">
+            <td colspan="7" style="text-align: center; padding: 36px 20px; color: #64748b; font-size: 14px; font-weight: 500;">
+              No records found
+            </td>
+          </tr>
+        `;
+        if (historyCountText) historyCountText.textContent = 'Showing 0 items';
+        if (historyPageLabel) historyPageLabel.textContent = '1 of 1';
+        if (btnHistoryPrev) btnHistoryPrev.disabled = true;
+        if (btnHistoryNext) btnHistoryNext.disabled = true;
+      } else {
+        tableBody.innerHTML = filtered.map(appt => {
+          const apptId = appt.appointment_id || ('ABC-' + String(appt.id).padStart(3, '0'));
+          const dateFormatted = formatDate(appt.appointment_date);
+          const timeVal = appt.appointment_time || '3:00 PM';
+          const doctorName = appt.doctor_name || 'Dr. Rohit Mehra';
+          const agendaText = appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics review';
+          const durationVal = formatDuration(appt.duration);
+          const prescriptionData = typeof appt.prescription === 'object' ? JSON.stringify(appt.prescription) : (appt.prescription || '');
+
+          return `
+            <tr>
+              <td class="table-id-cell">${escapeHtml(apptId)}</td>
+              <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
+              <td class="table-time-cell">${escapeHtml(timeVal)}</td>
+              <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
+              <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
+              <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
+              <td class="table-action-cell">
+                <button 
+                  type="button" 
+                  class="btn-view-history" 
+                  data-db-id="${escapeHtml(appt.id)}"
+                  data-id="${escapeHtml(apptId)}" 
+                  data-date="${escapeHtml(dateFormatted)}" 
+                  data-time="${escapeHtml(timeVal)}" 
+                  data-doctor="${escapeHtml(doctorName)}" 
+                  data-duration="${escapeHtml(durationVal)}" 
+                  data-agenda="${escapeHtml(agendaText)}"
+                  data-patient="${escapeHtml(appt.patient_name || 'Rahul Sharma')}"
+                  data-prescription="${escapeHtml(prescriptionData)}"
+                  data-notes="${escapeHtml(appt.notes || '')}"
+                >
+                  <span>View</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (historyCountText) historyCountText.textContent = `Showing ${filtered.length} matching item${filtered.length > 1 ? 's' : ''}`;
+        if (historyPageLabel) historyPageLabel.textContent = '1 of 1';
+        if (btnHistoryPrev) btnHistoryPrev.disabled = true;
+        if (btnHistoryNext) btnHistoryNext.disabled = true;
+        bindViewHistoryButtons();
+      }
+    } else {
+      const tableBody = document.getElementById('myAppointmentsTableBody');
+      if (!tableBody) return;
+
+      if (!term) {
+        renderMyAppointmentsTable();
+        return;
+      }
+
+      const filtered = (loadedMyAppts || []).filter(appt => {
+        const apptId = (appt.appointment_id || ('APT-' + appt.id)).toLowerCase();
+        const dateFormatted = formatDate(appt.appointment_date).toLowerCase();
+        const timeVal = (appt.appointment_time || '').toLowerCase();
+        const doctorName = (appt.doctor_name || '').toLowerCase();
+        const agendaText = (appt.agenda || appt.service_type || '').toLowerCase();
+        const durationVal = formatDuration(appt.duration).toLowerCase();
+
+        return apptId.includes(term) ||
+               dateFormatted.includes(term) ||
+               timeVal.includes(term) ||
+               doctorName.includes(term) ||
+               agendaText.includes(term) ||
+               durationVal.includes(term);
+      });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `
+          <tr class="no-records-row">
+            <td colspan="7" style="text-align: center; padding: 36px 20px; color: #64748b; font-size: 14px; font-weight: 500;">
+              No records found
+            </td>
+          </tr>
+        `;
+        if (myApptsCountText) myApptsCountText.textContent = 'Showing 0 items';
+        if (myApptsPageLabel) myApptsPageLabel.textContent = '1 of 1';
+        if (btnMyApptsPrev) btnMyApptsPrev.disabled = true;
+        if (btnMyApptsNext) btnMyApptsNext.disabled = true;
+      } else {
+        tableBody.innerHTML = filtered.map(appt => {
+          const apptId = appt.appointment_id || ('APT-' + appt.id);
+          const dateFormatted = formatDate(appt.appointment_date);
+          const timeVal = appt.appointment_time || '3:00 PM';
+          const doctorName = appt.doctor_name || 'Dr. Rohit Mishra';
+          const agendaText = appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
+          const durationVal = formatDuration(appt.duration);
+          const meetLink = appt.meet_link || getMeetLink(doctorName, apptId);
+
+          return `
+            <tr>
+              <td class="table-id-cell">${escapeHtml(apptId)}</td>
+              <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
+              <td class="table-time-cell">${escapeHtml(timeVal)}</td>
+              <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
+              <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
+              <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
+              <td class="table-action-cell">
+                <button type="button" class="meet-link-btn" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
+                  <span>meet.google...</span>
+                  <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (myApptsCountText) myApptsCountText.textContent = `Showing ${filtered.length} matching item${filtered.length > 1 ? 's' : ''}`;
+        if (myApptsPageLabel) myApptsPageLabel.textContent = '1 of 1';
+        if (btnMyApptsPrev) btnMyApptsPrev.disabled = true;
+        if (btnMyApptsNext) btnMyApptsNext.disabled = true;
+        bindMeetLinkButtons();
+      }
+    }
+  };
+
+  if (consultSearchInput) {
+    consultSearchInput.addEventListener('input', () => {
+      applySearchFilter();
     });
   }
 
@@ -540,8 +742,12 @@ document.addEventListener('DOMContentLoaded', () => {
           
           currentMyApptPage = 1;
           currentHistoryPage = 1;
-          renderMyAppointmentsTable();
-          renderAppointmentHistoryTable();
+          if (consultSearchInput && consultSearchInput.value.trim()) {
+            applySearchFilter();
+          } else {
+            renderMyAppointmentsTable();
+            renderAppointmentHistoryTable();
+          }
         }
       }
     } catch (err) {
@@ -829,7 +1035,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fetchDoctorsFromDB();
 
+  // Form Input Restrictions: disallow numbers in Full Name & restrict Mobile to 10 digits
+  if (consultName) {
+    consultName.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/[0-9]/g, '');
+    });
+  }
+
+  if (consultMobile) {
+    consultMobile.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    });
+  }
+
   // Calendar Picker Integration
+  if (nativeDatePicker) {
+    const todayISO = new Date().toISOString().split('T')[0];
+    nativeDatePicker.setAttribute('min', todayISO);
+  }
+
   if (btnDateCalendar && nativeDatePicker && consultDate) {
     btnDateCalendar.addEventListener('click', (e) => {
       e.preventDefault();
@@ -867,27 +1091,134 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Time Slots for Interactive Time Picker
-  const timeSlots = [
-    '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM',
-    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
-    '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
-    '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM',
-    '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM', '09:00 PM', '09:30 PM', '10:00 PM'
-  ];
+  // Time conversion & clock helpers
+  const parseTimeToMinutes = (tStr) => {
+    if (!tStr) return null;
+    const trimmed = tStr.trim();
+    const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([APap][Mm])?$/i);
+    if (!match) return null;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const meridian = (match[3] || '').toUpperCase();
+    if (meridian === 'PM' && hours < 12) hours += 12;
+    if (meridian === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  };
+
+  const minutesToFormattedTime = (totalMinutes) => {
+    if (totalMinutes === null || totalMinutes === undefined || isNaN(totalMinutes)) return '';
+    const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+    let h = Math.floor(normalized / 60);
+    const m = normalized % 60;
+    const meridian = h >= 12 ? 'PM' : 'AM';
+    let displayH = h % 12;
+    if (displayH === 0) displayH = 12;
+    const hh = String(displayH).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    return `${hh}:${mm} ${meridian}`;
+  };
+
+  const parseTimeComponents = (tStr, defaultHour = '07', defaultMin = '00', defaultPeriod = 'PM') => {
+    if (!tStr) return { hour: defaultHour, minute: defaultMin, period: defaultPeriod };
+    const match = tStr.trim().match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])?$/i);
+    if (!match) return { hour: defaultHour, minute: defaultMin, period: defaultPeriod };
+    let h = parseInt(match[1], 10);
+    if (h === 0) h = 12;
+    const hourStr = String(h).padStart(2, '0');
+    const minStr = String(parseInt(match[2], 10)).padStart(2, '0');
+    const perStr = (match[3] || 'AM').toUpperCase();
+    return { hour: hourStr, minute: minStr, period: perStr };
+  };
+
+  const formatDurationLabel = (diffMins) => {
+    if (diffMins <= 0) return '';
+    if (diffMins < 60) return `+${diffMins}m session`;
+    const hrs = Math.floor(diffMins / 60);
+    const rem = diffMins % 60;
+    return rem === 0 ? `+${hrs}h session` : `+${hrs}h ${rem}m session`;
+  };
+
+  const clockHoursList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+  const clockMinutesList = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+  const clockPeriodsList = ['AM', 'PM'];
+
+  const renderCompleteClockPicker = (dropdownEl, inputEl, isStartTime = true) => {
+    if (!dropdownEl || !inputEl) return;
+
+    const defaultH = isStartTime ? '07' : '07';
+    const defaultM = isStartTime ? '00' : '45';
+    const defaultP = isStartTime ? 'PM' : 'PM';
+    let { hour, minute, period } = parseTimeComponents(inputEl.value, defaultH, defaultM, defaultP);
+
+    // If minute is not exactly in 5-min intervals, find closest
+    if (!clockMinutesList.includes(minute)) {
+      const minNum = parseInt(minute, 10);
+      const rounded = Math.round(minNum / 5) * 5 % 60;
+      minute = String(rounded).padStart(2, '0');
+    }
+
+    const computeHint = (h, m, p) => {
+      const curMins = parseTimeToMinutes(`${h}:${m} ${p}`);
+      if (isStartTime) {
+        return 'Standard session: 45 min';
+      }
+      const startMins = parseTimeToMinutes(consultStartTime?.value);
+      if (startMins !== null && curMins !== null) {
+        if (curMins <= startMins) {
+          return '<span class="clock-duration-hint error">Must be after Start Time</span>';
+        }
+        return `<span class="clock-duration-hint">${formatDurationLabel(curMins - startMins)}</span>`;
+      }
+      return 'Session end time';
+    };
+
+    dropdownEl.innerHTML = `
+      <div class="clock-picker-header">
+        <span class="clock-header-title">${isStartTime ? 'Start Time' : 'End Time'}</span>
+        <div class="clock-digital-display">
+          <span class="clock-digit-box clock-hour-disp">${hour}</span>
+          <span class="clock-colon">:</span>
+          <span class="clock-digit-box clock-min-disp">${minute}</span>
+          <span class="clock-period-badge clock-period-disp">${period}</span>
+        </div>
+      </div>
+      <div class="clock-picker-body">
+        <div class="clock-col">
+          <div class="clock-col-header">Hour</div>
+          <div class="clock-col-scroll clock-hours-scroll">
+            ${clockHoursList.map(h => `<button type="button" class="clock-unit-btn ${h === hour ? 'active' : ''}" data-unit="hour" data-val="${h}">${h}</button>`).join('')}
+          </div>
+        </div>
+        <div class="clock-col">
+          <div class="clock-col-header">Min</div>
+          <div class="clock-col-scroll clock-mins-scroll">
+            ${clockMinutesList.map(m => `<button type="button" class="clock-unit-btn ${m === minute ? 'active' : ''}" data-unit="minute" data-val="${m}">${m}</button>`).join('')}
+          </div>
+        </div>
+        <div class="clock-col">
+          <div class="clock-col-header">Period</div>
+          <div class="clock-col-scroll clock-period-scroll">
+            ${clockPeriodsList.map(p => `<button type="button" class="clock-unit-btn ${p === period ? 'active' : ''}" data-unit="period" data-val="${p}">${p}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="clock-picker-footer">
+        <div class="clock-hint-wrap">${computeHint(hour, minute, period)}</div>
+        <button type="button" class="clock-btn-apply">Set Time</button>
+      </div>
+    `;
+
+    // Auto-scroll hour and minute lists to active items
+    setTimeout(() => {
+      const activeHour = dropdownEl.querySelector('.clock-hours-scroll .clock-unit-btn.active');
+      const activeMin = dropdownEl.querySelector('.clock-mins-scroll .clock-unit-btn.active');
+      if (activeHour) activeHour.scrollIntoView({ block: 'nearest' });
+      if (activeMin) activeMin.scrollIntoView({ block: 'nearest' });
+    }, 10);
+  };
 
   const setupTimePicker = (inputEl, btnEl, dropdownEl, isStartTime = true) => {
     if (!inputEl || !btnEl || !dropdownEl) return;
-
-    dropdownEl.innerHTML = timeSlots.map(time => `
-      <div class="time-picker-item" data-time="${time}">
-        <span>${time}</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-      </div>
-    `).join('');
 
     const toggleDropdown = (show) => {
       const willShow = show !== undefined ? show : !dropdownEl.classList.contains('active');
@@ -895,16 +1226,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.time-picker-dropdown.active').forEach(d => {
           if (d !== dropdownEl) d.classList.remove('active');
         });
+        renderCompleteClockPicker(dropdownEl, inputEl, isStartTime);
         dropdownEl.classList.add('active');
-        const curVal = inputEl.value.trim();
-        dropdownEl.querySelectorAll('.time-picker-item').forEach(item => {
-          if (item.getAttribute('data-time') === curVal) {
-            item.classList.add('selected');
-            item.scrollIntoView({ block: 'nearest' });
-          } else {
-            item.classList.remove('selected');
-          }
-        });
       } else {
         dropdownEl.classList.remove('active');
       }
@@ -921,18 +1244,92 @@ document.addEventListener('DOMContentLoaded', () => {
       toggleDropdown(true);
     });
 
-    dropdownEl.addEventListener('click', (e) => {
-      const item = e.target.closest('.time-picker-item');
-      if (!item) return;
-      const selectedTime = item.getAttribute('data-time');
-      inputEl.value = selectedTime;
-      toggleDropdown(false);
+    inputEl.addEventListener('focus', () => {
+      toggleDropdown(true);
+    });
 
-      // If selecting Start Time and End Time is blank, suggest 45 mins / 1 hour later
-      if (isStartTime && consultEndTime && !consultEndTime.value) {
-        const idx = timeSlots.indexOf(selectedTime);
-        if (idx !== -1 && idx + 1 < timeSlots.length) {
-          consultEndTime.value = timeSlots[idx + 1];
+    inputEl.addEventListener('change', () => {
+      const parsed = parseTimeToMinutes(inputEl.value);
+      if (parsed !== null) {
+        inputEl.value = minutesToFormattedTime(parsed);
+      }
+      if (isStartTime && consultEndTime) {
+        const sMins = parseTimeToMinutes(inputEl.value);
+        const eMins = parseTimeToMinutes(consultEndTime.value);
+        if (sMins !== null && (eMins === null || eMins <= sMins)) {
+          consultEndTime.value = minutesToFormattedTime(sMins + 45);
+        }
+      }
+    });
+
+    dropdownEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+
+      // Handle Set Time button click
+      const applyBtn = e.target.closest('.clock-btn-apply');
+      if (applyBtn) {
+        toggleDropdown(false);
+        return;
+      }
+
+      // Handle Hour / Minute / Period unit button click
+      const unitBtn = e.target.closest('.clock-unit-btn');
+      if (!unitBtn) return;
+
+      const unit = unitBtn.getAttribute('data-unit');
+      const val = unitBtn.getAttribute('data-val');
+      let { hour, minute, period } = parseTimeComponents(inputEl.value, isStartTime ? '07' : '07', isStartTime ? '00' : '45', 'PM');
+
+      if (unit === 'hour') hour = val;
+      if (unit === 'minute') minute = val;
+      if (unit === 'period') period = val;
+
+      // Update active classes within column
+      const scrollParent = unitBtn.closest('.clock-col-scroll');
+      if (scrollParent) {
+        scrollParent.querySelectorAll('.clock-unit-btn').forEach(btn => btn.classList.remove('active'));
+        unitBtn.classList.add('active');
+      }
+
+      // Update digital display
+      const hourDisp = dropdownEl.querySelector('.clock-hour-disp');
+      const minDisp = dropdownEl.querySelector('.clock-min-disp');
+      const periodDisp = dropdownEl.querySelector('.clock-period-disp');
+      if (hourDisp) hourDisp.textContent = hour;
+      if (minDisp) minDisp.textContent = minute;
+      if (periodDisp) periodDisp.textContent = period;
+
+      // Format formatted time string
+      const formatted = `${hour}:${minute} ${period}`;
+      inputEl.value = formatted;
+
+      // Update hint text in footer
+      const hintWrap = dropdownEl.querySelector('.clock-hint-wrap');
+      if (hintWrap) {
+        const curMins = parseTimeToMinutes(formatted);
+        if (isStartTime) {
+          hintWrap.innerHTML = '<span class="clock-duration-hint">Standard session: 45 min</span>';
+        } else {
+          const startMins = parseTimeToMinutes(consultStartTime?.value);
+          if (startMins !== null && curMins !== null) {
+            if (curMins <= startMins) {
+              hintWrap.innerHTML = '<span class="clock-duration-hint error">Must be after Start Time</span>';
+            } else {
+              hintWrap.innerHTML = `<span class="clock-duration-hint">${formatDurationLabel(curMins - startMins)}</span>`;
+            }
+          } else {
+            hintWrap.innerHTML = '<span class="clock-duration-hint">Session end time</span>';
+          }
+        }
+      }
+
+      // If choosing Start Time, automatically calculate and pre-fill End Time = Start Time + 45 mins
+      if (isStartTime) {
+        const sMins = parseTimeToMinutes(formatted);
+        const eMins = parseTimeToMinutes(consultEndTime?.value);
+        if (sMins !== null && (!consultEndTime?.value || eMins === null || eMins <= sMins)) {
+          const suggestedEnd = sMins + 45;
+          if (consultEndTime) consultEndTime.value = minutesToFormattedTime(suggestedEnd);
         }
       }
     });
@@ -1021,14 +1418,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (!mobile) {
-        showToast('Please enter your mobile number.', true);
+      if (/\d/.test(name)) {
+        showToast('Full name should not contain numbers.', true);
+        consultName?.focus();
+        return;
+      }
+
+      if (!mobile || mobile.length !== 10) {
+        showToast('Please enter a valid 10-digit mobile number.', true);
         consultMobile?.focus();
         return;
       }
 
-      if (!email) {
-        showToast('Please enter your email address.', true);
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        showToast('Please enter a valid email address.', true);
         consultEmail?.focus();
         return;
       }
@@ -1048,6 +1452,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!endTime) {
         showToast('Please select an end time.', true);
         consultEndTime?.focus();
+        return;
+      }
+
+      const startMins = parseTimeToMinutes(startTime);
+      const endMins = parseTimeToMinutes(endTime);
+      if (startMins === null || endMins === null || endMins <= startMins) {
+        showToast('End time must be after start time.', true);
+        consultEndTime?.focus();
+        return;
+      }
+
+      if (!agenda) {
+        showToast('Please enter an agenda for the consultation.', true);
+        consultAgenda?.focus();
         return;
       }
 

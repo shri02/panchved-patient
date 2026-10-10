@@ -241,6 +241,9 @@ if ($action === 'update_profile') {
     if (empty($fullName)) {
         sendJsonResponse(false, 'Please enter your full name.', [], 400);
     }
+    if (preg_match('/\d/', $fullName)) {
+        sendJsonResponse(false, 'Full name should not contain numbers.', [], 400);
+    }
     if (empty($email)) {
         sendJsonResponse(false, 'Please enter your email address.', [], 400);
     }

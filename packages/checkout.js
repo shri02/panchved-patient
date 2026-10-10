@@ -85,7 +85,33 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarOverlay.addEventListener('click', () => toggleMobileSidebar(false));
   }
 
-  // Synchronize authenticated user header details
+  // Update Patient Details in the "Your Details" Section from User Profile Data
+  const updateCheckoutPatientDetailsUI = (user, patient) => {
+    const fullName = patient?.full_name || user?.full_name;
+    const email = patient?.email || user?.email;
+    const phone = patient?.phone_number || user?.phone_number;
+
+    if (fullName) {
+      if (displayPatientName) displayPatientName.textContent = fullName;
+      if (editPatientName) editPatientName.value = fullName;
+    }
+    if (email) {
+      if (displayPatientEmail) displayPatientEmail.textContent = email;
+      if (editPatientEmail) editPatientEmail.value = email;
+    }
+    if (phone) {
+      if (displayPatientPhone) displayPatientPhone.textContent = phone;
+      if (editPatientPhone) editPatientPhone.value = phone;
+    }
+
+    if (activeBookingData) {
+      if (fullName) activeBookingData.patientName = fullName;
+      if (email) activeBookingData.patientEmail = email;
+      if (phone) activeBookingData.patientPhone = phone;
+    }
+  };
+
+  // Synchronize authenticated user header details & Your Details section
   const applyUserHeader = (user, patient) => {
     const fullName = patient?.full_name || user?.full_name;
     const patientId = patient?.patient_id || ('P00' + (user?.id || 1));
@@ -104,6 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const patientIdEl = document.getElementById('patientId');
       if (patientIdEl) patientIdEl.textContent = patientId;
     }
+
+    // Automatically update the "Your Details" section with the user profile
+    updateCheckoutPatientDetailsUI(user, patient);
   };
 
   let cachedPhone = '';
@@ -134,11 +163,61 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   syncHeaderFromDB();
 
-  // Logout Action
+  // Logout Modal Handlers
   const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const closeLogoutModalBtn = document.getElementById('closeLogoutModalBtn');
+  const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+  const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+  const openLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.add('active');
+      logoutModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  const closeLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.remove('active');
+      logoutModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  };
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
+    logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      openLogoutModal();
+    });
+  }
+
+  if (closeLogoutModalBtn) closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+  if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+
+  if (logoutModal) {
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) closeLogoutModal();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('active')) {
+      closeLogoutModal();
+    }
+  });
+
+  if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', async () => {
+      confirmLogoutBtn.disabled = true;
+      confirmLogoutBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite; margin-right: 6px;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path>
+        </svg>
+        <span>Logging out...</span>
+      `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
@@ -252,6 +331,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const workshopStored = localStorage.getItem('panchved_workshop_booking');
     const consultStored = localStorage.getItem('panchved_consultation_booking');
 
+    // Get current profile details from localStorage
+    const storedUserObj = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+    const storedPatientObj = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const currentProfileName = storedPatientObj?.full_name || storedUserObj?.full_name;
+    const currentProfileEmail = storedPatientObj?.email || storedUserObj?.email;
+    const currentProfilePhone = storedPatientObj?.phone_number || storedUserObj?.phone_number;
+
     if (checkoutType === 'workshop' && workshopStored) {
       isWorkshopCheckout = true;
       isPackageCheckout = false;
@@ -264,13 +350,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (checkoutDate) checkoutDate.textContent = data.date || '2 September 2026';
       if (checkoutTime) checkoutTime.textContent = data.time || '08:00 AM';
 
-      if (data.patientName && displayPatientName) displayPatientName.textContent = data.patientName;
-      if (data.patientEmail && displayPatientEmail) displayPatientEmail.textContent = data.patientEmail;
-      if (data.patientPhone && displayPatientPhone) displayPatientPhone.textContent = data.patientPhone;
+      const pName = currentProfileName || data.patientName || 'Rahul Sharma';
+      const pEmail = currentProfileEmail || data.patientEmail || 'rahulsharma@gmail.com';
+      const pPhone = currentProfilePhone || data.patientPhone || '9876543210';
 
-      if (data.patientName && editPatientName) editPatientName.value = data.patientName;
-      if (data.patientEmail && editPatientEmail) editPatientEmail.value = data.patientEmail;
-      if (data.patientPhone && editPatientPhone) editPatientPhone.value = data.patientPhone;
+      if (displayPatientName) displayPatientName.textContent = pName;
+      if (displayPatientEmail) displayPatientEmail.textContent = pEmail;
+      if (displayPatientPhone) displayPatientPhone.textContent = pPhone;
+
+      if (editPatientName) editPatientName.value = pName;
+      if (editPatientEmail) editPatientEmail.value = pEmail;
+      if (editPatientPhone) editPatientPhone.value = pPhone;
 
       if (successServiceType) successServiceType.textContent = 'workshop';
       if (successEventDate) successEventDate.textContent = data.date || '2 Sept 2026';
@@ -295,13 +385,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (priceItemText && data.date) priceItemText.innerHTML = `Date: <strong>${data.date}</strong>`;
         if (durationItemText && data.time) durationItemText.innerHTML = `Time: <strong>${data.time}</strong>`;
 
-        if (data.patientName && displayPatientName) displayPatientName.textContent = data.patientName;
-        if (data.patientEmail && displayPatientEmail) displayPatientEmail.textContent = data.patientEmail;
-        if (data.patientPhone && displayPatientPhone) displayPatientPhone.textContent = data.patientPhone;
+        const pName = currentProfileName || data.patientName || 'Rahul Sharma';
+        const pEmail = currentProfileEmail || data.patientEmail || 'rahulsharma@gmail.com';
+        const pPhone = currentProfilePhone || data.patientPhone || '9876543210';
 
-        if (data.patientName && editPatientName) editPatientName.value = data.patientName;
-        if (data.patientEmail && editPatientEmail) editPatientEmail.value = data.patientEmail;
-        if (data.patientPhone && editPatientPhone) editPatientPhone.value = data.patientPhone;
+        if (displayPatientName) displayPatientName.textContent = pName;
+        if (displayPatientEmail) displayPatientEmail.textContent = pEmail;
+        if (displayPatientPhone) displayPatientPhone.textContent = pPhone;
+
+        if (editPatientName) editPatientName.value = pName;
+        if (editPatientEmail) editPatientEmail.value = pEmail;
+        if (editPatientPhone) editPatientPhone.value = pPhone;
 
         if (successServiceType) successServiceType.textContent = 'consultation';
         if (receiptWorkshopRow) receiptWorkshopRow.style.display = 'none';
@@ -328,15 +422,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (checkoutAvatarText && data.doctorInitials) checkoutAvatarText.textContent = data.doctorInitials;
         if (checkoutPriceVal && data.startingPrice) checkoutPriceVal.textContent = data.startingPrice;
         if (checkoutDurationVal && data.duration) checkoutDurationVal.textContent = data.duration;
-
-        if (data.patientName && displayPatientName) displayPatientName.textContent = data.patientName;
-        if (data.patientEmail && displayPatientEmail) displayPatientEmail.textContent = data.patientEmail;
-        if (data.patientPhone && displayPatientPhone) displayPatientPhone.textContent = data.patientPhone;
-
-        if (data.patientName && editPatientName) editPatientName.value = data.patientName;
-        if (data.patientEmail && editPatientEmail) editPatientEmail.value = data.patientEmail;
-        if (data.patientPhone && editPatientPhone) editPatientPhone.value = data.patientPhone;
       }
+
+      const pName = currentProfileName || activeBookingData?.patientName || 'Rahul Sharma';
+      const pEmail = currentProfileEmail || activeBookingData?.patientEmail || 'rahulsharma@gmail.com';
+      const pPhone = currentProfilePhone || activeBookingData?.patientPhone || '9876543210';
+
+      if (displayPatientName) displayPatientName.textContent = pName;
+      if (displayPatientEmail) displayPatientEmail.textContent = pEmail;
+      if (displayPatientPhone) displayPatientPhone.textContent = pPhone;
+
+      if (editPatientName) editPatientName.value = pName;
+      if (editPatientEmail) editPatientEmail.value = pEmail;
+      if (editPatientPhone) editPatientPhone.value = pPhone;
 
       // Fetch dynamic fresh package and doctor data from SQL Database
       const targetId = qId || activeBookingData?.packageDbId || null;
@@ -348,6 +446,115 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (err) {
     console.warn('Notice: Unable to initialize checkout state:', err);
   }
+
+  // Input Validation: Restrict Numbers in Full Name & Limit Phone to 10 Digits
+  const restrictNameInput = (inputEl) => {
+    if (!inputEl) return;
+    inputEl.addEventListener('keydown', (e) => {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+      }
+    });
+    inputEl.addEventListener('input', () => {
+      inputEl.value = inputEl.value.replace(/[0-9]/g, '');
+    });
+  };
+  restrictNameInput(editPatientName);
+
+  if (editPatientPhone) {
+    editPatientPhone.addEventListener('input', () => {
+      editPatientPhone.value = editPatientPhone.value.replace(/\D/g, '').slice(0, 10);
+    });
+  }
+
+  // Helper: Synchronize and automatically update patient & user profile in DB and LocalStorage
+  const syncUpdatedProfileDetails = async (name, email, phone) => {
+    if (!name || !email || !phone) return;
+
+    // 1. Update localStorage caches
+    let updatedPatient = {};
+    let updatedUser = {};
+    try {
+      updatedPatient = JSON.parse(localStorage.getItem('panchved_patient') || '{}');
+      updatedUser = JSON.parse(localStorage.getItem('panchved_user') || '{}');
+
+      updatedPatient.full_name = name;
+      updatedPatient.email = email;
+      updatedPatient.phone_number = phone;
+
+      updatedUser.full_name = name;
+      updatedUser.email = email;
+      updatedUser.phone_number = phone;
+
+      localStorage.setItem('panchved_patient', JSON.stringify(updatedPatient));
+      localStorage.setItem('panchved_user', JSON.stringify(updatedUser));
+
+      // Also update booking cache if present
+      const consultStored = JSON.parse(localStorage.getItem('panchved_consultation_booking') || '{}');
+      if (consultStored && typeof consultStored === 'object') {
+        consultStored.patientName = name;
+        consultStored.patientEmail = email;
+        consultStored.patientPhone = phone;
+        localStorage.setItem('panchved_consultation_booking', JSON.stringify(consultStored));
+      }
+
+      const workshopStored = JSON.parse(localStorage.getItem('panchved_workshop_booking') || '{}');
+      if (workshopStored && typeof workshopStored === 'object') {
+        workshopStored.patientName = name;
+        workshopStored.patientEmail = email;
+        workshopStored.patientPhone = phone;
+        localStorage.setItem('panchved_workshop_booking', JSON.stringify(workshopStored));
+      }
+    } catch (e) {
+      console.warn('LocalStorage profile sync notice:', e);
+    }
+
+    // 2. Update page header user badge & greeting
+    applyUserHeader(updatedUser, updatedPatient);
+
+    // 3. Update active booking state
+    if (activeBookingData) {
+      activeBookingData.patientName = name;
+      activeBookingData.patientEmail = email;
+      activeBookingData.patientPhone = phone;
+    }
+
+    // 4. Update MySQL Database profile via PHP API
+    try {
+      const dob = updatedPatient?.dob_formatted || updatedPatient?.dob || '08/05/2002';
+      const gender = updatedPatient?.gender || 'Male';
+
+      const response = await fetch('../api/profile.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'update_profile',
+          fullName: name,
+          email: email,
+          phone: phone,
+          dob: dob,
+          gender: gender
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          if (result.user) {
+            try { localStorage.setItem('panchved_user', JSON.stringify(result.user)); } catch (e) {}
+          }
+          if (result.patient) {
+            try { localStorage.setItem('panchved_patient', JSON.stringify(result.patient)); } catch (e) {}
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Database profile sync notice:', err);
+    }
+  };
 
   // 3. In-Place Edit Details Toggle
   if (editDetailsBtn && patientDetailsView && patientDetailsEditForm) {
@@ -366,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (patientDetailsEditForm) {
-    patientDetailsEditForm.addEventListener('submit', (e) => {
+    patientDetailsEditForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const newName = editPatientName?.value.trim();
@@ -378,14 +585,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (/\d/.test(newName)) {
+        showToast('Full name should not contain numbers.', true);
+        editPatientName?.focus();
+        return;
+      }
+
+      if (newPhone.length < 10) {
+        showToast('Please enter a valid 10-digit phone number.', true);
+        editPatientPhone?.focus();
+        return;
+      }
+
+      const saveBtn = document.getElementById('saveEditBtn');
+      const originalSaveHtml = saveBtn ? saveBtn.innerHTML : 'Save Details';
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = 'Saving...';
+      }
+
+      // Update static display view immediately
       if (displayPatientName) displayPatientName.textContent = newName;
       if (displayPatientEmail) displayPatientEmail.textContent = newEmail;
       if (displayPatientPhone) displayPatientPhone.textContent = newPhone;
 
+      // Automatically update user profile in LocalStorage and MySQL database
+      await syncUpdatedProfileDetails(newName, newEmail, newPhone);
+
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalSaveHtml;
+      }
+
       patientDetailsEditForm.style.display = 'none';
       patientDetailsView.style.display = 'block';
 
-      showToast('Patient details updated successfully!');
+      showToast('Profile and details updated successfully!');
     });
   }
 
@@ -424,6 +659,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const pPhone = displayPatientPhone?.textContent.trim() || editPatientPhone?.value.trim() || '9876543210';
       const payMethod = getSelectedPaymentMethod();
       const currentPkgTitle = cleanPackageTitle(consultDetailsHeading?.textContent || activeBookingData?.packageTitle || 'Reset Your Hormones');
+
+      // Keep user profile up to date
+      await syncUpdatedProfileDetails(pName, pEmail, pPhone);
 
       let bookingId = '#' + Math.floor(100000 + Math.random() * 900000);
 
@@ -515,4 +753,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Real-time synchronization: When changes are made in User Profile, automatically update "Your Details"
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'panchved_user' || e.key === 'panchved_patient') {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        if (storedUser || storedPatient) {
+          applyUserHeader(storedUser, storedPatient);
+          updateCheckoutPatientDetailsUI(storedUser, storedPatient);
+        }
+      } catch (err) {}
+    }
+  });
+
+  // Re-sync when switching back to the checkout tab
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        if (storedUser || storedPatient) {
+          applyUserHeader(storedUser, storedPatient);
+          updateCheckoutPatientDetailsUI(storedUser, storedPatient);
+        }
+      } catch (err) {}
+      syncHeaderFromDB();
+    }
+  });
 });

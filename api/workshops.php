@@ -2,7 +2,7 @@
 /**
  * Panchved Patient Portal - Workshops Backend API
  * Handles:
- * 1. GET (action: list / default) - Fetch only workshops where attendee_type = 'Patient' (strictly excluding 'Doctor')
+ * 1. GET (action: list / default) - Fetch workshops visible to patients (attendee_type = 'Patient' or 'Both' / 'All')
  * 2. GET (action: details) - Fetch single workshop details by id or workshop_id
  * 3. GET (action: my_workshops) - Fetch enrolled workshops for current patient
  */
@@ -313,8 +313,8 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
     $workshop = null;
 
     if ($connection1 && ($id > 0 || !empty($wsId) || !empty($title))) {
-        // Query workshop strictly filtering for Patient attendee type
-        $query = "SELECT * FROM workshops WHERE (LOWER(TRIM(attendee_type)) = 'patient' OR attendee_type = 'Patient') AND (id = ? OR workshop_id = ? OR title = ?) LIMIT 1";
+        // Query workshop filtering for Patient or Both attendee type
+        $query = "SELECT * FROM workshops WHERE (LOWER(TRIM(attendee_type)) IN ('patient', 'both', 'all') OR attendee_type LIKE '%patient%' OR attendee_type LIKE '%both%' OR attendee_type LIKE '%all%') AND (id = ? OR workshop_id = ? OR title = ?) LIMIT 1";
         if ($stmt = mysqli_prepare($connection1, $query)) {
             mysqli_stmt_bind_param($stmt, "iss", $id, $wsId, $title);
             mysqli_stmt_execute($stmt);
@@ -339,27 +339,29 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
     if ($workshop) {
         sendJsonResponse(true, 'Workshop details retrieved successfully.', ['workshop' => $workshop]);
     } else {
-        sendJsonResponse(false, 'Workshop not found or attendee type is not Patient.', [], 404);
+        sendJsonResponse(false, 'Workshop not found or attendee type is not Patient or Both.', [], 404);
     }
 }
 
 // --------------------------------------------------------------------------
-// 2. GET LIST OF WORKSHOPS FOR PATIENT PORTAL (action = list / default)
-// Only workshops where attendee_type = 'Patient' (Doctor workshops are excluded)
+// 3. GET LIST OF WORKSHOPS FOR PATIENT PORTAL (action = list / default)
+// Workshops where attendee_type is 'Patient' or 'Both' / 'All' (Doctor-only workshops are excluded)
 // --------------------------------------------------------------------------
 $workshops = [];
 
 if ($connection1) {
-    // Strictly select workshops with attendee_type = 'Patient' (never 'Doctor')
-    $sql = "SELECT * FROM workshops WHERE (LOWER(TRIM(attendee_type)) = 'patient' OR attendee_type = 'Patient') AND LOWER(TRIM(attendee_type)) != 'doctor' ORDER BY id ASC";
+    // Select workshops with attendee_type = 'Patient' or 'Both' / 'All' (exclude doctor-only)
+    $sql = "SELECT * FROM workshops WHERE (LOWER(TRIM(attendee_type)) IN ('patient', 'both', 'all') OR attendee_type LIKE '%patient%' OR attendee_type LIKE '%both%' OR attendee_type LIKE '%all%') AND LOWER(TRIM(attendee_type)) != 'doctor' ORDER BY id ASC";
     $result = mysqli_query($connection1, $sql);
 
     if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {
-            // Verify attendee_type is Patient
+            // Verify attendee_type is Patient or Both
             $att = strtolower(trim((string)($row['attendee_type'] ?? '')));
-            if ($att === 'patient') {
-                $workshops[] = formatWorkshopRecord($row);
+            if ($att === 'patient' || $att === 'both' || $att === 'all' || stripos($att, 'patient') !== false || stripos($att, 'both') !== false || stripos($att, 'all') !== false) {
+                if ($att !== 'doctor') {
+                    $workshops[] = formatWorkshopRecord($row);
+                }
             }
         }
     }
@@ -372,6 +374,6 @@ if (empty($workshops)) {
 
 sendJsonResponse(true, 'Patient workshops fetched successfully.', [
     'count' => count($workshops),
-    'attendee_type' => 'Patient',
+    'attendee_type' => 'Patient, Both',
     'workshops' => $workshops
 ]);

@@ -1,6 +1,7 @@
 /**
  * Panchved Patient Portal - Courses & Workshop Checkout Engine
  * Dynamic Database Backend Integration with MySQL workshops table and PHP APIs
+ * Real-time bidirectional profile synchronization with user profile settings.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -83,7 +84,33 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarOverlay.addEventListener('click', () => toggleMobileSidebar(false));
   }
 
-  // Synchronize authenticated user header details
+  // Update Patient Details in the "Your Details" Section from User Profile Data
+  const updateCheckoutPatientDetailsUI = (user, patient) => {
+    const fullName = patient?.full_name || user?.full_name;
+    const email = patient?.email || user?.email;
+    const phone = patient?.phone_number || user?.phone_number;
+
+    if (fullName) {
+      if (displayPatientName) displayPatientName.textContent = fullName;
+      if (editPatientName) editPatientName.value = fullName;
+    }
+    if (email) {
+      if (displayPatientEmail) displayPatientEmail.textContent = email;
+      if (editPatientEmail) editPatientEmail.value = email;
+    }
+    if (phone) {
+      if (displayPatientPhone) displayPatientPhone.textContent = phone;
+      if (editPatientPhone) editPatientPhone.value = phone;
+    }
+
+    if (activeWorkshopData) {
+      if (fullName) activeWorkshopData.patientName = fullName;
+      if (email) activeWorkshopData.patientEmail = email;
+      if (phone) activeWorkshopData.patientPhone = phone;
+    }
+  };
+
+  // Synchronize authenticated user header details & Your Details section
   const applyUserHeader = (user, patient) => {
     const fullName = patient?.full_name || user?.full_name || 'Rahul Sharma';
     const patientId = patient?.patient_id || ('P00' + (user?.id || 1));
@@ -97,6 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (upc) upc.setAttribute('aria-label', `User profile: ${fullName}, Patient ID ${patientId}`);
     const mua = document.querySelector('.mobile-user-avatar');
     if (mua) mua.setAttribute('title', `${fullName} (${patientId})`);
+
+    // Automatically update the "Your Details" section with user profile data
+    updateCheckoutPatientDetailsUI(user, patient);
   };
 
   let cachedPhone = '';
@@ -127,11 +157,61 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   syncHeaderFromDB();
 
-  // Logout Action
+  // Logout Modal Handlers
   const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const closeLogoutModalBtn = document.getElementById('closeLogoutModalBtn');
+  const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+  const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+  const openLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.add('active');
+      logoutModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  const closeLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.remove('active');
+      logoutModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  };
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
+    logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      openLogoutModal();
+    });
+  }
+
+  if (closeLogoutModalBtn) closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+  if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+
+  if (logoutModal) {
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) closeLogoutModal();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('active')) {
+      closeLogoutModal();
+    }
+  });
+
+  if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', async () => {
+      confirmLogoutBtn.disabled = true;
+      confirmLogoutBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite; margin-right: 6px;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path>
+        </svg>
+        <span>Logging out...</span>
+      `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
@@ -188,10 +268,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checkoutSummaryFee) checkoutSummaryFee.textContent = formattedPrice;
     if (checkoutSummaryTotal) checkoutSummaryTotal.textContent = formattedPrice;
 
-    // Patient details
-    const patName = data.patientName || 'John Doe';
-    const patEmail = data.patientEmail || 'johndoe@gmail.com';
-    const patPhone = data.patientPhone || '9876543210';
+    // Prioritize current profile details
+    const storedUserObj = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+    const storedPatientObj = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const currentProfileName = storedPatientObj?.full_name || storedUserObj?.full_name;
+    const currentProfileEmail = storedPatientObj?.email || storedUserObj?.email;
+    const currentProfilePhone = storedPatientObj?.phone_number || storedUserObj?.phone_number;
+
+    const patName = currentProfileName || data.patientName || 'Rahul Sharma';
+    const patEmail = currentProfileEmail || data.patientEmail || 'rahulsharma@gmail.com';
+    const patPhone = currentProfilePhone || data.patientPhone || '9876543210';
 
     if (displayPatientName) displayPatientName.textContent = patName;
     if (displayPatientEmail) displayPatientEmail.textContent = patEmail;
@@ -258,20 +344,136 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Default fallback if nothing loaded
     if (!loaded && !activeWorkshopData) {
+      const storedUserObj = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+      const storedPatientObj = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+      const pName = storedPatientObj?.full_name || storedUserObj?.full_name || 'Rahul Sharma';
+      const pEmail = storedPatientObj?.email || storedUserObj?.email || 'rahulsharma@gmail.com';
+      const pPhone = storedPatientObj?.phone_number || storedUserObj?.phone_number || '9876543210';
+
       renderWorkshopData({
         workshopTitle: 'Ayurveda Lifestyle Workshop',
         doctorName: 'Dr. Ananya Mehta',
         date: '2 September 2026',
         time: '08:00 AM',
         price: 500.00,
-        patientName: 'John Doe',
-        patientEmail: 'johndoe@gmail.com',
-        patientPhone: '9876543210'
+        patientName: pName,
+        patientEmail: pEmail,
+        patientPhone: pPhone
       });
     }
   };
 
   initCheckoutData();
+
+  // Input Validation: Restrict Numbers in Full Name & Limit Phone to 10 Digits
+  const restrictNameInput = (inputEl) => {
+    if (!inputEl) return;
+    inputEl.addEventListener('keydown', (e) => {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+      }
+    });
+    inputEl.addEventListener('input', () => {
+      inputEl.value = inputEl.value.replace(/[0-9]/g, '');
+    });
+  };
+  restrictNameInput(editPatientName);
+
+  if (editPatientPhone) {
+    editPatientPhone.addEventListener('input', () => {
+      editPatientPhone.value = editPatientPhone.value.replace(/\D/g, '').slice(0, 10);
+    });
+  }
+
+  // Helper: Synchronize and automatically update patient & user profile in DB and LocalStorage
+  const syncUpdatedProfileDetails = async (name, email, phone) => {
+    if (!name || !email || !phone) return;
+
+    // 1. Update localStorage caches
+    let updatedPatient = {};
+    let updatedUser = {};
+    try {
+      updatedPatient = JSON.parse(localStorage.getItem('panchved_patient') || '{}');
+      updatedUser = JSON.parse(localStorage.getItem('panchved_user') || '{}');
+
+      updatedPatient.full_name = name;
+      updatedPatient.email = email;
+      updatedPatient.phone_number = phone;
+
+      updatedUser.full_name = name;
+      updatedUser.email = email;
+      updatedUser.phone_number = phone;
+
+      localStorage.setItem('panchved_patient', JSON.stringify(updatedPatient));
+      localStorage.setItem('panchved_user', JSON.stringify(updatedUser));
+
+      // Also update workshop booking cache if present
+      const workshopStored = JSON.parse(localStorage.getItem('panchved_workshop_booking') || '{}');
+      if (workshopStored && typeof workshopStored === 'object') {
+        workshopStored.patientName = name;
+        workshopStored.patientEmail = email;
+        workshopStored.patientPhone = phone;
+        localStorage.setItem('panchved_workshop_booking', JSON.stringify(workshopStored));
+      }
+
+      // Also update consultation booking cache if present
+      const consultStored = JSON.parse(localStorage.getItem('panchved_consultation_booking') || '{}');
+      if (consultStored && typeof consultStored === 'object') {
+        consultStored.patientName = name;
+        consultStored.patientEmail = email;
+        consultStored.patientPhone = phone;
+        localStorage.setItem('panchved_consultation_booking', JSON.stringify(consultStored));
+      }
+    } catch (e) {
+      console.warn('LocalStorage profile sync notice:', e);
+    }
+
+    // 2. Update page header user badge & greeting
+    applyUserHeader(updatedUser, updatedPatient);
+
+    // 3. Update active workshop booking state
+    if (activeWorkshopData) {
+      activeWorkshopData.patientName = name;
+      activeWorkshopData.patientEmail = email;
+      activeWorkshopData.patientPhone = phone;
+    }
+
+    // 4. Update MySQL Database profile via PHP API
+    try {
+      const dob = updatedPatient?.dob_formatted || updatedPatient?.dob || '08/05/2002';
+      const gender = updatedPatient?.gender || 'Male';
+
+      const response = await fetch('../api/profile.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'update_profile',
+          fullName: name,
+          email: email,
+          phone: phone,
+          dob: dob,
+          gender: gender
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          if (result.user) {
+            try { localStorage.setItem('panchved_user', JSON.stringify(result.user)); } catch (e) {}
+          }
+          if (result.patient) {
+            try { localStorage.setItem('panchved_patient', JSON.stringify(result.patient)); } catch (e) {}
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Database profile sync notice:', err);
+    }
+  };
 
   // 3. In-Place Edit Details Toggle
   if (editDetailsBtn && patientDetailsView && patientDetailsEditForm) {
@@ -290,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (patientDetailsEditForm) {
-    patientDetailsEditForm.addEventListener('submit', (e) => {
+    patientDetailsEditForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const newName = editPatientName?.value.trim();
@@ -302,22 +504,49 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (/\d/.test(newName)) {
+        showToast('Full name should not contain numbers.', true);
+        editPatientName?.focus();
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newEmail)) {
+        showToast('Please enter a valid email address.', true);
+        editPatientEmail?.focus();
+        return;
+      }
+
+      if (newPhone.length < 10) {
+        showToast('Please enter a valid 10-digit phone number.', true);
+        editPatientPhone?.focus();
+        return;
+      }
+
+      const saveBtn = document.getElementById('saveEditBtn');
+      const originalSaveHtml = saveBtn ? saveBtn.innerHTML : 'Save Details';
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = 'Saving...';
+      }
+
+      // Update static display view immediately
       if (displayPatientName) displayPatientName.textContent = newName;
       if (displayPatientEmail) displayPatientEmail.textContent = newEmail;
       if (displayPatientPhone) displayPatientPhone.textContent = newPhone;
 
-      if (activeWorkshopData) {
-        activeWorkshopData.patientName = newName;
-        activeWorkshopData.patientEmail = newEmail;
-        activeWorkshopData.patientPhone = newPhone;
-        try {
-          localStorage.setItem('panchved_workshop_booking', JSON.stringify(activeWorkshopData));
-        } catch (e) {}
+      // Automatically update user profile in LocalStorage and MySQL database
+      await syncUpdatedProfileDetails(newName, newEmail, newPhone);
+
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalSaveHtml;
       }
 
       patientDetailsEditForm.style.display = 'none';
       patientDetailsView.style.display = 'block';
-      showToast('Patient details updated successfully!');
+
+      showToast('Profile and details updated successfully!');
     });
   }
 
@@ -348,9 +577,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const feeText = checkoutSummaryTotal?.textContent.trim() || '₹500.00';
       const numericAmount = parseFloat(feeText.replace(/[^0-9.]/g, '')) || 500.00;
 
-      const patName = displayPatientName?.textContent.trim() || 'John Doe';
-      const patEmail = displayPatientEmail?.textContent.trim() || 'johndoe@gmail.com';
-      const patPhone = displayPatientPhone?.textContent.trim() || '9876543210';
+      const patName = displayPatientName?.textContent.trim() || editPatientName?.value.trim() || 'Rahul Sharma';
+      const patEmail = displayPatientEmail?.textContent.trim() || editPatientEmail?.value.trim() || 'rahulsharma@gmail.com';
+      const patPhone = displayPatientPhone?.textContent.trim() || editPatientPhone?.value.trim() || '9876543210';
+
+      // Keep user profile up to date
+      await syncUpdatedProfileDetails(patName, patEmail, patPhone);
 
       const originalHtml = confirmPaymentBtn.innerHTML;
       confirmPaymentBtn.disabled = true;
@@ -418,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
           date: dateText,
           time: timeText,
           meet_link: 'https://meet.google.com/abc-xyz-pqrs',
-          image_url: currentWorkshop?.image_url || '../assets/courses/course_pre_pregnancy.jpg'
+          image_url: activeWorkshopData?.image_url || '../assets/courses/course_pre_pregnancy.jpg'
         };
         storedList.unshift(newWorkshopItem);
         localStorage.setItem('panchved_registered_workshops', JSON.stringify(storedList));
@@ -451,4 +683,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 400);
     });
   }
+
+  // Real-time synchronization: When changes are made in User Profile, automatically update "Your Details"
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'panchved_user' || e.key === 'panchved_patient') {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        if (storedUser || storedPatient) {
+          applyUserHeader(storedUser, storedPatient);
+          updateCheckoutPatientDetailsUI(storedUser, storedPatient);
+        }
+      } catch (err) {}
+    }
+  });
+
+  // Re-sync when switching back to the course checkout tab
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        if (storedUser || storedPatient) {
+          applyUserHeader(storedUser, storedPatient);
+          updateCheckoutPatientDetailsUI(storedUser, storedPatient);
+        }
+      } catch (err) {}
+      syncHeaderFromDB();
+    }
+  });
 });

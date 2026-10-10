@@ -505,7 +505,7 @@
         
         <!-- Select Doctor Dropdown -->
         <div class="form-group">
-          <label for="consultDoctor" class="form-field-label">Select Doctor</label>
+          <label for="consultDoctor" class="form-field-label">Select Doctor<span class="required-star">*</span></label>
           <div class="select-wrapper">
             <select id="consultDoctor" name="doctor" class="modal-input modal-select" required>
               <option value="" disabled selected>Select Doctor</option>
@@ -521,7 +521,7 @@
         <!-- Row 1: Name & Mobile Number (2 Columns) -->
         <div class="modal-form-row">
           <div class="form-group">
-            <label for="consultName" class="form-field-label">Name</label>
+            <label for="consultName" class="form-field-label">Name<span class="required-star">*</span></label>
             <input 
               type="text" 
               id="consultName" 
@@ -534,7 +534,7 @@
           </div>
 
           <div class="form-group">
-            <label for="consultMobile" class="form-field-label">Mobile number</label>
+            <label for="consultMobile" class="form-field-label">Mobile number<span class="required-star">*</span></label>
             <div class="phone-input-combo">
               <div class="country-code-pill" id="countryCodePill">
                 <span>+91</span>
@@ -549,6 +549,7 @@
                 class="modal-input phone-input" 
                 placeholder="Enter number" 
                 value="" 
+                maxlength="10"
                 required 
               />
             </div>
@@ -557,7 +558,7 @@
 
         <!-- Row 2: Email ID (Full Width) -->
         <div class="form-group">
-          <label for="consultEmail" class="form-field-label">Email ID</label>
+          <label for="consultEmail" class="form-field-label">Email ID<span class="required-star">*</span></label>
           <input 
             type="email" 
             id="consultEmail" 
@@ -573,7 +574,7 @@
         <div class="modal-form-row-dates">
           <div class="form-group-date-stack">
             <div class="form-group">
-              <label for="consultDate" class="form-field-label">Date</label>
+              <label for="consultDate" class="form-field-label">Date<span class="required-star">*</span></label>
               <div class="input-with-icon">
                 <input 
                   type="text" 
@@ -597,7 +598,7 @@
             </div>
 
             <div class="form-group">
-              <label for="consultEndTime" class="form-field-label">End Time</label>
+              <label for="consultEndTime" class="form-field-label">End Time<span class="required-star">*</span></label>
               <div class="input-with-icon time-picker-container">
                 <input 
                   type="text" 
@@ -606,6 +607,7 @@
                   class="modal-input icon-input time-picker-input" 
                   placeholder="Select time" 
                   value="" 
+                  autocomplete="off"
                   required 
                 />
                 <button type="button" class="field-icon-btn" id="btnEndTimeClock" aria-label="Open end time picker" title="Open time list">
@@ -620,7 +622,7 @@
           </div>
 
           <div class="form-group">
-            <label for="consultStartTime" class="form-field-label">Start Time</label>
+            <label for="consultStartTime" class="form-field-label">Start Time<span class="required-star">*</span></label>
             <div class="input-with-icon time-picker-container">
               <input 
                 type="text" 
@@ -629,6 +631,7 @@
                 class="modal-input icon-input time-picker-input" 
                 placeholder="Select time" 
                 value="" 
+                autocomplete="off"
                 required 
               />
               <button type="button" class="field-icon-btn" id="btnStartTimeClock" aria-label="Open start time picker" title="Open time list">
@@ -644,7 +647,7 @@
 
         <!-- Row 4: Agenda -->
         <div class="form-group">
-          <label for="consultAgenda" class="form-field-label">Agenda</label>
+          <label for="consultAgenda" class="form-field-label">Agenda<span class="required-star">*</span></label>
           <input 
             type="text" 
             id="consultAgenda" 
@@ -652,6 +655,7 @@
             class="modal-input" 
             placeholder="Message text goes here" 
             value="" 
+            required 
           />
         </div>
 
@@ -663,6 +667,36 @@
         </div>
 
       </form>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div class="modal-backdrop" id="logoutModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle">
+    <div class="logout-modal-box">
+      <button type="button" class="modal-close-btn" id="closeLogoutModalBtn" aria-label="Cancel and close modal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      <div class="logout-icon-badge">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </div>
+
+      <h3 class="logout-modal-title" id="logoutModalTitle">Log Out of Your Account?</h3>
+      <p class="logout-modal-desc">Are you sure you want to log out? You will need to sign back in to access your consultations, packages, and health records.</p>
+
+      <div class="logout-modal-actions">
+        <button type="button" class="btn-logout-cancel" id="cancelLogoutBtn">Cancel</button>
+        <button type="button" class="btn-logout-confirm" id="confirmLogoutBtn">
+          <span>Yes, Log Out</span>
+        </button>
+      </div>
     </div>
   </div>
 

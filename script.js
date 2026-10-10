@@ -123,7 +123,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const gInput = document.getElementById('profileGender');
-        if (gInput && gender) gInput.value = gender;
+        if (gInput && gender) {
+          const matchOpt = Array.from(gInput.options || []).find(
+            opt => opt.value.toLowerCase() === gender.toLowerCase()
+          );
+          if (matchOpt) {
+            gInput.value = matchOpt.value;
+          } else {
+            gInput.value = gender;
+          }
+        }
       }
     } catch (e) {
       console.warn('syncAppUserData error', e);
@@ -288,11 +297,82 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Logout Modal Handlers
+  const logoutModal = document.getElementById('logoutModal');
+  const closeLogoutModalBtn = document.getElementById('closeLogoutModalBtn');
+  const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+  const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+  const openLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.add('active');
+      logoutModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  const closeLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.remove('active');
+      logoutModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  };
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', (e) => {
+    logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
+      if (logoutModal) {
+        openLogoutModal();
+      } else {
+        try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+        try {
+          localStorage.removeItem('panchved_user');
+          localStorage.removeItem('panchved_patient');
+          localStorage.removeItem('panchved_prakruti_result');
+        } catch (e) {}
+        showToast('Logged out successfully.');
+        showView('login');
+      }
+    });
+  }
+
+  if (closeLogoutModalBtn) closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+  if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+
+  if (logoutModal) {
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) closeLogoutModal();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('active')) {
+      closeLogoutModal();
+    }
+  });
+
+  if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', async () => {
+      confirmLogoutBtn.disabled = true;
+      confirmLogoutBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite; margin-right: 6px;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path>
+        </svg>
+        <span>Logging out...</span>
+      `;
+      try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
+      try {
+        localStorage.removeItem('panchved_user');
+        localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('panchved_prakruti_result');
+      } catch (e) {}
+      closeLogoutModal();
       showToast('Logged out successfully.');
       showView('login');
+      confirmLogoutBtn.disabled = false;
+      confirmLogoutBtn.innerHTML = '<span>Yes, Log Out</span>';
     });
   }
 
@@ -503,21 +583,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 6. Restrict Phone Input & Auto Format DOB
-  const restrictPhoneInput = (inputEl) => {
+  // 6. Restrict Phone Input, Full Name Input & Auto Format DOB
+  const restrictPhoneInput = (inputEl, maxDigits = 10) => {
     if (!inputEl) return;
+    inputEl.addEventListener('keydown', (e) => {
+      // Allow control keys (backspace, delete, tab, arrows, copy/paste shortcuts)
+      if (e.ctrlKey || e.metaKey || e.altKey || ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+        return;
+      }
+      const digitsOnly = inputEl.value.replace(/\D/g, '');
+      const selectedText = window.getSelection ? window.getSelection().toString() : '';
+      if (maxDigits && digitsOnly.length >= maxDigits && !selectedText && /^\d$/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
     inputEl.addEventListener('input', () => {
-      inputEl.value = inputEl.value.replace(/[^\d\s-]/g, '');
+      let val = inputEl.value.replace(/\D/g, '');
+      if (maxDigits && val.length > maxDigits) {
+        val = val.substring(0, maxDigits);
+      }
+      inputEl.value = val;
     });
   };
   const phoneInput = document.getElementById('phoneNumberInput');
   const personalPhoneInput = document.getElementById('personalPhoneInput');
-  restrictPhoneInput(phoneInput);
-  restrictPhoneInput(personalPhoneInput);
+  restrictPhoneInput(phoneInput, 10);
+  restrictPhoneInput(personalPhoneInput, 10);
+
+  const restrictNameInput = (inputEl) => {
+    if (!inputEl) return;
+    inputEl.addEventListener('keydown', (e) => {
+      // Disallow numeric keys
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+      }
+    });
+    inputEl.addEventListener('input', () => {
+      inputEl.value = inputEl.value.replace(/[0-9]/g, '');
+    });
+  };
+  const createAccountFullNameInput = document.getElementById('fullNameInput');
+  restrictNameInput(createAccountFullNameInput);
+  const modalProfileFullNameInput = document.getElementById('profileFullName');
+  restrictNameInput(modalProfileFullNameInput);
 
   const dobInput = document.getElementById('dobInput');
   const dobCalendarBtn = document.getElementById('dobCalendarBtn');
   const dobNativePicker = document.getElementById('dobNativePicker');
+
+  // Restrict calendar picker to current date (disable future dates)
+  const setDobPickerMaxDate = () => {
+    if (dobNativePicker) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      dobNativePicker.max = `${yyyy}-${mm}-${dd}`;
+    }
+  };
+  setDobPickerMaxDate();
 
   if (dobInput) {
     dobInput.addEventListener('input', (e) => {
@@ -537,6 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dobCalendarBtn && dobNativePicker) {
     dobCalendarBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      setDobPickerMaxDate();
       try {
         if (typeof dobNativePicker.showPicker === 'function') {
           dobNativePicker.showPicker();
@@ -552,6 +677,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dobNativePicker.addEventListener('change', () => {
       if (!dobNativePicker.value) return;
+      if (dobNativePicker.max && dobNativePicker.value > dobNativePicker.max) {
+        dobNativePicker.value = dobNativePicker.max;
+      }
       const parts = dobNativePicker.value.split('-'); // YYYY-MM-DD
       if (parts.length === 3) {
         const year = parts[0];
@@ -573,6 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
     height: '',
     weight: '',
     phone: '',
+    email: '',
     countryCode: '+91',
     appetite: '',
     sleepType: '',
@@ -671,9 +800,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const heightInput = document.getElementById('heightInput');
   const weightInput = document.getElementById('weightInput');
   const personalSelectedCountryCode = document.getElementById('personalSelectedCountryCode');
+  const emailInput = document.getElementById('emailInput');
+
+  if (personalPhoneInput) {
+    personalPhoneInput.addEventListener('blur', async () => {
+      const digits = personalPhoneInput.value.replace(/\D/g, '');
+      if (digits.length === 10) {
+        try {
+          const res = await fetch(`api/create_account.php?check_phone=${encodeURIComponent(digits)}`);
+          const checkData = await res.json();
+          if (checkData && checkData.exists) {
+            showToast(checkData.message || 'This phone number is already registered. Please log in or use a different number.', true);
+          }
+        } catch (e) {}
+      }
+    });
+  }
 
   if (personalDetailsForm && continueBtn) {
-    personalDetailsForm.addEventListener('submit', (e) => {
+    personalDetailsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const name = fullNameInput ? fullNameInput.value.trim() : '';
@@ -682,6 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const height = heightInput ? heightInput.value.trim() : '';
       const weight = weightInput ? weightInput.value.trim() : '';
       const phone = personalPhoneInput ? personalPhoneInput.value.trim() : (phoneInput ? phoneInput.value.trim() : '');
+      const email = emailInput ? emailInput.value.trim() : '';
       const countryCode = personalSelectedCountryCode ? personalSelectedCountryCode.textContent.trim() : '+91';
 
       if (!name) {
@@ -690,10 +836,37 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (/\d/.test(name)) {
+        showToast('Full Name cannot contain numbers.', true);
+        fullNameInput?.focus();
+        return;
+      }
+
       if (!dob) {
         showToast('Please enter your Date of Birth (dd/mm/yy).', true);
         dobInput?.focus();
         return;
+      }
+
+      // Check if Date of Birth is in the future
+      const dobMatch = dob.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if (dobMatch) {
+        const d = parseInt(dobMatch[1], 10);
+        const m = parseInt(dobMatch[2], 10);
+        let y = parseInt(dobMatch[3], 10);
+        if (dobMatch[3].length === 2) {
+          const currentYear = new Date().getFullYear();
+          const currentShort = currentYear % 100;
+          y = y > currentShort ? (1900 + y) : (2000 + y);
+        }
+        const enteredDate = new Date(y, m - 1, d);
+        const now = new Date();
+        now.setHours(23, 59, 59, 999);
+        if (enteredDate > now) {
+          showToast('Date of Birth cannot be in the future.', true);
+          dobInput?.focus();
+          return;
+        }
       }
 
       if (!gender) {
@@ -715,25 +888,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const phoneDigits = phone.replace(/\D/g, '');
-      if (!phone || phoneDigits.length < 10) {
+      if (!phone || phoneDigits.length !== 10) {
         showToast('Please enter a valid 10-digit phone number.', true);
         personalPhoneInput?.focus();
         return;
       }
 
-      // Save into registration state
-      registrationState.fullName = name;
-      registrationState.dob = dob;
-      registrationState.gender = gender;
-      registrationState.height = height;
-      registrationState.weight = weight;
-      registrationState.phone = phone;
-      registrationState.countryCode = countryCode;
+      if (!email) {
+        showToast('Please enter your Email Address.', true);
+        emailInput?.focus();
+        return;
+      }
 
-      try {
-        localStorage.setItem('panchved_registration_phone', phone);
-        localStorage.setItem('panchved_registration_data', JSON.stringify(registrationState));
-      } catch (e) {}
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showToast('Please enter a valid email address.', true);
+        emailInput?.focus();
+        return;
+      }
 
       const originalHtml = continueBtn.innerHTML;
       continueBtn.disabled = true;
@@ -743,16 +915,46 @@ document.addEventListener('DOMContentLoaded', () => {
           <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)"></circle>
           <path d="M12 2a10 10 0 0 1 10 10" stroke="#ffffff"></path>
         </svg>
-        <span>Saving details...</span>
+        <span>Verifying details...</span>
       `;
 
-      setTimeout(() => {
-        continueBtn.disabled = false;
-        continueBtn.style.opacity = '1';
-        continueBtn.innerHTML = originalHtml;
-        showToast('Personal details saved! Proceeding to Prakruti Parikshan...');
-        showView('prakruti');
-      }, 400);
+      // Check if phone number is already registered in backend
+      try {
+        const phoneCheckRes = await fetch(`api/create_account.php?check_phone=${encodeURIComponent(phoneDigits)}`);
+        const phoneCheckData = await phoneCheckRes.json();
+        if (phoneCheckData && phoneCheckData.exists) {
+          continueBtn.disabled = false;
+          continueBtn.style.opacity = '1';
+          continueBtn.innerHTML = originalHtml;
+          showToast(phoneCheckData.message || 'This phone number is already registered. Please log in or use a different number.', true);
+          personalPhoneInput?.focus();
+          return;
+        }
+      } catch (err) {
+        console.warn('Phone verification check error:', err);
+      }
+
+      // Save into registration state
+      registrationState.fullName = name;
+      registrationState.dob = dob;
+      registrationState.gender = gender;
+      registrationState.height = height;
+      registrationState.weight = weight;
+      registrationState.phone = phone;
+      registrationState.email = email;
+      registrationState.countryCode = countryCode;
+
+      try {
+        localStorage.setItem('panchved_registration_phone', phone);
+        localStorage.setItem('panchved_registration_email', email);
+        localStorage.setItem('panchved_registration_data', JSON.stringify(registrationState));
+      } catch (e) {}
+
+      continueBtn.disabled = false;
+      continueBtn.style.opacity = '1';
+      continueBtn.innerHTML = originalHtml;
+      showToast('Personal details saved! Proceeding to Prakruti Parikshan...');
+      showView('prakruti');
     });
   }
 
@@ -908,6 +1110,16 @@ document.addEventListener('DOMContentLoaded', () => {
           registrationState.phone = phoneInput.value.trim();
         } else {
           registrationState.phone = '9876543210';
+        }
+      }
+
+      // Fallback email if blank
+      if (!registrationState.email) {
+        const storedRegEmail = localStorage.getItem('panchved_registration_email');
+        if (storedRegEmail) {
+          registrationState.email = storedRegEmail;
+        } else if (emailInput && emailInput.value.trim()) {
+          registrationState.email = emailInput.value.trim();
         }
       }
 
@@ -1249,6 +1461,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Modal Profile Date Picker Wiring
+  const modalProfileDobCalendarBtn = document.getElementById('modalProfileDobCalendarBtn');
+  const modalProfileDobNativePicker = document.getElementById('modalProfileDobNativePicker');
+  const modalProfileDobInput = document.getElementById('profileDob');
+
+  if (modalProfileDobNativePicker) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    modalProfileDobNativePicker.max = `${yyyy}-${mm}-${dd}`;
+  }
+
+  if (modalProfileDobCalendarBtn && modalProfileDobNativePicker) {
+    modalProfileDobCalendarBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (modalProfileDobInput && modalProfileDobInput.value) {
+        const parts = modalProfileDobInput.value.trim().split('/');
+        if (parts.length === 3 && parts[2].length === 4) {
+          const d = parts[0].padStart(2, '0');
+          const m = parts[1].padStart(2, '0');
+          const y = parts[2];
+          const isoDate = `${y}-${m}-${d}`;
+          if (!modalProfileDobNativePicker.max || isoDate <= modalProfileDobNativePicker.max) {
+            modalProfileDobNativePicker.value = isoDate;
+          }
+        }
+      }
+      try {
+        if (typeof modalProfileDobNativePicker.showPicker === 'function') {
+          modalProfileDobNativePicker.showPicker();
+        } else {
+          modalProfileDobNativePicker.focus();
+          modalProfileDobNativePicker.click();
+        }
+      } catch (err) {
+        modalProfileDobNativePicker.focus();
+        modalProfileDobNativePicker.click();
+      }
+    });
+
+    modalProfileDobNativePicker.addEventListener('change', () => {
+      if (!modalProfileDobNativePicker.value) return;
+      if (modalProfileDobNativePicker.max && modalProfileDobNativePicker.value > modalProfileDobNativePicker.max) {
+        modalProfileDobNativePicker.value = modalProfileDobNativePicker.max;
+      }
+      const parts = modalProfileDobNativePicker.value.split('-');
+      if (parts.length === 3 && modalProfileDobInput) {
+        modalProfileDobInput.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    });
+  }
+
   // Profile Settings Form Submission
   if (profileSettingsForm && updateProfileBtn) {
     profileSettingsForm.addEventListener('submit', async (e) => {
@@ -1263,6 +1528,34 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!fullName) {
         showToast('Please enter your full name.', true);
         return;
+      }
+
+      if (/\d/.test(fullName)) {
+        showToast('Full name should not contain numbers.', true);
+        return;
+      }
+
+      if (!dob) {
+        showToast('Please enter your date of birth.', true);
+        return;
+      }
+
+      if (dob) {
+        let dobDate = null;
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dob)) {
+          const [d, m, y] = dob.split('/');
+          dobDate = new Date(`${y}-${m}-${d}`);
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+          dobDate = new Date(dob);
+        }
+        if (dobDate && !isNaN(dobDate.getTime())) {
+          const today = new Date();
+          today.setHours(23, 59, 59, 999);
+          if (dobDate > today) {
+            showToast('Date of birth cannot be in the future.', true);
+            return;
+          }
+        }
       }
 
       if (!email) {

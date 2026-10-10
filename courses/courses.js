@@ -1,7 +1,7 @@
 /**
  * Panchved Patient Portal - Courses & Workshops Engine
  * Dynamic Database Backend Integration with MySQL workshops table
- * Displays ONLY workshops where attendee_type = 'Patient' (strictly excluding 'Doctor')
+ * Displays workshops where attendee_type = 'Patient' or 'Both' / 'All'
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -141,11 +141,61 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   syncHeaderFromDB();
 
-  // Logout Action
+  // Logout Modal Handlers
   const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const closeLogoutModalBtn = document.getElementById('closeLogoutModalBtn');
+  const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+  const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+  const openLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.add('active');
+      logoutModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  const closeLogoutModal = () => {
+    if (logoutModal) {
+      logoutModal.classList.remove('active');
+      logoutModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  };
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
+    logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      openLogoutModal();
+    });
+  }
+
+  if (closeLogoutModalBtn) closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+  if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+
+  if (logoutModal) {
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) closeLogoutModal();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('active')) {
+      closeLogoutModal();
+    }
+  });
+
+  if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', async () => {
+      confirmLogoutBtn.disabled = true;
+      confirmLogoutBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 0.8s linear infinite; margin-right: 6px;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path>
+        </svg>
+        <span>Logging out...</span>
+      `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
         localStorage.removeItem('panchved_user');
@@ -316,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
           speaker: wsOrCard.getAttribute('data-doctor-name') || 'Dr. Rajesh Varma',
           speaker_role: wsOrCard.getAttribute('data-doctor-role') || 'Ayurveda Physician',
           speaker_bio: wsOrCard.getAttribute('data-doctor-bio') || '',
-          attendee_type: 'Patient'
+          attendee_type: wsOrCard.getAttribute('data-attendee') || 'Patient'
         };
       }
     }
@@ -362,15 +412,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ========================================================
-  // 4A. RENDER ALL WORKSHOPS LIST (Strictly attendee_type = 'Patient')
+  // ========================================================
+  // 4A. RENDER ALL WORKSHOPS LIST (attendee_type = 'Patient' or 'Both' / 'All')
   // ========================================================
   const renderAllWorkshopsList = (workshops) => {
     if (!allWorkshopsSection) return;
 
-    // Filter strictly to guarantee only Patient attendee workshops are rendered
+    // Filter to guarantee only Patient and Both attendee workshops are rendered (excluding doctor-only)
     const patientWorkshops = (Array.isArray(workshops) ? workshops : []).filter(ws => {
       const att = (ws.attendee_type || '').toLowerCase().trim();
-      return att === 'patient' && att !== 'doctor';
+      return (att === 'patient' || att === 'both' || att === 'all' || att.includes('patient') || att.includes('both') || att.includes('all')) && att !== 'doctor';
     });
 
     if (patientWorkshops.length === 0) {
@@ -427,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
           data-doctor-name="${speakerName.replace(/"/g, '&quot;')}"
           data-doctor-role="${speakerRole.replace(/"/g, '&quot;')}"
           data-doctor-bio="${speakerBio.replace(/"/g, '&quot;')}"
-          data-attendee="Patient"
+          data-attendee="${ws.attendee_type || 'Patient'}"
         >
           <div class="workshop-card-img-wrap">
             <img src="${img}" alt="${ws.title}" class="workshop-card-img" />
@@ -641,10 +692,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.workshops)) {
-          // Strictly filter out any workshops that do not have attendee_type = 'Patient'
+          // Filter to include workshops for Patient or Both (excluding doctor-only)
           loadedWorkshops = data.workshops.filter(ws => {
             const att = (ws.attendee_type || '').toLowerCase().trim();
-            return att === 'patient' && att !== 'doctor';
+            return (att === 'patient' || att === 'both' || att === 'all' || att.includes('patient') || att.includes('both') || att.includes('all')) && att !== 'doctor';
           });
           renderAllWorkshopsList(loadedWorkshops);
         } else {

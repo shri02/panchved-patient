@@ -254,7 +254,18 @@
             <div class="input-divider" aria-hidden="true"></div>
 
             <input type="tel" id="personalPhoneInput" name="phone" class="phone-input-field" placeholder="9876543210"
-              maxlength="15" autocomplete="tel" required />
+              maxlength="10" autocomplete="tel" required />
+          </div>
+        </div>
+
+        <!-- Email Field -->
+        <div class="form-group">
+          <label for="emailInput" class="form-label">
+            Email<span class="required-star">*</span>
+          </label>
+          <div class="input-wrapper simple-input-wrapper">
+            <input type="email" id="emailInput" name="email" class="text-input-field" placeholder="Eg. rajesh@gmail.com"
+              autocomplete="email" required />
           </div>
         </div>
 
@@ -292,7 +303,7 @@
       <form class="auth-form prakruti-form" id="prakrutiForm" novalidate>
         <!-- 1. Appetite -->
         <div class="form-group custom-select-group" data-select-id="appetite">
-          <label class="form-label">Appetite</label>
+          <label class="form-label">Appetite<span class="required-star">*</span></label>
           <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
             <span class="selected-value placeholder">Select</span>
             <span class="chevron-icon" aria-hidden="true">
@@ -314,7 +325,7 @@
 
         <!-- 2. Sleep Type -->
         <div class="form-group custom-select-group" data-select-id="sleepType">
-          <label class="form-label">Sleep Type</label>
+          <label class="form-label">Sleep Type<span class="required-star">*</span></label>
           <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
             <span class="selected-value placeholder">Select</span>
             <span class="chevron-icon" aria-hidden="true">
@@ -338,7 +349,7 @@
 
         <!-- 3. Dream -->
         <div class="form-group custom-select-group" data-select-id="dream1">
-          <label class="form-label">Dream</label>
+          <label class="form-label">Dream<span class="required-star">*</span></label>
           <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
             <span class="selected-value placeholder">Select</span>
             <span class="chevron-icon" aria-hidden="true">
@@ -362,7 +373,7 @@
         <div class="form-row-grid">
           <!-- Skin Type -->
           <div class="form-group custom-select-group" data-select-id="skinType">
-            <label class="form-label">Skin Type</label>
+            <label class="form-label">Skin Type<span class="required-star">*</span></label>
             <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false"
               aria-haspopup="listbox">
               <span class="selected-value placeholder">Select skin type</span>
@@ -385,7 +396,7 @@
 
           <!-- Hair Type -->
           <div class="form-group custom-select-group" data-select-id="hairType">
-            <label class="form-label">Hair Type</label>
+            <label class="form-label">Hair Type<span class="required-star">*</span></label>
             <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false"
               aria-haspopup="listbox">
               <span class="selected-value placeholder">Select hair type</span>
@@ -409,7 +420,7 @@
 
         <!-- 5. Bowel Movement -->
         <div class="form-group custom-select-group" data-select-id="bowelMovement">
-          <label class="form-label">Bowel Movement</label>
+          <label class="form-label">Bowel Movement<span class="required-star">*</span></label>
           <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
             <span class="selected-value placeholder">Select</span>
             <span class="chevron-icon" aria-hidden="true">
@@ -922,36 +933,50 @@
               <!-- Row 1: Full Name & Date of Birth (2 Columns) -->
               <div class="profile-form-row">
                 <div class="profile-field-group">
-                  <label for="profileFullName" class="profile-field-label">Full Name</label>
+                  <label for="profileFullName" class="profile-field-label">Full Name<span class="required-star">*</span></label>
                   <input type="text" id="profileFullName" name="fullName" class="profile-input-field"
                     value="Rahul Sharma" placeholder="Full Name" required />
                 </div>
 
                 <div class="profile-field-group">
-                  <label for="profileDob" class="profile-field-label">Date of Birth</label>
-                  <input type="text" id="profileDob" name="dob" class="profile-input-field" value="08/05/2002"
-                    placeholder="dd/mm/yyyy" required />
+                  <label for="profileDob" class="profile-field-label">Date of Birth<span class="required-star">*</span></label>
+                  <div class="profile-date-wrapper">
+                    <input type="text" id="profileDob" name="dob" class="profile-input-field" value="08/05/2002"
+                      placeholder="dd/mm/yyyy" maxlength="10" autocomplete="bday" required />
+                    <button type="button" class="calendar-toggle-btn" id="modalProfileDobCalendarBtn" aria-label="Open date of birth calendar" title="Select Date of Birth">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                    </button>
+                    <input type="date" id="modalProfileDobNativePicker" class="dob-hidden-picker" aria-hidden="true" tabindex="-1" />
+                  </div>
                 </div>
               </div>
 
               <!-- Row 2: Phone Number & Gender (2 Columns) -->
               <div class="profile-form-row">
                 <div class="profile-field-group">
-                  <label for="profilePhone" class="profile-field-label">Phone Number</label>
+                  <label for="profilePhone" class="profile-field-label">Phone Number<span class="required-star">*</span></label>
                   <input type="tel" id="profilePhone" name="phone" class="profile-input-field" value="9876543210"
                     placeholder="Phone Number" required />
                 </div>
 
                 <div class="profile-field-group">
-                  <label for="profileGender" class="profile-field-label">Gender</label>
-                  <input type="text" id="profileGender" name="gender" class="profile-input-field" value="Male"
-                    placeholder="Gender" required />
+                  <label for="profileGender" class="profile-field-label">Gender<span class="required-star">*</span></label>
+                  <select id="profileGender" name="gender" class="profile-input-field profile-select-field" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
               </div>
 
               <!-- Row 3: Email (Full Width) -->
               <div class="profile-field-group profile-field-full">
-                <label for="profileEmail" class="profile-field-label">Email</label>
+                <label for="profileEmail" class="profile-field-label">Email<span class="required-star">*</span></label>
                 <input type="email" id="profileEmail" name="email" class="profile-input-field"
                   value="rahulsharma@gmail.com" placeholder="Email Address" required />
               </div>
@@ -976,7 +1001,7 @@
               <!-- Password Field 1: Old Password -->
               <div class="profile-form-row">
                 <div class="profile-field-group">
-                  <label for="oldPassword" class="profile-field-label">Old Password</label>
+                  <label for="oldPassword" class="profile-field-label">Old Password<span class="required-star">*</span></label>
                   <div class="profile-password-wrapper">
                     <input 
                       type="password" 
@@ -1004,7 +1029,7 @@
               <!-- Password Fields 2 & 3: New Password & Confirm Password (2 Columns) -->
               <div class="profile-form-row">
                 <div class="profile-field-group">
-                  <label for="newPassword" class="profile-field-label">New Password</label>
+                  <label for="newPassword" class="profile-field-label">New Password<span class="required-star">*</span></label>
                   <div class="profile-password-wrapper">
                     <input 
                       type="password" 
@@ -1029,7 +1054,7 @@
                 </div>
 
                 <div class="profile-field-group">
-                  <label for="confirmPassword" class="profile-field-label">Confirm Password</label>
+                  <label for="confirmPassword" class="profile-field-label">Confirm Password<span class="required-star">*</span></label>
                   <div class="profile-password-wrapper">
                     <input 
                       type="password" 
@@ -1067,6 +1092,7 @@
       </main>
     </div>
   </div>
+
 
   <!-- Interactive Feedback Toast -->
   <div id="toast" class="toast-msg" role="status" aria-live="polite">
