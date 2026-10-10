@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Create Account API
+ * Ocayur Patient Portal - Create Account API
  * Handles 3-step registration flow:
  * 1. Personal Details (Full Name, DOB, Gender, Height, Weight)
  * 2. Prakruti Parikshan (Appetite, Sleep Type, Dream, Skin Type, Hair Type)
@@ -300,7 +300,7 @@ $_SESSION['role'] = 'Patient';
 $_SESSION['patient_id'] = $finalPatientId;
 
 // Send Success Response
-sendJsonResponse(true, 'Account created successfully! Welcome to Panchved.', [
+sendJsonResponse(true, 'Account created successfully! Welcome to Ocayur.', [
     'user' => [
         'id' => (int)$userId,
         'username' => $username,

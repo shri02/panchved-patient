@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Dynamic Profile API
+ * Ocayur Patient Portal - Dynamic Profile API
  * Handles:
  * 1. GET / Fetch authenticated patient's profile directly from `patients` and `users` tables
  * 2. POST (action: update_profile) / Update patient & user record

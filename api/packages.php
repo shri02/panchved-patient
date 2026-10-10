@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Packages Backend API
+ * Ocayur Patient Portal - Packages Backend API
  * Handles:
  * 1. GET (action: list / default) - Fetch all active packages from `packages` table
  * 2. GET (action: details) - Fetch single package details + linked doctor info

@@ -1,5 +1,5 @@
 -- ============================================================================
--- Panchved Complete Ayurved & Physiotherapy Rehab Center
+-- Ocayur Ayurveda Lifestyle
 -- Comprehensive Database Schema SQL Script
 -- Database: jewrzsmy_panchved / jcwrzsmy_panchved
 -- ============================================================================
@@ -33,9 +33,9 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Sample Seed Data for Users (Password: admin123)
 -- bcrypt hash for 'admin123': $2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm
 INSERT INTO `users` (`id`, `username`, `full_name`, `email`, `phone_number`, `password_hash`, `role`, `status`) VALUES
-(1, 'admin', 'John Doe', 'admin@panchved.com', '9876543210', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'Admin', 'Active'),
+(1, 'admin', 'John Doe', 'admin@ocayur.com', '9876543210', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'Admin', 'Active'),
 (2, 'drnidhi', 'Dr. Nidhi Jha', 'drnidhi@gmail.com', '9876543211', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'Doctor', 'Active'),
-(3, 'staff', 'Reception Desk', 'staff@panchved.com', '9876543212', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'Staff', 'Active')
+(3, 'staff', 'Reception Desk', 'staff@ocayur.com', '9876543212', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'Staff', 'Active')
 ON DUPLICATE KEY UPDATE `full_name` = VALUES(`full_name`), `password_hash` = VALUES(`password_hash`);
 
 
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS `workshops` (
   `date` DATE NOT NULL,
   `time` VARCHAR(50) NOT NULL DEFAULT '8:00 AM',
   `duration_text` VARCHAR(100) DEFAULT '90 mins',
-  `location` VARCHAR(150) NOT NULL DEFAULT 'Panchved Center / Hybrid Online',
+  `location` VARCHAR(150) NOT NULL DEFAULT 'Ocayur Center / Hybrid Online',
   `capacity` INT(11) NOT NULL DEFAULT 50,
   `enrolled` INT(11) NOT NULL DEFAULT 0,
   `registrations` INT(11) NOT NULL DEFAULT 0,
@@ -233,11 +233,11 @@ CREATE TABLE IF NOT EXISTS `workshops` (
 
 -- Sample Seed Data for Workshops
 INSERT INTO `workshops` (`id`, `workshop_id`, `title`, `subtitle`, `assign_speaker`, `meet_link`, `instructor`, `speaker`, `speaker_role`, `attendee_type`, `date`, `time`, `duration_text`, `location`, `capacity`, `registrations`, `fee`, `price`, `about`, `image_url`, `status`) VALUES
-(1, 'WS-001', 'Mindset For Business World Of Ayurveda', 'Holistic Health & Ayurveda Insights', 'Dr. Nidhi Jha', 'https://meet.google.com/xyz-abcd-efg', 'Dr. Nidhi Jha', 'Dr. Nidhi Jha & Team', 'Ayurveda Physician', 'Doctor', '2026-09-02', '8:00 AM', 'One Month Workshop', 'Panchved Center Hall A', 50, 24, 5999.00, 5999.00, 'Comprehensive immersion into clinical Ayurveda protocols, pulse diagnostics, and business insights.', 'assets/courses/course_business.jpg', 'Upcoming'),
+(1, 'WS-001', 'Mindset For Business World Of Ayurveda', 'Holistic Health & Ayurveda Insights', 'Dr. Nidhi Jha', 'https://meet.google.com/xyz-abcd-efg', 'Dr. Nidhi Jha', 'Dr. Nidhi Jha & Team', 'Ayurveda Physician', 'Doctor', '2026-09-02', '8:00 AM', 'One Month Workshop', 'Ocayur Center Hall A', 50, 24, 5999.00, 5999.00, 'Comprehensive immersion into clinical Ayurveda protocols, pulse diagnostics, and business insights.', 'assets/courses/course_business.jpg', 'Upcoming'),
 (2, 'WS-002', 'Skill Development Guide For Ayurveda Doctors', 'Holistic Health & Ayurveda Insights', 'Dr. Rajesh Varma', 'https://meet.google.com/bmq-ypeq-eur', 'Dr. Rajesh Varma', 'Dr. Rajesh Varma', 'Ayurveda Physician', 'Patient', '2026-09-03', '8:00 AM', '90 mins', 'Rehab Studio 2', 40, 18, 799.00, 799.00, 'Hands-on practical workshop covering advanced musculoskeletal assessment, postural restoration, and spine decompression therapies.', 'assets/courses/course_ayurveda_herbs.jpg', 'Upcoming'),
 (3, 'WS-003', 'Telemedicine Necessities Laws & AI', 'Holistic Health & Ayurveda Insights', 'Dr. Sneha Patil', 'https://meet.google.com/bmq-ypeq-eur', 'Dr. Sneha Patil', 'Dr. Sneha Patil', 'Ayurveda Physician', 'Patient', '2026-09-03', '8:00 AM', '90 mins', 'Auditorium & Live Stream', 100, 42, 799.00, 799.00, 'Explore how patient tele-health protocols and AI wellness aids provide accessible, safe, and round-the-clock Ayurvedic guidance.', 'assets/courses/course_telemedicine.jpg', 'Upcoming'),
 (4, 'WS-004', 'Online Consultation + Marketing Strategy', 'Holistic Health & Ayurveda Insights', 'Dr. Amit Kulkarni', 'https://meet.google.com/bmq-ypeq-eur', 'Dr. Amit Kulkarni', 'Dr. Amit Kulkarni', 'Ayurveda Physician', 'Doctor', '2026-09-03', '8:00 AM', '90 mins', 'Online Zoom Room', 75, 60, 799.00, 799.00, 'Practical breathwork, desk ergonomic routines, and mindful dietary habits for high-stress corporate environments.', 'assets/courses/course_consultation.jpg', 'Upcoming'),
-(5, 'WS-005', 'Garbhasanskaar & Future Approach of Ayurveda', 'Holistic Health & Ayurveda Insights', 'Dr. Pooja Joshi', 'https://meet.google.com/bmq-ypeq-eur', 'Dr. Pooja Joshi', 'Dr. Pooja Joshi', 'Ayurveda Physician', 'Doctor', '2026-09-03', '8:00 AM', '90 mins', 'Panchved Center Hall A', 50, 2, 499.00, 499.00, 'Ayurveda Prenatal Guidance, Mind-Body Preparation and lifestyle harmony.', 'assets/courses/course_garbhasanskaar.jpg', 'Upcoming')
+(5, 'WS-005', 'Garbhasanskaar & Future Approach of Ayurveda', 'Holistic Health & Ayurveda Insights', 'Dr. Pooja Joshi', 'https://meet.google.com/bmq-ypeq-eur', 'Dr. Pooja Joshi', 'Dr. Pooja Joshi', 'Ayurveda Physician', 'Doctor', '2026-09-03', '8:00 AM', '90 mins', 'Ocayur Center Hall A', 50, 2, 499.00, 499.00, 'Ayurveda Prenatal Guidance, Mind-Body Preparation and lifestyle harmony.', 'assets/courses/course_garbhasanskaar.jpg', 'Upcoming')
 ON DUPLICATE KEY UPDATE `title` = VALUES(`title`), `attendee_type` = VALUES(`attendee_type`), `instructor` = VALUES(`instructor`);
 
 COMMIT;

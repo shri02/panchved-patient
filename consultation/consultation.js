@@ -1,5 +1,5 @@
 /**
- * Panchved Patient Portal - Consultations Engine
+ * Ocayur Patient Portal - Consultations Engine
  * Handles: Tabs, Search Filtering, Google Meet Copying, View Details Modal,
  * Medical Prescription Modal, and Booking Modal Flow.
  */
@@ -131,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedPhone = '';
   let cachedPatientId = '';
   try {
-    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
       applyUserHeader(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
@@ -213,9 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
-        localStorage.removeItem('panchved_user');
-        localStorage.removeItem('panchved_patient');
-        localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+        localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => { window.location.href = '../index.html'; }, 350);
@@ -501,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const getMeetLink = (doctorName, apptId) => {
     const cleanDoc = (doctorName || 'consult').toLowerCase().replace(/dr\.?|\s+/g, '').replace(/[^a-z0-9]/g, '');
-    return `https://meet.google.com/abc-${cleanDoc || 'panchved'}-panchved`;
+    return `https://meet.google.com/abc-${cleanDoc || 'ocayur'}-ocayur`;
   };
 
   const escapeHtml = (str) => {
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     meetLinkButtons.forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
-        const link = btn.getAttribute('data-link') || 'https://meet.google.com/panchved-consult';
+        const link = btn.getAttribute('data-link') || 'https://meet.google.com/ocayur-consult';
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(link)
             .then(() => showToast('Google Meet link copied to clipboard!'))
@@ -852,7 +852,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rxReferralSpecialty) rxReferralSpecialty.textContent = rx.referred_specialty || rx.doctor_specialty || 'Ayurvedic Medicine';
     if (rxContactText) {
       const phone = rx.support_phone || rx.doctor_phone || '+91 7896543210';
-      const email = rx.support_email || rx.doctor_email || 'panchvedsupport@gmail.com';
+      const email = rx.support_email || rx.doctor_email || 'care@ocayur.com';
       rxContactText.innerHTML = `${escapeHtml(phone)} &nbsp;|&nbsp; ${escapeHtml(email)}`;
     }
 
@@ -1496,8 +1496,8 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       try {
-        localStorage.setItem('panchved_consultation_booking', JSON.stringify(bookingData));
-        localStorage.setItem('panchved_checkout_type', 'consultation');
+        localStorage.setItem('ocayur_consultation_booking', JSON.stringify(bookingData));
+        localStorage.setItem('ocayur_checkout_type', 'consultation');
       } catch (err) {
         console.warn('localStorage disabled', err);
       }

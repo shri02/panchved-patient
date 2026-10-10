@@ -2,11 +2,12 @@
 <html lang="en">
 
 <head>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panchved - Your Ayurveda Profile</title>
+  <title>Ocayur - Your Ayurveda Profile</title>
   <meta name="description"
-    content="Panchved Patient Portal - Your Ayurveda Assessment & Dosha Prakruti Profile Result">
+    content="Ocayur Patient Portal - Your Ayurveda Assessment & Dosha Prakruti Profile Result">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,9 +21,10 @@
   <main class="login-page-container">
     <!-- Brand Logo Section -->
     <header class="brand-header">
-      <a href="index.html" class="brand-logo-link" title="Panchved Complete Ayurved & Physiotherapy Rehab Center">
-        <img src="assets/logo.svg" alt="Panchved Complete Ayurved & Physiotherapy Rehab Center"
-          class="brand-logo-img" width="130" height="145" />
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+      <a href="index.html" class="brand-logo-link" title="Ocayur Ayurveda Lifestyle">
+        <img src="assets/logo.svg" alt="Ocayur Ayurveda Lifestyle"
+          class="brand-logo-img" width="160" height="88" />
       </a>
     </header>
 
@@ -68,7 +70,7 @@
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
       <polyline points="22 4 12 14.01 9 11.01"></polyline>
     </svg>
-    <span id="toastMsg">Welcome to Panchved!</span>
+    <span id="toastMsg">Welcome to Ocayur!</span>
   </div>
 
   <script>
@@ -92,9 +94,9 @@
 
       // Load dynamic assessment result if stored
       try {
-        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
-        const assessment = JSON.parse(localStorage.getItem('panchved_prakruti_result') || 'null');
+        const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+        const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
+        const assessment = JSON.parse((localStorage.getItem('ocayur_prakruti_result') || localStorage.getItem('panchved_prakruti_result')) || 'null');
 
         if (assessment && profileTypeName && profileDescription) {
           if (assessment.title || assessment.type) {

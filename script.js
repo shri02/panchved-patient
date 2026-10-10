@@ -1,5 +1,5 @@
 /**
- * Panchved Patient Portal - Complete Single-Page Application Engine
+ * Ocayur Patient Portal - Complete Single-Page Application Engine
  * Supports:
  * - View 1: Login
  * - View 2: Personal Details (Step 1/2)
@@ -79,8 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Synchronize dynamic user & patient data across dashboard headers and forms
   const syncAppUserData = () => {
     try {
-      const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-      const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+      const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+      const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
       if (storedUser || storedPatient) {
         const fullName = storedPatient?.full_name || storedUser?.full_name;
         const patientId = storedPatient?.patient_id || ('P00' + (storedUser?.id || 1));
@@ -147,8 +147,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.dashboard-sidebar .nav-link').forEach(l => l.classList.remove('active'));
     syncAppUserData();
 
-    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
-    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
+    const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
+    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
     const activeName = storedPatient?.full_name || storedUser?.full_name || 'Patient';
 
     if (subView === 'packages') {
@@ -327,9 +327,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
         try {
-          localStorage.removeItem('panchved_user');
-          localStorage.removeItem('panchved_patient');
-          localStorage.removeItem('panchved_prakruti_result');
+          localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+          localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+          localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
         } catch (e) {}
         showToast('Logged out successfully.');
         showView('login');
@@ -364,9 +364,9 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       try { await fetch('api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
-        localStorage.removeItem('panchved_user');
-        localStorage.removeItem('panchved_patient');
-        localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+        localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       closeLogoutModal();
       showToast('Logged out successfully.');
@@ -766,10 +766,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (response.ok && result.success) {
           if (result.user) {
-            try { localStorage.setItem('panchved_user', JSON.stringify(result.user)); } catch (e) {}
+            try { localStorage.setItem('ocayur_user', JSON.stringify(result.user)); } catch (e) {}
           }
           if (result.patient) {
-            try { localStorage.setItem('panchved_patient', JSON.stringify(result.patient)); } catch (e) {}
+            try { localStorage.setItem('ocayur_patient', JSON.stringify(result.patient)); } catch (e) {}
           }
 
           showToast(result.message || 'Login successful! Welcome to Dashboard.');
@@ -945,9 +945,9 @@ document.addEventListener('DOMContentLoaded', () => {
       registrationState.countryCode = countryCode;
 
       try {
-        localStorage.setItem('panchved_registration_phone', phone);
-        localStorage.setItem('panchved_registration_email', email);
-        localStorage.setItem('panchved_registration_data', JSON.stringify(registrationState));
+        localStorage.setItem('ocayur_registration_phone', phone);
+        localStorage.setItem('ocayur_registration_email', email);
+        localStorage.setItem('ocayur_registration_data', JSON.stringify(registrationState));
       } catch (e) {}
 
       continueBtn.disabled = false;
@@ -1101,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Fallback phone if blank
       if (!registrationState.phone) {
-        const storedRegPhone = localStorage.getItem('panchved_registration_phone');
+        const storedRegPhone = (localStorage.getItem('ocayur_registration_phone') || localStorage.getItem('panchved_registration_phone'));
         if (storedRegPhone) {
           registrationState.phone = storedRegPhone;
         } else if (personalPhoneInput && personalPhoneInput.value.trim()) {
@@ -1115,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Fallback email if blank
       if (!registrationState.email) {
-        const storedRegEmail = localStorage.getItem('panchved_registration_email');
+        const storedRegEmail = (localStorage.getItem('ocayur_registration_email') || localStorage.getItem('panchved_registration_email'));
         if (storedRegEmail) {
           registrationState.email = storedRegEmail;
         } else if (emailInput && emailInput.value.trim()) {
@@ -1148,14 +1148,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (response.ok && result.success) {
           if (result.user) {
-            try { localStorage.setItem('panchved_user', JSON.stringify(result.user)); } catch (e) {}
+            try { localStorage.setItem('ocayur_user', JSON.stringify(result.user)); } catch (e) {}
           }
           if (result.patient) {
-            try { localStorage.setItem('panchved_patient', JSON.stringify(result.patient)); } catch (e) {}
+            try { localStorage.setItem('ocayur_patient', JSON.stringify(result.patient)); } catch (e) {}
           }
 
           if (result.prakruti_result) {
-            try { localStorage.setItem('panchved_prakruti_result', JSON.stringify(result.prakruti_result)); } catch (e) {}
+            try { localStorage.setItem('ocayur_prakruti_result', JSON.stringify(result.prakruti_result)); } catch (e) {}
             const profileTypeName = document.getElementById('profileTypeName');
             const profileDescription = document.getElementById('profileDescription');
             if (profileTypeName && result.prakruti_result.title) {
@@ -1599,10 +1599,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (response.ok && result.success) {
           if (result.user) {
-            try { localStorage.setItem('panchved_user', JSON.stringify(result.user)); } catch (e) {}
+            try { localStorage.setItem('ocayur_user', JSON.stringify(result.user)); } catch (e) {}
           }
           if (result.patient) {
-            try { localStorage.setItem('panchved_patient', JSON.stringify(result.patient)); } catch (e) {}
+            try { localStorage.setItem('ocayur_patient', JSON.stringify(result.patient)); } catch (e) {}
           }
 
           const headerUserName = document.getElementById('userName');

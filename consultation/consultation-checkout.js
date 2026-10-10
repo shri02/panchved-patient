@@ -1,5 +1,5 @@
 /**
- * Panchved Patient Portal - Consultation Checkout & Payment Engine
+ * Ocayur Patient Portal - Consultation Checkout & Payment Engine
  * Handles payment confirmation, in-place details editing, and backend booking for Consultations.
  */
 
@@ -100,8 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedPhone = '';
   let cachedPatientId = '';
   try {
-    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
       applyUserHeader(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
@@ -182,9 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
-        localStorage.removeItem('panchved_user');
-        localStorage.removeItem('panchved_patient');
-        localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+        localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => { window.location.href = '../index.html'; }, 350);
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 1. Initialize Consultation Booking Data from localStorage
   try {
-    const stored = localStorage.getItem('panchved_consultation_booking');
+    const stored = (localStorage.getItem('ocayur_consultation_booking') || localStorage.getItem('panchved_consultation_booking'));
     if (stored) {
       activeBookingData = JSON.parse(stored);
       const data = activeBookingData;
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeBookingData.patientName = newName;
         activeBookingData.patientEmail = newEmail;
         activeBookingData.patientPhone = newPhone;
-        localStorage.setItem('panchved_consultation_booking', JSON.stringify(activeBookingData));
+        localStorage.setItem('ocayur_consultation_booking', JSON.stringify(activeBookingData));
       }
 
       patientDetailsEditForm.style.display = 'none';

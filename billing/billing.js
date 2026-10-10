@@ -1,5 +1,5 @@
 /**
- * Panchved Patient Portal - Billing Engine
+ * Ocayur Patient Portal - Billing Engine
  * Dynamically fetches and renders payment records, active package details,
  * and itemized invoice receipts directly from MySQL database schema.
  */
@@ -111,8 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedPhone = '';
   let cachedPatientId = '';
   try {
-    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
       applyUserHeader(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
@@ -193,9 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
-        localStorage.removeItem('panchved_user');
-        localStorage.removeItem('panchved_patient');
-        localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+        localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => { window.location.href = '../index.html'; }, 350);

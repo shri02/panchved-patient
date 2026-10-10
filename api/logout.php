@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Logout API
+ * Ocayur Patient Portal - Logout API
  * Destroys active user session.
  */
 

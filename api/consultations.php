@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Consultations Backend API
+ * Ocayur Patient Portal - Consultations Backend API
  * Handles appointment listing and consultation bookings.
  */
 
@@ -163,7 +163,7 @@ function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAp
     $referralDoc = $prescRow['doctor_name'] ?? ($parsedApptPresc['doctor_name'] ?? (!empty($doctorName) ? $doctorName : 'Dr. Ananya Prasad'));
     $referralSpec = $prescRow['doctor_specialty'] ?? ($parsedApptPresc['doctor_specialty'] ?? ($dRow['expertise'] ?? 'Ayurvedic Medicine'));
     $referralPhone = $prescRow['doctor_phone'] ?? ($dRow['phone_number'] ?? '+91 7896543210');
-    $referralEmail = $prescRow['doctor_email'] ?? ($dRow['email'] ?? 'panchvedsupport@gmail.com');
+    $referralEmail = $prescRow['doctor_email'] ?? ($dRow['email'] ?? 'care@ocayur.com');
 
     return [
         'appointment_id' => $appt['appointment_id'] ?? ('APT-' . ($appt['id'] ?? 1)),
@@ -292,7 +292,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $apptId = !empty($r['appointment_id']) ? $r['appointment_id'] : ('APT-' . $r['id']);
             $docName = !empty($r['doctor_name']) ? $r['doctor_name'] : 'Dr. Nidhi Jha';
             $cleanDoc = strtolower(preg_replace('/[^a-z0-9]/i', '', str_replace(['Dr.', 'Dr '], '', $docName)));
-            $meetLink = "https://meet.google.com/abc-{$cleanDoc}-panchved";
+            $meetLink = "https://meet.google.com/abc-{$cleanDoc}-ocayur";
 
             $prescPayload = resolvePrescriptionPayload($r, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient, $defaultPrescription);
 

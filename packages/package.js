@@ -1,5 +1,5 @@
 /**
- * Panchved Patient Portal - Packages & Direct Checkout Engine
+ * Ocayur Patient Portal - Packages & Direct Checkout Engine
  * Dynamic Database Backend Integration with PHP & JS
  */
 
@@ -107,8 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedPhone = '';
   let cachedPatientId = '';
   try {
-    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
       applyUserHeader(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
@@ -190,9 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
-        localStorage.removeItem('panchved_user');
-        localStorage.removeItem('panchved_patient');
-        localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+        localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => { window.location.href = '../index.html'; }, 350);
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (detailPkgImg) {
       const rawImg = pkg.image_url || 'assets/gut-healing-pkg.jpg';
       detailPkgImg.src = (rawImg.startsWith('http') || rawImg.startsWith('../')) ? rawImg : '../' + rawImg;
-      detailPkgImg.alt = `${pkg.package_name || 'Package'} - Panchved Ayurved & Physiotherapy`;
+      detailPkgImg.alt = `${pkg.package_name || 'Package'} - Ocayur Ayurveda Lifestyle`;
     }
 
     // Dynamic Doctor details from database schema
@@ -511,8 +511,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let pPhone = '9876543210';
       let pId = 'P001';
       try {
-        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+        const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
         if (storedPatient || storedUser) {
           pName = storedPatient?.full_name || storedUser?.full_name || pName;
           pEmail = storedPatient?.email || storedUser?.email || pEmail;
@@ -547,8 +547,8 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       try {
-        localStorage.setItem('panchved_consultation_booking', JSON.stringify(bookingData));
-        localStorage.setItem('panchved_checkout_type', 'package');
+        localStorage.setItem('ocayur_consultation_booking', JSON.stringify(bookingData));
+        localStorage.setItem('ocayur_checkout_type', 'package');
       } catch (err) {
         console.warn('localStorage error', err);
       }

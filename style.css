@@ -1,31 +1,55 @@
 /* Google Fonts Import */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
 
 :root {
-  /* Brand Palette */
-  --primary-teal: #008a90;
-  --primary-teal-hover: #00757b;
-  --primary-teal-active: #006065;
-  --primary-teal-light: #e6f5f6;
-  --primary-teal-glow: rgba(0, 138, 144, 0.2);
+  /* ========================================================
+     Ocayur Brand Design System (Ayurveda Lifestyle)
+     Brand Palette:
+       - Cream:      #fff7ec
+       - Olive:      #484831
+       - Terracotta: #723f1e
+     ======================================================== */
+  --brand-cream: #fff7ec;
+  --brand-cream-soft: #fcf8f2;
+  --brand-cream-muted: #f6eee0;
 
-  --brand-maroon: #7e1946;
-  --brand-maroon-dark: #631236;
+  --brand-olive: #484831;
+  --brand-olive-hover: #383826;
+  --brand-olive-active: #2b2b1d;
+  --brand-olive-light: #f1f3ea;
+  --brand-olive-glow: rgba(72, 72, 49, 0.2);
+
+  --brand-terracotta: #723f1e;
+  --brand-terracotta-hover: #5d3318;
+  --brand-terracotta-active: #4a2813;
+  --brand-terracotta-light: #fbf2eb;
+  --brand-terracotta-glow: rgba(114, 63, 30, 0.2);
+
+  /* Primary Brand Roles (Aliased for compatibility) */
+  --primary-teal: #723f1e;
+  --primary-teal-hover: #5d3318;
+  --primary-teal-active: #4a2813;
+  --primary-teal-light: #fbf2eb;
+  --primary-teal-glow: rgba(114, 63, 30, 0.2);
+
+  --brand-maroon: #484831;
+  --brand-maroon-dark: #383826;
 
   /* Neutral Palette */
-  --bg-page: #f8fafc;
+  --bg-page: #faf6ee;
   --bg-card: #ffffff;
-  --text-main: #111827;
-  --text-muted: #475569;
-  --text-light: #64748b;
-  --text-subtle: #94a3b8;
-  --border-color: #d8dee4;
-  --border-focus: #008a90;
-  --danger-color: #ef4444;
+  --text-main: #25231f;
+  --text-muted: #5c564d;
+  --text-light: #7a7267;
+  --text-subtle: #a69e92;
+  --border-color: #e8e1d5;
+  --border-focus: #723f1e;
+  --danger-color: #c53030;
+  --danger-light: #fff5f5;
 
   /* Elevation */
-  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --card-shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --card-shadow: 0 4px 14px -2px rgba(72, 72, 49, 0.06), 0 2px 6px -2px rgba(114, 63, 30, 0.04);
+  --card-shadow-hover: 0 12px 28px -4px rgba(72, 72, 49, 0.1), 0 8px 12px -6px rgba(114, 63, 30, 0.06);
 
   /* Radii */
   --radius-card: 14px;
@@ -46,7 +70,7 @@
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Outfit', 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-page);
   color: var(--text-main);
   min-height: 100vh;
@@ -92,9 +116,9 @@ body {
 }
 
 .brand-logo-img {
-  width: 125px;
+  width: 165px;
   height: auto;
-  max-height: 140px;
+  max-height: 95px;
   object-fit: contain;
   display: block;
 }
@@ -649,14 +673,14 @@ body {
   justify-content: center;
   text-decoration: none;
   gap: 8px;
-  box-shadow: 0 2px 4px rgba(0, 138, 144, 0.2);
+  box-shadow: 0 2px 4px rgba(114, 63, 30, 0.2);
   transition: var(--transition);
   margin-top: 4px;
 }
 
 .btn-primary:hover {
   background-color: var(--primary-teal-hover);
-  box-shadow: 0 4px 10px rgba(0, 138, 144, 0.35);
+  box-shadow: 0 4px 10px rgba(114, 63, 30, 0.35);
   transform: translateY(-1px);
   color: #ffffff;
 }
@@ -877,8 +901,12 @@ body {
   }
 
   .brand-logo-img {
-    width: 110px;
-  }
+  width: 165px;
+  height: auto;
+  max-height: 95px;
+  object-fit: contain;
+  display: block;
+}
 
   .input-wrapper,
   .custom-select-trigger {
@@ -991,7 +1019,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background-color: #e0f2fe;
+  background-color: var(--brand-olive-light);
   color: var(--primary-teal);
   display: flex;
   align-items: center;
@@ -1030,10 +1058,11 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 }
 
 .sidebar-brand-header .brand-logo-img {
-  width: 120px;
+  width: 165px;
   height: auto;
-  max-height: 125px;
+  max-height: 95px;
   object-fit: contain;
+  display: block;
 }
 
 .sidebar-nav {
@@ -1082,7 +1111,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   background-color: var(--primary-teal);
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(0, 138, 144, 0.25);
+  box-shadow: 0 2px 6px rgba(114, 63, 30, 0.25);
 }
 
 .nav-link.active .nav-icon svg {
@@ -1117,7 +1146,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 .btn-logout:hover {
   background-color: var(--primary-teal);
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(0, 138, 144, 0.2);
+  box-shadow: 0 4px 10px rgba(114, 63, 30, 0.2);
 }
 
 .btn-logout:active {
@@ -1654,8 +1683,8 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   width: 82px;
   height: 82px;
   border-radius: 50%;
-  background-color: #a5f3fc;
-  color: #0e7490;
+  background-color: #f1f3ea;
+  color: var(--brand-olive);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1732,12 +1761,12 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 2px 4px rgba(0, 138, 144, 0.2);
+  box-shadow: 0 2px 4px rgba(114, 63, 30, 0.2);
 }
 
 .btn-update-profile:hover {
   background-color: var(--primary-teal-hover);
-  box-shadow: 0 4px 10px rgba(0, 138, 144, 0.3);
+  box-shadow: 0 4px 10px rgba(114, 63, 30, 0.3);
   transform: translateY(-1px);
 }
 
@@ -1880,7 +1909,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 }
 
 .profile-select-field:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23008a90' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23723f1e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 /* ========================================================
@@ -2124,14 +2153,14 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   border-radius: var(--radius-btn);
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 138, 144, 0.2);
+  box-shadow: 0 2px 4px rgba(114, 63, 30, 0.2);
   transition: var(--transition);
   white-space: nowrap;
 }
 
 .btn-book-consult-cta:hover {
   background-color: var(--primary-teal-hover);
-  box-shadow: 0 4px 10px rgba(0, 138, 144, 0.3);
+  box-shadow: 0 4px 10px rgba(114, 63, 30, 0.3);
   transform: translateY(-1px);
 }
 
@@ -2246,7 +2275,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 
 .meet-link-btn:hover {
   color: var(--primary-teal);
-  background-color: #f0fdfa;
+  background-color: #fbf2eb;
 }
 
 .meet-link-btn .copy-icon {
@@ -2263,7 +2292,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background-color: #006699;
+  background-color: #484831;
   color: #ffffff;
   font-family: inherit;
   font-size: 12.5px;
@@ -2331,7 +2360,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 .btn-page-nav:hover:not(:disabled) {
   border-color: var(--primary-teal);
   color: var(--primary-teal);
-  background-color: #f0fdfa;
+  background-color: #fbf2eb;
 }
 
 .btn-page-nav:disabled {
@@ -2362,7 +2391,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background-color: #e0f2fe;
+  background-color: var(--brand-olive-light);
   color: #0284c7;
   display: flex;
   align-items: center;
@@ -2771,7 +2800,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 .btn-join-meet {
   width: 100%;
   padding: 11px 16px;
-  background-color: #9d174d;
+  background-color: #484831;
   color: #ffffff;
   font-family: inherit;
   font-size: 14px;
@@ -2866,7 +2895,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   border-radius: var(--radius-btn);
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 138, 144, 0.25);
+  box-shadow: 0 2px 4px rgba(114, 63, 30, 0.25);
   transition: var(--transition);
   max-width: 240px;
   margin-top: 6px;
@@ -2874,7 +2903,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 
 .btn-register-workshop:hover {
   background-color: var(--primary-teal-hover);
-  box-shadow: 0 4px 12px rgba(0, 138, 144, 0.35);
+  box-shadow: 0 4px 12px rgba(114, 63, 30, 0.35);
   transform: translateY(-1px);
 }
 
@@ -2931,8 +2960,8 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 }
 
 .active-package-banner {
-  background-color: #d1f0f2;
-  border: 1px solid #a3dfe3;
+  background-color: var(--brand-cream);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 14px 20px;
   display: flex;
@@ -3017,7 +3046,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background-color: #006699;
+  background-color: #484831;
   color: #ffffff;
   font-family: inherit;
   font-size: 12.5px;
@@ -3088,7 +3117,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 }
 
 .receipt-modal-box .modal-close-btn:focus-visible {
-  outline: 2px solid #006699;
+  outline: 2px solid #484831;
   outline-offset: 2px;
 }
 
@@ -3262,7 +3291,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 }
 
 .receipt-total-highlight-bar {
-  background-color: #bce9ec;
+  background-color: #fbf2eb;
   border-radius: 6px;
   padding: 10px 14px;
   width: 240px;
@@ -3443,7 +3472,7 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   }
 
   .receipt-total-highlight-bar {
-    background-color: #bce9ec !important;
+    background-color: #fbf2eb !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     padding: 8px 12px !important;

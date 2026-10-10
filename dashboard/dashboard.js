@@ -1,5 +1,5 @@
 /**
- * Panchved Patient Portal - Dashboard Engine
+ * Ocayur Patient Portal - Dashboard Engine
  * Dynamic PHP & MySQL Database Backend Integration
  * Full Dynamic Cards, Metrics, Graphs & Notifications
  */
@@ -233,8 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedPhone = '';
   let cachedPatientId = '';
   try {
-    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
       applyDashboardPatient(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // 1. Patient & Header
           if (data.patient) {
             applyDashboardPatient(null, data.patient);
-            try { localStorage.setItem('panchved_patient', JSON.stringify(data.patient)); } catch (e) {}
+            try { localStorage.setItem('ocayur_patient', JSON.stringify(data.patient)); } catch (e) {}
           }
 
           // 2. Metric Statistics Cards
@@ -652,9 +652,9 @@ document.addEventListener('DOMContentLoaded', () => {
         await fetch('../api/logout.php', { method: 'POST' });
       } catch (err) {}
       try {
-        localStorage.removeItem('panchved_user');
-        localStorage.removeItem('panchved_patient');
-        localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+        localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => {

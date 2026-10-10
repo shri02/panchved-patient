@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Workshops Backend API
+ * Ocayur Patient Portal - Workshops Backend API
  * Handles:
  * 1. GET (action: list / default) - Fetch workshops visible to patients (attendee_type = 'Patient' or 'Both' / 'All')
  * 2. GET (action: details) - Fetch single workshop details by id or workshop_id
@@ -51,7 +51,7 @@ if ($connection1) {
       `date` DATE NOT NULL,
       `time` VARCHAR(50) NOT NULL DEFAULT '8:00 AM',
       `duration_text` VARCHAR(100) DEFAULT '90 mins',
-      `location` VARCHAR(150) NOT NULL DEFAULT 'Panchved Center / Hybrid Online',
+      `location` VARCHAR(150) NOT NULL DEFAULT 'Ocayur Center / Hybrid Online',
       `capacity` INT(11) NOT NULL DEFAULT 50,
       `enrolled` INT(11) NOT NULL DEFAULT 0,
       `registrations` INT(11) NOT NULL DEFAULT 0,
@@ -136,7 +136,7 @@ function formatWorkshopRecord($row) {
         'formatted_date' => $formattedDate,
         'time' => $timeVal,
         'duration_text' => $durationText,
-        'location' => !empty($row['location']) ? trim((string)$row['location']) : 'Panchved Center / Hybrid Online',
+        'location' => !empty($row['location']) ? trim((string)$row['location']) : 'Ocayur Center / Hybrid Online',
         'meet_link' => !empty($row['meet_link']) ? trim((string)$row['meet_link']) : 'https://meet.google.com/xyz-abcd-efg',
         'capacity' => (int)($row['capacity'] ?? 50),
         'enrolled' => (int)($row['enrolled'] ?? 0),
@@ -225,7 +225,7 @@ function getFallbackPatientWorkshops() {
             'formatted_date' => '23 September, Wednesday',
             'time' => '5:00 PM',
             'duration_text' => '90 mins',
-            'location' => 'Panchved Center Hall A',
+            'location' => 'Ocayur Center Hall A',
             'meet_link' => 'https://meet.google.com/bey-byer-rty',
             'capacity' => 50,
             'enrolled' => 0,

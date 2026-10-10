@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Authentication API (Login)
+ * Ocayur Patient Portal - Authentication API (Login)
  * Validates credentials against `users` and `patients` tables in MySQL database.
  */
 

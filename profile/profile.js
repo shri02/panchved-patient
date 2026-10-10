@@ -1,5 +1,5 @@
 /**
- * Panchved Patient Portal - Dynamic Profile Settings Engine
+ * Ocayur Patient Portal - Dynamic Profile Settings Engine
  * Handles dynamic data fetching from database via PHP API,
  * profile details update, secure password change, and session state.
  */
@@ -220,8 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedPhone = '';
   let cachedPatientId = '';
   try {
-    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
       applyProfileData(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
@@ -257,10 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update localStorage with fresh DB data
         if (result.user) {
-          try { localStorage.setItem('panchved_user', JSON.stringify(result.user)); } catch (e) {}
+          try { localStorage.setItem('ocayur_user', JSON.stringify(result.user)); } catch (e) {}
         }
         if (result.patient) {
-          try { localStorage.setItem('panchved_patient', JSON.stringify(result.patient)); } catch (e) {}
+          try { localStorage.setItem('ocayur_patient', JSON.stringify(result.patient)); } catch (e) {}
         }
       }
     } catch (err) {
@@ -377,31 +377,31 @@ document.addEventListener('DOMContentLoaded', () => {
           const freshPatient = result.patient || { full_name: fullName, email: email, phone_number: phone, dob: dob, gender: gender };
 
           if (result.user) {
-            try { localStorage.setItem('panchved_user', JSON.stringify(result.user)); } catch (e) {}
+            try { localStorage.setItem('ocayur_user', JSON.stringify(result.user)); } catch (e) {}
           } else {
-            try { localStorage.setItem('panchved_user', JSON.stringify(freshUser)); } catch (e) {}
+            try { localStorage.setItem('ocayur_user', JSON.stringify(freshUser)); } catch (e) {}
           }
           if (result.patient) {
-            try { localStorage.setItem('panchved_patient', JSON.stringify(result.patient)); } catch (e) {}
+            try { localStorage.setItem('ocayur_patient', JSON.stringify(result.patient)); } catch (e) {}
           } else {
-            try { localStorage.setItem('panchved_patient', JSON.stringify(freshPatient)); } catch (e) {}
+            try { localStorage.setItem('ocayur_patient', JSON.stringify(freshPatient)); } catch (e) {}
           }
 
           // Update booking storage caches so package checkout page immediately gets the updated user details
           try {
-            const consultStored = JSON.parse(localStorage.getItem('panchved_consultation_booking') || '{}');
+            const consultStored = JSON.parse((localStorage.getItem('ocayur_consultation_booking') || localStorage.getItem('panchved_consultation_booking')) || '{}');
             if (consultStored && typeof consultStored === 'object' && Object.keys(consultStored).length > 0) {
               consultStored.patientName = fullName;
               consultStored.patientEmail = email;
               consultStored.patientPhone = phone;
-              localStorage.setItem('panchved_consultation_booking', JSON.stringify(consultStored));
+              localStorage.setItem('ocayur_consultation_booking', JSON.stringify(consultStored));
             }
-            const workshopStored = JSON.parse(localStorage.getItem('panchved_workshop_booking') || '{}');
+            const workshopStored = JSON.parse((localStorage.getItem('ocayur_workshop_booking') || localStorage.getItem('panchved_workshop_booking')) || '{}');
             if (workshopStored && typeof workshopStored === 'object' && Object.keys(workshopStored).length > 0) {
               workshopStored.patientName = fullName;
               workshopStored.patientEmail = email;
               workshopStored.patientPhone = phone;
-              localStorage.setItem('panchved_workshop_booking', JSON.stringify(workshopStored));
+              localStorage.setItem('ocayur_workshop_booking', JSON.stringify(workshopStored));
             }
           } catch (e) {}
 
@@ -587,9 +587,9 @@ document.addEventListener('DOMContentLoaded', () => {
         await fetch('../api/logout.php', { method: 'POST' });
       } catch (err) {}
       try {
-        localStorage.removeItem('panchved_user');
-        localStorage.removeItem('panchved_patient');
-        localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+        localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => {
@@ -600,10 +600,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Real-time synchronization when updated from Checkout or other tabs
   window.addEventListener('storage', (e) => {
-    if (e.key === 'panchved_user' || e.key === 'panchved_patient') {
+    if ((e.key === 'ocayur_user' || e.key === 'panchved_user') || (e.key === 'ocayur_patient' || e.key === 'panchved_patient')) {
       try {
-        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+        const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
         if (storedUser || storedPatient) {
           applyProfileData(storedUser, storedPatient);
         }
@@ -615,8 +615,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       try {
-        const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-        const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+        const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+        const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
         if (storedUser || storedPatient) {
           applyProfileData(storedUser, storedPatient);
         }

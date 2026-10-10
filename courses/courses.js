@@ -1,5 +1,5 @@
 /**
- * Panchved Patient Portal - Courses & Workshops Engine
+ * Ocayur Patient Portal - Courses & Workshops Engine
  * Dynamic Database Backend Integration with MySQL workshops table
  * Displays workshops where attendee_type = 'Patient' or 'Both' / 'All'
  */
@@ -116,8 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   try {
-    const storedUser = JSON.parse(localStorage.getItem('panchved_user') || 'null');
-    const storedPatient = JSON.parse(localStorage.getItem('panchved_patient') || 'null');
+    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
       applyUserHeader(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
@@ -198,9 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
       try {
-        localStorage.removeItem('panchved_user');
-        localStorage.removeItem('panchved_patient');
-        localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
+        localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
+        localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => { window.location.href = '../index.html'; }, 350);
@@ -553,13 +553,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let registered = [];
     try {
-      const storedList = JSON.parse(localStorage.getItem('panchved_registered_workshops') || '[]');
+      const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
       if (Array.isArray(storedList)) registered = storedList;
     } catch (e) {}
 
     // Check single booking from checkout if not already in list
     try {
-      const singleBooking = JSON.parse(localStorage.getItem('panchved_workshop_booking') || 'null');
+      const singleBooking = JSON.parse((localStorage.getItem('ocayur_workshop_booking') || localStorage.getItem('panchved_workshop_booking')) || 'null');
       if (singleBooking && (singleBooking.workshopTitle || singleBooking.title)) {
         const t = singleBooking.workshopTitle || singleBooking.title;
         const already = registered.some(r => r.title === t || (r.id && r.id == singleBooking.id));
@@ -772,8 +772,8 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       try {
-        localStorage.setItem('panchved_workshop_booking', JSON.stringify(workshopBooking));
-        localStorage.setItem('panchved_checkout_type', 'workshop');
+        localStorage.setItem('ocayur_workshop_booking', JSON.stringify(workshopBooking));
+        localStorage.setItem('ocayur_checkout_type', 'workshop');
       } catch (err) {
         console.warn('localStorage error', err);
       }

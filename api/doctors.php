@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Doctors Backend API
+ * Ocayur Patient Portal - Doctors Backend API
  * Fetches active doctors directly from MySQL `doctors` table schema.
  */
 

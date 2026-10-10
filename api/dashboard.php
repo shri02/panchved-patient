@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Dashboard API
+ * Ocayur Patient Portal - Dashboard API
  *
  * Dashboard data is read from MySQL only.
  * No demo/fallback patient, package, health or notification records are created.

@@ -1,1 +1,1 @@
-# panchved-patient
+# ocayur-patient

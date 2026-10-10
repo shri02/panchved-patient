@@ -1,6 +1,6 @@
 <?php
 /**
- * Panchved Patient Portal - Billing & Payment History API
+ * Ocayur Patient Portal - Billing & Payment History API
  * Dynamically fetches successful payments, invoices, active package details,
  * and receipt breakdowns directly from the MySQL database schema.
  */
