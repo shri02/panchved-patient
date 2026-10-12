@@ -13,7 +13,7 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
@@ -37,6 +37,9 @@ function sendJsonResponse($success, $message, $data = [], $statusCode = 200) {
 
 // Read raw JSON or POST data
 $rawInput = file_get_contents('php://input');
+if (empty($rawInput) && php_sapi_name() === 'cli') {
+    $rawInput = file_get_contents('php://stdin');
+}
 $data = json_decode($rawInput, true);
 if (!$data || !is_array($data)) {
     $data = $_POST;
@@ -278,17 +281,92 @@ if ($uInStmt) {
     mysqli_stmt_close($uInStmt);
 }
 
-// 2. Insert into `patients` table
+// Additional Patient Schema Fields
+$bloodGroup = isset($data['bloodGroup']) ? trim($data['bloodGroup']) : (isset($data['blood_group']) ? trim($data['blood_group']) : 'O+');
+$emergencyContact = isset($data['emergencyContact']) ? trim($data['emergencyContact']) : (isset($data['emergency_contact']) ? trim($data['emergency_contact']) : '');
+$address = isset($data['address']) ? trim($data['address']) : '';
+$packageName = isset($data['packageName']) ? trim($data['packageName']) : (isset($data['package_name']) ? trim($data['package_name']) : 'Ayurveda Holistic Care');
+$status = 'Ongoing';
+
+// 2. Insert into `patients` table based on schema.sql
 $patientRecordId = null;
 $finalPatientId = $newPatientId;
-$insertPat = "INSERT INTO patients (patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Ayurveda Holistic Care', 0, 'Ongoing')";
+$insertPat = "INSERT INTO patients (
+    patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at, updated_at
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW()
+)";
 $pInStmt = mysqli_prepare($connection1, $insertPat);
 if ($pInStmt) {
-    mysqli_stmt_bind_param($pInStmt, "sssisss", $newPatientId, $fullName, $formattedDob, $age, $phoneDigits, $gender, $email);
+    mysqli_stmt_bind_param($pInStmt, "ssssissssssssss", 
+        $newPatientId, 
+        $profileType, 
+        $fullName, 
+        $formattedDob, 
+        $age, 
+        $height, 
+        $weight, 
+        $phoneDigits, 
+        $gender, 
+        $email,
+        $bloodGroup,
+        $emergencyContact,
+        $address,
+        $packageName,
+        $status
+    );
     mysqli_stmt_execute($pInStmt);
     $patientRecordId = mysqli_insert_id($connection1);
     mysqli_stmt_close($pInStmt);
 }
+
+// Fallback in case of schema discrepancy
+if (!$patientRecordId) {
+    $fallbackInsert = "INSERT INTO patients (patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())";
+    if ($fbStmt = mysqli_prepare($connection1, $fallbackInsert)) {
+        mysqli_stmt_bind_param($fbStmt, "sssisssss", $newPatientId, $fullName, $formattedDob, $age, $phoneDigits, $gender, $email, $packageName, $status);
+        mysqli_stmt_execute($fbStmt);
+        $patientRecordId = mysqli_insert_id($connection1);
+        mysqli_stmt_close($fbStmt);
+    }
+}
+
+// Fetch complete newly-created record from database
+$patientPayload = null;
+if ($patientRecordId) {
+    $selPat = "SELECT * FROM patients WHERE id = ? LIMIT 1";
+    if ($spStmt = mysqli_prepare($connection1, $selPat)) {
+        mysqli_stmt_bind_param($spStmt, "i", $patientRecordId);
+        mysqli_stmt_execute($spStmt);
+        $spRes = mysqli_stmt_get_result($spStmt);
+        $patientPayload = mysqli_fetch_assoc($spRes);
+        mysqli_stmt_close($spStmt);
+    }
+}
+if (!$patientPayload) {
+    $patientPayload = [
+        'id' => (int)$patientRecordId,
+        'patient_id' => $finalPatientId,
+        'patient_profile' => $profileType,
+        'full_name' => $fullName,
+        'dob' => $formattedDob,
+        'age' => $age,
+        'height' => $height,
+        'weight' => $weight,
+        'gender' => $gender,
+        'phone_number' => $phoneDigits,
+        'email' => $email,
+        'blood_group' => $bloodGroup,
+        'emergency_contact' => $emergencyContact,
+        'address' => $address,
+        'package_name' => $packageName,
+        'total_appointments' => 0,
+        'status' => $status,
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+}
+$patientPayload['dob_formatted'] = !empty($patientPayload['dob']) ? date('d/m/Y', strtotime($patientPayload['dob'])) : '';
 
 // 3. Set Session Variables
 $_SESSION['user_id'] = $userId;
@@ -309,20 +387,7 @@ sendJsonResponse(true, 'Account created successfully! Welcome to Ocayur.', [
         'phone_number' => $phoneDigits,
         'role' => 'Patient'
     ],
-    'patient' => [
-        'id' => (int)$patientRecordId,
-        'patient_id' => $finalPatientId,
-        'full_name' => $fullName,
-        'dob' => $formattedDob,
-        'age' => $age,
-        'gender' => $gender,
-        'phone_number' => $phoneDigits,
-        'email' => $email,
-        'height' => $height,
-        'weight' => $weight,
-        'package_name' => 'Ayurveda Holistic Care',
-        'status' => 'Ongoing'
-    ],
+    'patient' => $patientPayload,
     'prakruti_result' => [
         'type' => $profileType,
         'title' => $profileType,

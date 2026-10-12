@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || (isset($_GET['action']) && $_GET['ac
 
     // A. Query `patients` table by phone, email or patient_id
     if (!empty($phone) || !empty($phoneDigits) || !empty($email) || !empty($patientId)) {
-        $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at, updated_at FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1";
+        $pQuery = "SELECT id, patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at, updated_at FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1";
         if ($stmt = mysqli_prepare($connection1, $pQuery)) {
             mysqli_stmt_bind_param($stmt, "ssss", $phone, $phoneDigits, $email, $patientId);
             mysqli_stmt_execute($stmt);
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || (isset($_GET['action']) && $_GET['ac
             mysqli_stmt_close($uStmt);
         }
     } elseif ($user && !$patient) {
-        $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at, updated_at FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) LIMIT 1";
+        $pQuery = "SELECT id, patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at, updated_at FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) LIMIT 1";
         if ($stmt = mysqli_prepare($connection1, $pQuery)) {
             mysqli_stmt_bind_param($stmt, "sss", $user['phone_number'], $phoneDigits, $user['email']);
             mysqli_stmt_execute($stmt);
@@ -120,16 +120,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || (isset($_GET['action']) && $_GET['ac
     $finalPatientData = [
         'id' => (int)($patient['id'] ?? ($user['id'] ?? 1)),
         'patient_id' => $finalPatientId,
+        'patient_profile' => $patient['patient_profile'] ?? '',
         'full_name' => $finalFullName,
         'dob' => $patient['dob'] ?? '',
         'dob_formatted' => $formattedDob,
         'age' => (int)($patient['age'] ?? 0),
+        'height' => $patient['height'] ?? '',
+        'weight' => $patient['weight'] ?? '',
         'phone_number' => $finalPhone,
         'gender' => $patient['gender'] ?? 'Male',
         'email' => $finalEmail,
+        'blood_group' => $patient['blood_group'] ?? 'O+',
+        'emergency_contact' => $patient['emergency_contact'] ?? '',
+        'address' => $patient['address'] ?? '',
         'package_name' => $patient['package_name'] ?? 'Ayurveda Holistic Care',
         'total_appointments' => (int)($patient['total_appointments'] ?? 0),
-        'status' => $patient['status'] ?? 'Ongoing'
+        'status' => $patient['status'] ?? 'Ongoing',
+        'created_at' => $patient['created_at'] ?? '',
+        'updated_at' => $patient['updated_at'] ?? ''
     ];
 
     $finalUserData = [

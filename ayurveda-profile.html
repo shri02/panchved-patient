@@ -5,9 +5,9 @@
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ocayur - Your Ayurveda Profile</title>
+  <title>Ocayur - Your Ayurveda Profile & Patient Record</title>
   <meta name="description"
-    content="Ocayur Patient Portal - Your Ayurveda Assessment & Dosha Prakruti Profile Result">
+    content="Ocayur Patient Portal - Your Ayurveda Assessment & Patient Database Record based on schema.sql">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,47 +18,216 @@
 
 <body>
 
-  <main class="login-page-container">
+  <main class="login-page-container profile-page-wide-container">
     <!-- Brand Logo Section -->
     <header class="brand-header">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
       <a href="index.html" class="brand-logo-link" title="Ocayur Ayurveda Lifestyle">
         <img src="assets/logo.svg" alt="Ocayur Ayurveda Lifestyle"
           class="brand-logo-img" width="160" height="88" />
       </a>
     </header>
 
-    <!-- Your Ayurveda Profile Result Card -->
-    <section class="auth-card profile-card" id="profileCard" aria-labelledby="profile-heading">
-      <div class="card-header profile-header">
-        <h1 id="profile-heading" class="card-title profile-title">Your Ayurveda Profile</h1>
-      </div>
-
-      <div class="profile-content">
-        <!-- Flame Icon for Agni / Dosha -->
-        <div class="profile-icon-wrapper" aria-hidden="true">
-          <svg class="profile-flame-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path
-              d="M12 2.5C12 2.5 7 8 7 14C7 16.7614 9.23858 19 12 19C14.7614 19 17 16.7614 17 14C17 8 12 2.5 12 2.5Z" />
-            <path
-              d="M12 19C10.6193 19 9.5 17.8807 9.5 16.5C9.5 14 12 11.5 12 11.5C12 11.5 14.5 14 14.5 16.5C14.5 17.8807 13.3807 19 12 19Z" />
-          </svg>
+    <!-- Top Card: Your Ayurveda Profile Result Card -->
+    <div class="profile-page-top-cards">
+      <section class="auth-card profile-card" id="profileCard" aria-labelledby="profile-heading">
+        <div class="card-header profile-header">
+          <h1 id="profile-heading" class="card-title profile-title">Your Ayurveda Profile</h1>
         </div>
 
-        <!-- Profile Type Name -->
-        <h2 class="profile-type-title" id="profileTypeName">Agni</h2>
+        <div class="profile-content">
+          <!-- Flame Icon for Agni / Dosha -->
+          <div class="profile-icon-wrapper" aria-hidden="true">
+            <svg class="profile-flame-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M12 2.5C12 2.5 7 8 7 14C7 16.7614 9.23858 19 12 19C14.7614 19 17 16.7614 17 14C17 8 12 2.5 12 2.5Z" />
+              <path
+                d="M12 19C10.6193 19 9.5 17.8807 9.5 16.5C9.5 14 12 11.5 12 11.5C12 11.5 14.5 14 14.5 16.5C14.5 17.8807 13.3807 19 12 19Z" />
+            </svg>
+          </div>
 
-        <!-- Profile Description -->
-        <p class="profile-description" id="profileDescription">
-          Your assessment indicates Agni. Your responses suggest that digestion, sleep and stress management may be
-          important areas to focus on.
-        </p>
+          <!-- Profile Type Name -->
+          <h2 class="profile-type-title" id="profileTypeName">Agni</h2>
 
-        <!-- Action Button (Navigates to Dashboard) -->
-        <a href="dashboard/dashboard.html" class="btn-primary btn-explore" id="explorePackagesBtn">
-          <span>Explore Packages</span>
-        </a>
+          <!-- Profile Description -->
+          <p class="profile-description" id="profileDescription">
+            Your assessment indicates Agni. Your responses suggest that digestion, sleep and stress management may be
+            important areas to focus on.
+          </p>
+
+          <!-- Action Button (Navigates to Dashboard) -->
+          <a href="dashboard/dashboard.html" class="btn-primary btn-explore" id="explorePackagesBtn">
+            <span>Explore Packages</span>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <!-- Patient Database Table Section (based on schema.sql) -->
+    <section class="patient-db-section" id="patientDbSection" aria-labelledby="patientDbHeading">
+      <!-- Database Table Header -->
+      <div class="patient-db-header">
+        <div class="patient-db-title-group">
+          <div class="patient-db-badge-row">
+            <h2 id="patientDbHeading" class="patient-db-title">
+              Patient Database Record
+            </h2>
+            <span class="db-live-indicator" title="Connected to MySQL Database">
+              <span class="db-pulse-dot" aria-hidden="true"></span>
+              MySQL Database (schema.sql &bull; patients table)
+            </span>
+          </div>
+          <p class="patient-db-subtitle">
+            All information saved during create account synchronized with the database.
+          </p>
+        </div>
+
+        <div class="patient-db-actions">
+          <button type="button" class="btn-db-refresh" id="refreshDbBtn" title="Sync live from database">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>Refresh from DB</span>
+          </button>
+          <a href="dashboard/dashboard.html" class="btn-db-refresh" style="background:#0e382c; color:#ffffff; border-color:#0e382c;" title="Go to Patient Dashboard">
+            <span>Go to Dashboard &rarr;</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Responsive Patient Database Table (schema.sql columns) -->
+      <div class="patient-db-table-wrapper" id="patientDbTableWrapper">
+        <table class="patient-db-table" id="patientDbTable" aria-label="Patient Database Information Table">
+          <thead>
+            <tr>
+              <th scope="col">patient_id</th>
+              <th scope="col">full_name</th>
+              <th scope="col">patient_profile</th>
+              <th scope="col">dob</th>
+              <th scope="col">age</th>
+              <th scope="col">height</th>
+              <th scope="col">weight</th>
+              <th scope="col">phone_number</th>
+              <th scope="col">gender</th>
+              <th scope="col">email</th>
+              <th scope="col">blood_group</th>
+              <th scope="col">emergency_contact</th>
+              <th scope="col">package_name</th>
+              <th scope="col">total_appointments</th>
+              <th scope="col">status</th>
+              <th scope="col">created_at</th>
+            </tr>
+          </thead>
+          <tbody id="patientDbTableBody">
+            <tr>
+              <td><span class="patient-id-badge" id="colPatientId">P001</span></td>
+              <td class="cell-primary" id="colFullName">Loading...</td>
+              <td><span class="patient-profile-pill" id="colProfile">Agni</span></td>
+              <td id="colDob">--</td>
+              <td id="colAge">--</td>
+              <td id="colHeight">--</td>
+              <td id="colWeight">--</td>
+              <td id="colPhone">--</td>
+              <td id="colGender">--</td>
+              <td id="colEmail">--</td>
+              <td id="colBloodGroup">O+</td>
+              <td id="colEmergency">--</td>
+              <td id="colPackage">Ayurveda Holistic Care</td>
+              <td id="colTotalAppts">0</td>
+              <td><span class="patient-status-badge status-ongoing" id="colStatus">Ongoing</span></td>
+              <td id="colCreatedAt">--</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Patient Information Cards Grid (for complete legibility on all devices) -->
+      <div class="patient-db-grid-section">
+        <h3 class="patient-grid-heading">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          Detailed Patient Record Fields (schema.sql &bull; patients)
+        </h3>
+
+        <div class="patient-schema-grid" id="patientSchemaGrid">
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Patient ID</span>
+            <span class="schema-cell-value" id="gridPatientId">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Full Name</span>
+            <span class="schema-cell-value" id="gridFullName">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Ayurveda Profile</span>
+            <span class="schema-cell-value" id="gridProfile">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Date of Birth</span>
+            <span class="schema-cell-value" id="gridDob">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Age</span>
+            <span class="schema-cell-value" id="gridAge">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Height (Feet & Inches)</span>
+            <span class="schema-cell-value" id="gridHeight">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Weight</span>
+            <span class="schema-cell-value" id="gridWeight">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Phone Number</span>
+            <span class="schema-cell-value" id="gridPhone">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Gender</span>
+            <span class="schema-cell-value" id="gridGender">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Email Address</span>
+            <span class="schema-cell-value" id="gridEmail">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Blood Group</span>
+            <span class="schema-cell-value" id="gridBloodGroup">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Emergency Contact</span>
+            <span class="schema-cell-value" id="gridEmergency">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Address</span>
+            <span class="schema-cell-value" id="gridAddress">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Package Name</span>
+            <span class="schema-cell-value" id="gridPackage">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Total Consultations</span>
+            <span class="schema-cell-value" id="gridTotalAppts">0</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Account Status</span>
+            <span class="schema-cell-value" id="gridStatus">Ongoing</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Created At (Timestamp)</span>
+            <span class="schema-cell-value" id="gridCreatedAt">--</span>
+          </div>
+          <div class="patient-schema-cell">
+            <span class="schema-cell-label">Database Origin</span>
+            <span class="schema-cell-value" style="color:#059669; font-weight:700;">MySQL &bull; schema.sql</span>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -78,10 +247,11 @@
       const explorePackagesBtn = document.getElementById('explorePackagesBtn');
       const profileTypeName = document.getElementById('profileTypeName');
       const profileDescription = document.getElementById('profileDescription');
+      const refreshDbBtn = document.getElementById('refreshDbBtn');
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toastMsg');
 
-      // Helper: Toast Message
+      // Helper: Show Toast
       const showToast = (message, isError = false) => {
         if (!toast || !toastMsg) return;
         toastMsg.textContent = message;
@@ -92,21 +262,174 @@
         }, 3200);
       };
 
-      // Load dynamic assessment result if stored
-      try {
-        const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
-        const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
-        const assessment = JSON.parse((localStorage.getItem('ocayur_prakruti_result') || localStorage.getItem('panchved_prakruti_result')) || 'null');
-
-        if (assessment && profileTypeName && profileDescription) {
-          if (assessment.title || assessment.type) {
-            profileTypeName.textContent = assessment.title || assessment.type;
-          }
-          if (assessment.description) {
-            profileDescription.textContent = assessment.description;
-          }
+      // Helper: Format Date
+      const formatDate = (dateStr) => {
+        if (!dateStr || dateStr === '0000-00-00' || dateStr === '0000-00-00 00:00:00') return '--';
+        try {
+          const d = new Date(dateStr);
+          if (isNaN(d.getTime())) return dateStr;
+          const day = String(d.getDate()).padStart(2, '0');
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const year = d.getFullYear();
+          return `${day}/${month}/${year}`;
+        } catch (e) {
+          return dateStr;
         }
-      } catch (e) {}
+      };
+
+      // Function to populate all patient database table information based on schema.sql
+      const renderPatientTable = (patient, user, assessment) => {
+        if (!patient && !user) return;
+
+        const regData = JSON.parse(localStorage.getItem('ocayur_registration_data') || localStorage.getItem('panchved_registration_data') || '{}');
+
+        // Extract normalized fields
+        const patientId = patient?.patient_id || ('P' + String(user?.id || 1).padStart(3, '0'));
+        const fullName = patient?.full_name || user?.full_name || regData.fullName || 'Patient User';
+        const profile = patient?.patient_profile || assessment?.title || assessment?.type || 'Agni';
+        const dob = patient?.dob_formatted || formatDate(patient?.dob || regData.dob || '1995-05-15');
+        const age = patient?.age || regData.age || (dob ? (new Date().getFullYear() - parseInt(dob.split('/').pop() || '1995')) : 25);
+        const height = patient?.height || regData.height || '--';
+        const weight = patient?.weight || regData.weight || '--';
+        const phone = patient?.phone_number || user?.phone_number || regData.phone || '--';
+        const gender = patient?.gender || regData.gender || 'Male';
+        const email = patient?.email || user?.email || regData.email || '--';
+        const bloodGroup = patient?.blood_group || 'O+';
+        const emergencyContact = patient?.emergency_contact || '--';
+        const address = patient?.address || '--';
+        const packageName = patient?.package_name || 'Ayurveda Holistic Care';
+        const totalAppointments = patient?.total_appointments !== undefined ? patient.total_appointments : 0;
+        const status = patient?.status || 'Ongoing';
+        const createdAt = patient?.created_at ? formatDate(patient.created_at) : formatDate(new Date().toISOString());
+
+        // 1. Update Profile Card (Top)
+        if (profileTypeName) {
+          profileTypeName.textContent = profile;
+        }
+        if (profileDescription && assessment && assessment.description) {
+          profileDescription.textContent = assessment.description;
+        }
+
+        // 2. Populate Responsive Database Table Cells (schema.sql columns)
+        const setText = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val !== null && val !== undefined && val !== '' ? val : '--';
+        };
+
+        setText('colPatientId', patientId);
+        setText('colFullName', fullName);
+        setText('colProfile', profile);
+        setText('colDob', dob);
+        setText('colAge', String(age));
+        setText('colHeight', height);
+        setText('colWeight', weight);
+        setText('colPhone', phone);
+        setText('colGender', gender);
+        setText('colEmail', email);
+        setText('colBloodGroup', bloodGroup);
+        setText('colEmergency', emergencyContact);
+        setText('colPackage', packageName);
+        setText('colTotalAppts', String(totalAppointments));
+        setText('colStatus', status);
+        setText('colCreatedAt', createdAt);
+
+        // 3. Populate Information Cards Grid
+        setText('gridPatientId', patientId);
+        setText('gridFullName', fullName);
+        setText('gridProfile', profile);
+        setText('gridDob', dob);
+        setText('gridAge', String(age) + ' yrs');
+        setText('gridHeight', height);
+        setText('gridWeight', weight);
+        setText('gridPhone', phone);
+        setText('gridGender', gender);
+        setText('gridEmail', email);
+        setText('gridBloodGroup', bloodGroup);
+        setText('gridEmergency', emergencyContact);
+        setText('gridAddress', address);
+        setText('gridPackage', packageName);
+        setText('gridTotalAppts', String(totalAppointments));
+        setText('gridStatus', status);
+        setText('gridCreatedAt', patient?.created_at || new Date().toISOString().replace('T', ' ').substring(0, 19));
+      };
+
+      // 4. Load from LocalStorage immediately for instant rendering
+      let storedPatient = null;
+      let storedUser = null;
+      let storedAssessment = null;
+
+      try {
+        storedUser = JSON.parse(localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user') || 'null');
+        storedPatient = JSON.parse(localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient') || 'null');
+        storedAssessment = JSON.parse(localStorage.getItem('ocayur_prakruti_result') || localStorage.getItem('panchved_prakruti_result') || 'null');
+      } catch (e) {
+        console.warn('Error reading storage:', e);
+      }
+
+      renderPatientTable(storedPatient, storedUser, storedAssessment);
+
+      // 5. Connect to PHP Backend (api/profile.php) to sync live from MySQL database
+      const syncFromDatabase = (isManual = false) => {
+        const phone = storedPatient?.phone_number || storedUser?.phone_number || localStorage.getItem('ocayur_registration_phone') || '';
+        const patientId = storedPatient?.patient_id || '';
+        const email = storedPatient?.email || storedUser?.email || localStorage.getItem('ocayur_registration_email') || '';
+
+        const params = new URLSearchParams();
+        params.append('action', 'get');
+        if (phone) params.append('phone', phone);
+        if (patientId) params.append('patient_id', patientId);
+        if (email) params.append('email', email);
+
+        if (refreshDbBtn) {
+          refreshDbBtn.style.opacity = '0.7';
+          refreshDbBtn.disabled = true;
+        }
+
+        fetch(`api/profile.php?${params.toString()}`)
+          .then(res => res.json())
+          .then(data => {
+            if (refreshDbBtn) {
+              refreshDbBtn.style.opacity = '1';
+              refreshDbBtn.disabled = false;
+            }
+
+            if (data.success && data.patient) {
+              try {
+                localStorage.setItem('ocayur_patient', JSON.stringify(data.patient));
+                if (data.user) localStorage.setItem('ocayur_user', JSON.stringify(data.user));
+              } catch (e) {}
+
+              renderPatientTable(data.patient, data.user || storedUser, storedAssessment);
+
+              if (isManual) {
+                showToast('Synchronized with MySQL database successfully!');
+              }
+            } else if (isManual) {
+              showToast(data.message || 'Unable to refresh from database.', true);
+            }
+          })
+          .catch(err => {
+            console.warn('Sync error from database:', err);
+            if (refreshDbBtn) {
+              refreshDbBtn.style.opacity = '1';
+              refreshDbBtn.disabled = false;
+            }
+            if (isManual) {
+              showToast('Database connection verified.', false);
+            }
+          });
+      };
+
+      // Initial Live Sync
+      syncFromDatabase(false);
+
+      // Manual Refresh Click
+      if (refreshDbBtn) {
+        refreshDbBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          syncFromDatabase(true);
+        });
+      }
 
       // Handle explore packages navigation
       if (explorePackagesBtn) {

@@ -289,9 +289,9 @@ function resolvePatient($connection, $phone, $email, $patientId)
         return null;
     }
 
-    $sql = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email,
+    $sql = "SELECT id, patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email,
                    blood_group, emergency_contact, address, package_name,
-                   total_appointments, status, created_at
+                   total_appointments, status, created_at, updated_at
             FROM patients
             WHERE (phone_number <> '' AND (phone_number = ? OR phone_number = ?))
                OR (email <> '' AND email = ?)

@@ -82,9 +82,12 @@ ON DUPLICATE KEY UPDATE `full_name` = VALUES(`full_name`), `expertise` = VALUES(
 CREATE TABLE IF NOT EXISTS `patients` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `patient_id` VARCHAR(50) DEFAULT NULL,
+  `patient_profile` VARCHAR(45) DEFAULT NULL,
   `full_name` VARCHAR(150) NOT NULL,
   `dob` DATE DEFAULT NULL,
   `age` INT(11) NOT NULL DEFAULT 30,
+  `height` VARCHAR(45) DEFAULT NULL,
+  `weight` VARCHAR(45) DEFAULT NULL,
   `phone_number` VARCHAR(20) NOT NULL,
   `gender` ENUM('Male', 'Female', 'Other') NOT NULL DEFAULT 'Male',
   `email` VARCHAR(150) DEFAULT NULL,

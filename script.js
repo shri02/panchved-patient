@@ -1071,6 +1071,10 @@ document.addEventListener('DOMContentLoaded', () => {
       registrationState.hairType = hairType;
       registrationState.bowelMovement = bowelMovement;
 
+      try {
+        localStorage.setItem('ocayur_registration_data', JSON.stringify(registrationState));
+      } catch (e) {}
+
       const originalHtml = submitPrakrutiBtn.innerHTML;
       submitPrakrutiBtn.disabled = true;
       submitPrakrutiBtn.style.opacity = '0.85';
