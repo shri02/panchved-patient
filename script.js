@@ -643,6 +643,65 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   setDobPickerMaxDate();
 
+  // Helper: Auto Calculate Exact Age from Date of Birth
+  const calculateExactAge = (dobStr) => {
+    if (!dobStr) return null;
+    let d, m, y;
+    const match = String(dobStr).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (match) {
+      d = parseInt(match[1], 10);
+      m = parseInt(match[2], 10);
+      y = parseInt(match[3], 10);
+      if (match[3].length === 2) {
+        const currentShort = new Date().getFullYear() % 100;
+        y = y > currentShort ? (1900 + y) : (2000 + y);
+      }
+    } else if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(String(dobStr).trim())) {
+      const parts = String(dobStr).trim().split('-').map(Number);
+      y = parts[0];
+      m = parts[1];
+      d = parts[2];
+    } else {
+      return null;
+    }
+
+    if (!d || !m || !y || m < 1 || m > 12 || d < 1 || d > 31) return null;
+
+    const birthDate = new Date(y, m - 1, d);
+    if (birthDate.getFullYear() !== y || birthDate.getMonth() !== (m - 1) || birthDate.getDate() !== d) {
+      return null;
+    }
+
+    const today = new Date();
+    if (birthDate > today) return null;
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return Math.max(0, age);
+  };
+
+  const dobAgeBadge = document.getElementById('dobAgeBadge');
+  const dobAgeValue = document.getElementById('dobAgeValue');
+
+  const updateCalculatedAgeUI = (val) => {
+    const age = calculateExactAge(val);
+    if (age !== null && !isNaN(age)) {
+      registrationState.age = age;
+      if (dobAgeBadge && dobAgeValue) {
+        dobAgeValue.textContent = age;
+        dobAgeBadge.style.display = 'inline-flex';
+      }
+    } else {
+      if (dobAgeBadge) {
+        dobAgeBadge.style.display = 'none';
+      }
+    }
+  };
+
   if (dobInput) {
     dobInput.addEventListener('input', (e) => {
       let val = e.target.value.replace(/\D/g, '');
@@ -654,6 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (val.length > 4) formatted += '/' + val.substring(4, 6);
 
       dobInput.value = formatted;
+      updateCalculatedAgeUI(formatted);
     });
   }
 
@@ -688,6 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const shortYear = year.slice(-2);
         if (dobInput) {
           dobInput.value = `${day}/${month}/${shortYear}`;
+          updateCalculatedAgeUI(dobInput.value);
         }
       }
     });
@@ -697,6 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const registrationState = {
     fullName: '',
     dob: '',
+    age: null,
     gender: '',
     height: '',
     weight: '',
@@ -991,6 +1053,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Save into registration state
       registrationState.fullName = name;
       registrationState.dob = dob;
+      registrationState.age = calculateExactAge(dob);
       registrationState.gender = gender;
       registrationState.height = height;
       registrationState.weight = weight;

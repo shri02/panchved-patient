@@ -149,30 +149,42 @@ if ($genderRaw === 'female') {
     $gender = 'Other';
 }
 
-// Date of Birth & Age Calculation
+// Date of Birth & Auto Calculate Exact Age from DOB
 $formattedDob = '1995-05-15';
-$age = 29;
+$age = 31;
 
 if (!empty($dobRaw)) {
-    // Supports dd/mm/yy, dd/mm/yyyy, yyyy-mm-dd
-    if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/', $dobRaw, $matches)) {
-        $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-        $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
-        $year = $matches[3];
-        if (strlen($year) === 2) {
+    $parsedYear = null;
+    $parsedMonth = null;
+    $parsedDay = null;
+
+    if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/', trim($dobRaw), $matches)) {
+        $parsedDay = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+        $parsedMonth = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+        $rawYear = $matches[3];
+        if (strlen($rawYear) === 2) {
             $currentYearShort = (int)date('y');
-            $year = ((int)$year > $currentYearShort) ? ('19' . $year) : ('20' . $year);
+            $parsedYear = ((int)$rawYear > $currentYearShort) ? ('19' . $rawYear) : ('20' . $rawYear);
+        } else {
+            $parsedYear = $rawYear;
         }
-        $formattedDob = "$year-$month-$day";
-    } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dobRaw)) {
-        $formattedDob = $dobRaw;
+    } elseif (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', trim($dobRaw), $matches)) {
+        $parsedYear = $matches[1];
+        $parsedMonth = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+        $parsedDay = str_pad($matches[3], 2, '0', STR_PAD_LEFT);
     }
 
-    $dobDate = date_create($formattedDob);
-    if ($dobDate) {
-        $diff = date_diff($dobDate, date_create('today'));
-        $age = $diff->y > 0 ? $diff->y : 25;
+    if ($parsedYear && $parsedMonth && $parsedDay && checkdate((int)$parsedMonth, (int)$parsedDay, (int)$parsedYear)) {
+        $formattedDob = sprintf('%04d-%02d-%02d', (int)$parsedYear, (int)$parsedMonth, (int)$parsedDay);
+        $dobDate = date_create($formattedDob);
+        $today = date_create('today');
+        if ($dobDate && $today) {
+            $diff = date_diff($dobDate, $today);
+            $age = ($diff->invert === 0) ? (int)$diff->y : 0;
+        }
     }
+} elseif (isset($data['age']) && is_numeric($data['age'])) {
+    $age = (int)$data['age'];
 }
 
 // Generate email if empty

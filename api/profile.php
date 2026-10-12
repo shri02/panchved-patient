@@ -265,26 +265,38 @@ if ($action === 'update_profile') {
         $phoneDigits = $_SESSION['phone_number'] ?? '9876543210';
     }
 
-    // Normalize DOB
+    // Normalize DOB & Auto Calculate Exact Age
     $mysqlDob = '2000-01-01';
-    $age = 25;
+    $age = 26;
     if (!empty($dobRaw)) {
-        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/', $dobRaw, $m)) {
-            $d = str_pad($m[1], 2, '0', STR_PAD_LEFT);
-            $mo = str_pad($m[2], 2, '0', STR_PAD_LEFT);
-            $y = $m[3];
-            if (strlen($y) === 2) {
-                $y = ((int)$y > (int)date('y')) ? ('19' . $y) : ('20' . $y);
+        $parsedYear = null;
+        $parsedMonth = null;
+        $parsedDay = null;
+
+        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/', trim($dobRaw), $m)) {
+            $parsedDay = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $parsedMonth = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+            $rawY = $m[3];
+            if (strlen($rawY) === 2) {
+                $currentShort = (int)date('y');
+                $parsedYear = ((int)$rawY > $currentShort) ? ('19' . $rawY) : ('20' . $rawY);
+            } else {
+                $parsedYear = $rawY;
             }
-            $mysqlDob = "$y-$mo-$d";
-        } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dobRaw)) {
-            $mysqlDob = $dobRaw;
+        } elseif (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', trim($dobRaw), $m)) {
+            $parsedYear = $m[1];
+            $parsedMonth = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+            $parsedDay = str_pad($m[3], 2, '0', STR_PAD_LEFT);
         }
 
-        $dobObj = date_create($mysqlDob);
-        if ($dobObj) {
-            $diff = date_diff($dobObj, date_create('today'));
-            $age = $diff->y > 0 ? $diff->y : 25;
+        if ($parsedYear && $parsedMonth && $parsedDay && checkdate((int)$parsedMonth, (int)$parsedDay, (int)$parsedYear)) {
+            $mysqlDob = sprintf('%04d-%02d-%02d', (int)$parsedYear, (int)$parsedMonth, (int)$parsedDay);
+            $dobObj = date_create($mysqlDob);
+            $today = date_create('today');
+            if ($dobObj && $today) {
+                $diff = date_diff($dobObj, $today);
+                $age = ($diff->invert === 0) ? (int)$diff->y : 0;
+            }
         }
     }
 

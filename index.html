@@ -172,6 +172,13 @@
               </button>
               <input type="date" id="dobNativePicker" class="dob-hidden-picker" aria-hidden="true" tabindex="-1" />
             </div>
+            <div id="dobAgeBadge" class="dob-age-badge" style="display: none;" aria-live="polite">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Age: <strong id="dobAgeValue">--</strong> yrs</span>
+            </div>
           </div>
 
           <!-- Gender -->

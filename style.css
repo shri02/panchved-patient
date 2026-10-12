@@ -3559,3 +3559,19 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
     visibility: visible !important;
   }
 }
+
+/* Auto-calculated Age Badge */
+.dob-age-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0e382c;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-top: 5px;
+  animation: fadeIn 0.25s ease-out;
+}
