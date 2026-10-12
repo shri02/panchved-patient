@@ -200,14 +200,41 @@
 
         <!-- Height & Weight (2 Columns) -->
         <div class="form-row-grid">
-          <!-- Height -->
+          <!-- Height (in Feet & Inches) -->
           <div class="form-group">
-            <label for="heightInput" class="form-label">
+            <label for="heightFeetInput" class="form-label">
               Height<span class="required-star">*</span>
             </label>
-            <div class="input-wrapper simple-input-wrapper">
-              <input type="text" id="heightInput" name="height" class="text-input-field" placeholder="Eg. 5 ft 8 in"
-                required />
+            <div class="input-wrapper height-combo-wrapper" id="heightComboWrapper">
+              <input 
+                type="number" 
+                id="heightFeetInput" 
+                name="height_feet" 
+                class="text-input-field height-num-input" 
+                placeholder="Feet" 
+                min="1" 
+                max="8" 
+                step="1"
+                inputmode="numeric"
+                aria-label="Height in feet"
+                required 
+              />
+              <span class="height-unit-label">ft</span>
+              <span class="height-divider" aria-hidden="true"></span>
+              <input 
+                type="number" 
+                id="heightInchesInput" 
+                name="height_inches" 
+                class="text-input-field height-num-input" 
+                placeholder="Inches" 
+                min="0" 
+                max="11" 
+                step="1"
+                inputmode="numeric"
+                aria-label="Height in inches"
+              />
+              <span class="height-unit-label">in</span>
+              <input type="hidden" id="heightInput" name="height" />
             </div>
           </div>
 

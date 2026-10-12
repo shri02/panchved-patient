@@ -270,6 +270,47 @@ body {
   padding: 0 14px;
 }
 
+/* Height Combo Input (Feet and Inches) */
+.height-combo-wrapper {
+  padding: 0 10px;
+  gap: 2px;
+}
+
+.height-num-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  text-align: center;
+  padding: 0 2px;
+}
+
+.height-num-input::-webkit-outer-spin-button,
+.height-num-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.height-num-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.height-unit-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  user-select: none;
+  flex-shrink: 0;
+  padding: 0 3px;
+}
+
+.height-divider {
+  width: 1px;
+  height: 20px;
+  background-color: #d1d5db;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
 /* Text & Select Input Fields */
 .text-input-field {
   width: 100%;

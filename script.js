@@ -798,92 +798,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const fullNameInput = document.getElementById('fullNameInput');
   const genderSelect = document.getElementById('genderSelect');
   const heightInput = document.getElementById('heightInput');
+  const heightFeetInput = document.getElementById('heightFeetInput');
+  const heightInchesInput = document.getElementById('heightInchesInput');
   const weightInput = document.getElementById('weightInput');
   const personalSelectedCountryCode = document.getElementById('personalSelectedCountryCode');
   const emailInput = document.getElementById('emailInput');
 
-  // Helper: Parse and validate height in feet and inches (strictly rejects cm)
-  const parseHeightFeetInches = (raw) => {
-    if (!raw) return null;
-    const s = raw.trim().toLowerCase();
-
-    // Explicitly reject cm or centimeter
-    if (s.includes('cm') || s.includes('centimeter')) {
-      return { error: 'cm' };
-    }
-
-    // Numbers 30 or greater without units are likely cm (e.g. 150, 165, 175)
-    const pureNum = parseFloat(s);
-    if (!isNaN(pureNum) && pureNum >= 30 && !s.includes('in') && !s.includes('"') && !s.includes('inch')) {
-      return { error: 'cm' };
-    }
-
-    // Pattern 1: feet and inches (e.g. 5'8", 5'8, 5 ft 8 in, 5ft 8in, 5 feet 8 inches, 5 ft 8)
-    const ftInMatch = s.match(/^(\d+)\s*(?:'|ft|feet)?\s*(\d+(?:\.\d+)?)\s*(?:"|in|inches)?$/i);
-    if (ftInMatch) {
-      const feet = parseInt(ftInMatch[1], 10);
-      const inches = Math.round(parseFloat(ftInMatch[2]));
-      if (feet >= 1 && feet <= 8 && inches >= 0 && inches <= 11) {
-        return { feet, inches, formatted: `${feet} ft ${inches} in` };
+  // Synchronize Feet & Inches into heightInput
+  const syncHeightCombined = () => {
+    const feet = heightFeetInput ? heightFeetInput.value.trim() : '';
+    const inches = heightInchesInput ? heightInchesInput.value.trim() : '';
+    if (feet !== '' || inches !== '') {
+      const fNum = feet !== '' ? parseInt(feet, 10) : 0;
+      const iNum = inches !== '' ? parseInt(inches, 10) : 0;
+      if (heightInput) {
+        heightInput.value = `${fNum} ft ${iNum} in`;
       }
-      return { error: 'range' };
+    } else {
+      if (heightInput) heightInput.value = '';
     }
-
-    // Pattern 2: feet only (e.g. 5 ft, 5 feet, 5', 6ft)
-    const ftOnlyMatch = s.match(/^(\d+)\s*(?:'|ft|feet)$/i);
-    if (ftOnlyMatch) {
-      const feet = parseInt(ftOnlyMatch[1], 10);
-      if (feet >= 1 && feet <= 8) {
-        return { feet, inches: 0, formatted: `${feet} ft 0 in` };
-      }
-      return { error: 'range' };
-    }
-
-    // Pattern 3: inches only (e.g. 68 in, 68 inches, 68")
-    const inOnlyMatch = s.match(/^(\d+)\s*(?:"|in|inches)$/i);
-    if (inOnlyMatch) {
-      const totalInches = parseInt(inOnlyMatch[1], 10);
-      if (totalInches >= 24 && totalInches <= 96) {
-        const feet = Math.floor(totalInches / 12);
-        const inches = totalInches % 12;
-        return { feet, inches, formatted: `${feet} ft ${inches} in` };
-      }
-      return { error: 'range' };
-    }
-
-    // Pattern 4: dot notation (e.g. 5.8 for 5 ft 8 in)
-    const dotMatch = s.match(/^(\d+)\.(\d+)$/);
-    if (dotMatch) {
-      const feet = parseInt(dotMatch[1], 10);
-      const inches = parseInt(dotMatch[2], 10);
-      if (feet >= 1 && feet <= 8 && inches <= 11) {
-        return { feet, inches, formatted: `${feet} ft ${inches} in` };
-      }
-      return { error: 'range' };
-    }
-
-    // Pattern 5: single digit 1-8 (assume feet, e.g. "5" or "6")
-    const singleDigit = s.match(/^([1-8])$/);
-    if (singleDigit) {
-      const feet = parseInt(singleDigit[1], 10);
-      return { feet, inches: 0, formatted: `${feet} ft 0 in` };
-    }
-
-    return { error: 'invalid' };
   };
 
-  if (heightInput) {
-    heightInput.addEventListener('blur', () => {
-      const val = heightInput.value.trim();
-      if (!val) return;
-      const res = parseHeightFeetInches(val);
-      if (res && res.formatted) {
-        heightInput.value = res.formatted;
-      } else if (res && res.error === 'cm') {
-        showToast('Please enter your height in feet and inches (e.g. 5 ft 8 in), not in cm.', true);
-      }
-    });
-  }
+  [heightFeetInput, heightInchesInput].forEach(inp => {
+    if (inp) {
+      inp.addEventListener('input', syncHeightCombined);
+      inp.addEventListener('keydown', (e) => {
+        if (['e', 'E', '+', '-'].includes(e.key)) {
+          e.preventDefault();
+        }
+      });
+    }
+  });
 
   if (personalPhoneInput) {
     personalPhoneInput.addEventListener('blur', async () => {
@@ -958,35 +903,37 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const rawHeight = heightInput ? heightInput.value.trim() : '';
+      const feet = heightFeetInput ? heightFeetInput.value.trim() : '';
+      const inches = heightInchesInput ? heightInchesInput.value.trim() : '';
 
-      if (!rawHeight) {
-        showToast('Please enter your Height in feet and inches (e.g. 5 ft 8 in).', true);
-        heightInput?.focus();
+      if (!feet && !inches && !height) {
+        showToast('Please enter your Height in feet and inches.', true);
+        (heightFeetInput || heightInput)?.focus();
         return;
       }
 
-      const parsedHeight = parseHeightFeetInches(rawHeight);
-      if (parsedHeight && parsedHeight.error === 'cm') {
-        showToast('Please enter your height in feet and inches (e.g. 5 ft 8 in), not in cm.', true);
-        heightInput?.focus();
+      if (!feet) {
+        showToast('Please enter your height in feet.', true);
+        heightFeetInput?.focus();
         return;
       }
 
-      if (parsedHeight && parsedHeight.error === 'range') {
-        showToast('Please enter a valid height between 1 ft and 8 ft (0-11 in).', true);
-        heightInput?.focus();
+      const feetVal = parseInt(feet, 10);
+      if (isNaN(feetVal) || feetVal < 1 || feetVal > 8) {
+        showToast('Please enter a valid height in feet (1-8 ft).', true);
+        heightFeetInput?.focus();
         return;
       }
 
-      if (!parsedHeight || !parsedHeight.formatted) {
-        showToast('Please enter your height in feet and inches (e.g. 5 ft 8 in).', true);
-        heightInput?.focus();
+      const inchesVal = inches !== '' ? parseInt(inches, 10) : 0;
+      if (isNaN(inchesVal) || inchesVal < 0 || inchesVal > 11) {
+        showToast('Please enter valid inches (0-11 in).', true);
+        heightInchesInput?.focus();
         return;
       }
 
-      const height = parsedHeight.formatted;
-      heightInput.value = height;
+      height = `${feetVal} ft ${inchesVal} in`;
+      if (heightInput) heightInput.value = height;
 
       if (!weight) {
         showToast('Please enter your Weight.', true);
