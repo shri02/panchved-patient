@@ -997,7 +997,137 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========================================================
   // 6. MODAL 3: BOOK CONSULTATION MODAL & DYNAMIC DOCTOR FETCH
   // ========================================================
+  // Time conversion & clock helpers
+  const parseTimeToMinutes = (tStr) => {
+    if (!tStr) return null;
+    const trimmed = tStr.trim();
+    const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([APap][Mm])?$/i);
+    if (!match) return null;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const meridian = (match[3] || '').toUpperCase();
+    if (meridian === 'PM' && hours < 12) hours += 12;
+    if (meridian === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  };
+
+  const minutesToFormattedTime = (totalMinutes) => {
+    if (totalMinutes === null || totalMinutes === undefined || isNaN(totalMinutes)) return '';
+    const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+    let h = Math.floor(normalized / 60);
+    const m = normalized % 60;
+    const meridian = h >= 12 ? 'PM' : 'AM';
+    let displayH = h % 12;
+    if (displayH === 0) displayH = 12;
+    const hh = String(displayH).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    return `${hh}:${mm} ${meridian}`;
+  };
+
+  // Doctor Schedule & Availability Mapping (in minutes from midnight)
+  const doctorSchedules = {
+    1: [ // Dr. Nidhi Jha: 08:00 AM - 01:00 PM, 05:00 PM - 09:00 PM
+      { start: 480, end: 780, text: '08:00 AM - 01:00 PM' },
+      { start: 1020, end: 1260, text: '05:00 PM - 09:00 PM' }
+    ],
+    2: [ // Dr. Rohit Mehra: 10:00 AM - 02:00 PM, 04:00 PM - 08:00 PM
+      { start: 600, end: 840, text: '10:00 AM - 02:00 PM' },
+      { start: 960, end: 1200, text: '04:00 PM - 08:00 PM' }
+    ],
+    3: [ // Dr. Priya Patel: 08:00 AM - 02:00 PM, 06:00 PM - 09:00 PM
+      { start: 480, end: 840, text: '08:00 AM - 02:00 PM' },
+      { start: 1080, end: 1260, text: '06:00 PM - 09:00 PM' }
+    ],
+    4: [ // Dr. Ankit Verma: 12:00 PM - 06:00 PM
+      { start: 720, end: 1080, text: '12:00 PM - 06:00 PM' }
+    ],
+    5: [ // Dr. Sneha Kulkarni: 03:00 PM - 09:00 PM
+      { start: 900, end: 1260, text: '03:00 PM - 09:00 PM' }
+    ]
+  };
+
+  const isDoctorAvailableAt = (doc, timeStr, dateStr = '') => {
+    if (!timeStr) return true; // If no time chosen yet, all active doctors shown
+    const timeMins = parseTimeToMinutes(timeStr);
+    if (timeMins === null) return true;
+
+    // Check doctor shift schedule
+    const docId = parseInt(doc.id, 10);
+    const schedule = doc.schedule || doctorSchedules[docId] || [
+      { start: 540, end: 1140, text: '09:00 AM - 07:00 PM' }
+    ];
+
+    const inShift = schedule.some(slot => {
+      const s = slot.start_min !== undefined ? slot.start_min : slot.start;
+      const e = slot.end_min !== undefined ? slot.end_min : slot.end;
+      return timeMins >= s && timeMins < e;
+    });
+    if (!inShift) return false;
+
+    // Check for booked appointment conflicts if date is selected
+    if (dateStr && Array.isArray(loadedMyAppts)) {
+      const isBooked = loadedMyAppts.some(appt => {
+        if (!appt) return false;
+        const apptDate = appt.appointment_date || appt.date || '';
+        const apptDoc = appt.doctor_name || appt.doctor || '';
+        const apptTime = appt.appointment_time || appt.time || '';
+        if (apptDate === dateStr && (apptDoc === doc.name || apptDoc.includes(doc.name))) {
+          const apptStart = parseTimeToMinutes(apptTime.split('-')[0]);
+          if (apptStart !== null && Math.abs(apptStart - timeMins) < 45) {
+            return true;
+          }
+        }
+        return false;
+      });
+      if (isBooked) return false;
+    }
+
+    return true;
+  };
+
   let activeDoctorsList = [];
+
+  const renderDoctorSelectOptions = (doctors, preservedDoctor = '', placeholderText = 'Select Doctor') => {
+    if (!consultDoctor) return;
+
+    let hasPreservedMatch = false;
+    const optionsHtml = doctors.map(doc => {
+      const isSelected = preservedDoctor && doc.name === preservedDoctor;
+      if (isSelected) hasPreservedMatch = true;
+      return `<option value="${escapeHtml(doc.name)}" data-id="${doc.id}" data-role="${escapeHtml(doc.role || doc.expertise || 'Ayurveda Physician')}" data-initials="${escapeHtml(doc.initials || 'DR')}" ${isSelected ? 'selected' : ''}>${escapeHtml(doc.name)}${doc.role ? (' - ' + escapeHtml(doc.role)) : ''}</option>`;
+    }).join('');
+
+    consultDoctor.innerHTML = `<option value="" disabled ${!hasPreservedMatch ? 'selected' : ''}>${placeholderText}</option>` + optionsHtml;
+
+    if (hasPreservedMatch) {
+      consultDoctor.value = preservedDoctor;
+    } else {
+      consultDoctor.selectedIndex = 0;
+    }
+  };
+
+  const updateDoctorsForStartTime = (selectedTime, selectedDate) => {
+    if (!consultDoctor) return;
+
+    const time = selectedTime !== undefined ? selectedTime : (consultStartTime?.value.trim() || '');
+    const date = selectedDate !== undefined ? selectedDate : (consultDate?.value.trim() || '');
+    const currentSelected = consultDoctor.value;
+
+    if (!time) {
+      // If no start time is selected, display all active doctors
+      renderDoctorSelectOptions(activeDoctorsList, currentSelected, 'Select Doctor');
+      return;
+    }
+
+    const availableDocs = activeDoctorsList.filter(doc => isDoctorAvailableAt(doc, time, date));
+
+    if (availableDocs.length === 0) {
+      consultDoctor.innerHTML = `<option value="" disabled selected>No doctors available at ${escapeHtml(time)}</option>`;
+      consultDoctor.selectedIndex = 0;
+    } else {
+      renderDoctorSelectOptions(availableDocs, currentSelected, `Select Doctor (${availableDocs.length} available)`);
+    }
+  };
 
   // Fetch active doctors dynamically from database schema
   const fetchDoctorsFromDB = async () => {
@@ -1007,7 +1137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (data.success && Array.isArray(data.doctors) && data.doctors.length > 0) {
           activeDoctorsList = data.doctors;
-          renderDoctorSelectOptions(activeDoctorsList);
+          updateDoctorsForStartTime(consultStartTime?.value.trim() || '', consultDate?.value.trim() || '');
           return;
         }
       }
@@ -1022,14 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
       { id: 4, name: 'Dr. Ankit Verma', role: 'Ayurvedic Consultant (Chronic Disease Management)', initials: 'AV' },
       { id: 5, name: 'Dr. Sneha Kulkarni', role: 'Neuro-Physiotherapist (Neurological Rehab)', initials: 'SK' }
     ];
-    renderDoctorSelectOptions(activeDoctorsList);
-  };
-
-  const renderDoctorSelectOptions = (doctors) => {
-    if (!consultDoctor) return;
-    consultDoctor.innerHTML = '<option value="" disabled selected>Select Doctor</option>' +
-      doctors.map(doc => `<option value="${doc.name}" data-id="${doc.id}" data-role="${doc.role || doc.expertise || 'Ayurveda Physician'}" data-initials="${doc.initials || 'DR'}">${doc.name}${doc.role ? (' - ' + doc.role) : ''}</option>`).join('');
-    consultDoctor.selectedIndex = 0;
+    updateDoctorsForStartTime(consultStartTime?.value.trim() || '', consultDate?.value.trim() || '');
   };
 
   fetchDoctorsFromDB();
@@ -1090,32 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Time conversion & clock helpers
-  const parseTimeToMinutes = (tStr) => {
-    if (!tStr) return null;
-    const trimmed = tStr.trim();
-    const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([APap][Mm])?$/i);
-    if (!match) return null;
-    let hours = parseInt(match[1], 10);
-    const minutes = parseInt(match[2], 10);
-    const meridian = (match[3] || '').toUpperCase();
-    if (meridian === 'PM' && hours < 12) hours += 12;
-    if (meridian === 'AM' && hours === 12) hours = 0;
-    return hours * 60 + minutes;
-  };
-
-  const minutesToFormattedTime = (totalMinutes) => {
-    if (totalMinutes === null || totalMinutes === undefined || isNaN(totalMinutes)) return '';
-    const normalized = ((totalMinutes % 1440) + 1440) % 1440;
-    let h = Math.floor(normalized / 60);
-    const m = normalized % 60;
-    const meridian = h >= 12 ? 'PM' : 'AM';
-    let displayH = h % 12;
-    if (displayH === 0) displayH = 12;
-    const hh = String(displayH).padStart(2, '0');
-    const mm = String(m).padStart(2, '0');
-    return `${hh}:${mm} ${meridian}`;
-  };
+  // Clock Picker Helpers
 
   const parseTimeComponents = (tStr, defaultHour = '07', defaultMin = '00', defaultPeriod = 'PM') => {
     if (!tStr) return { hour: defaultHour, minute: defaultMin, period: defaultPeriod };
@@ -1252,12 +1350,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (parsed !== null) {
         inputEl.value = minutesToFormattedTime(parsed);
       }
+      if (isStartTime) {
+        updateDoctorsForStartTime(inputEl.value, consultDate?.value.trim());
+      }
       if (isStartTime && consultEndTime) {
         const sMins = parseTimeToMinutes(inputEl.value);
         const eMins = parseTimeToMinutes(consultEndTime.value);
         if (sMins !== null && (eMins === null || eMins <= sMins)) {
           consultEndTime.value = minutesToFormattedTime(sMins + 45);
         }
+      }
+    });
+
+    inputEl.addEventListener('input', () => {
+      if (isStartTime) {
+        updateDoctorsForStartTime(inputEl.value, consultDate?.value.trim());
       }
     });
 
@@ -1268,6 +1375,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const applyBtn = e.target.closest('.clock-btn-apply');
       if (applyBtn) {
         toggleDropdown(false);
+        if (isStartTime) {
+          updateDoctorsForStartTime(inputEl.value, consultDate?.value.trim());
+        }
         return;
       }
 
@@ -1301,6 +1411,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Format formatted time string
       const formatted = `${hour}:${minute} ${period}`;
       inputEl.value = formatted;
+
+      if (isStartTime) {
+        updateDoctorsForStartTime(formatted, consultDate?.value.trim());
+      }
 
       // Update hint text in footer
       const hintWrap = dropdownEl.querySelector('.clock-hint-wrap');
@@ -1339,6 +1453,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTimePicker(consultEndTime, btnEndTimeClock, endTimeDropdown, false);
   }
 
+  if (consultDate) {
+    consultDate.addEventListener('change', () => {
+      if (consultStartTime?.value) {
+        updateDoctorsForStartTime(consultStartTime.value, consultDate.value.trim());
+      }
+    });
+  }
+
   // Close time dropdowns when clicking outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.time-picker-container')) {
@@ -1346,19 +1468,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Open booking modal ensuring ALL fields remain blank with visible placeholders
+  // Open booking modal ensuring user name and phone number are automatically pre-filled and editable
   const openBookingModal = () => {
     if (!consultationModal) return;
 
-    // Reset all form inputs to blank and reset doctor selection to placeholder
+    // Reset all form inputs to blank
     if (consultationBookingForm) {
       consultationBookingForm.reset();
     }
-    if (consultDoctor) {
-      consultDoctor.selectedIndex = 0;
+
+    // Auto pre-fill authenticated patient name and mobile number (both remain editable)
+    let prefillName = '';
+    let prefillPhone = '';
+    try {
+      const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
+      const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+      prefillName = storedPatient?.full_name || storedUser?.full_name || document.getElementById('userName')?.textContent?.trim() || 'Rahul Sharma';
+      prefillPhone = storedPatient?.phone_number || storedUser?.phone_number || cachedPhone || '9876543210';
+    } catch (e) {
+      prefillName = document.getElementById('userName')?.textContent?.trim() || 'Rahul Sharma';
+      prefillPhone = cachedPhone || '9876543210';
     }
-    if (consultName) consultName.value = '';
-    if (consultMobile) consultMobile.value = '';
+    // Clean phone number to 10 digits
+    prefillPhone = String(prefillPhone || '').replace(/\D/g, '');
+    if (prefillPhone.length > 10) prefillPhone = prefillPhone.slice(-10);
+
+    if (consultName) {
+      consultName.value = prefillName;
+      consultName.readOnly = false;
+      consultName.disabled = false;
+    }
+    if (consultMobile) {
+      consultMobile.value = prefillPhone;
+      consultMobile.readOnly = false;
+      consultMobile.disabled = false;
+    }
+
     if (consultEmail) consultEmail.value = '';
     if (consultDate) consultDate.value = '';
     if (consultStartTime) consultStartTime.value = '';
@@ -1366,12 +1511,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (consultAgenda) consultAgenda.value = '';
     if (nativeDatePicker) nativeDatePicker.value = '';
 
+    // Initialize doctor dropdown (shows all active doctors until a start time is chosen)
+    updateDoctorsForStartTime('', '');
+
     document.querySelectorAll('.time-picker-dropdown.active').forEach(d => d.classList.remove('active'));
 
     consultationModal.classList.add('active');
     consultationModal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    setTimeout(() => (consultName || consultDoctor)?.focus(), 80);
+    setTimeout(() => (consultDate || consultName)?.focus(), 80);
   };
 
   const closeBookingModal = () => {
@@ -1444,7 +1592,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (!docVal) {
-        showToast('Please select a doctor.', true);
+        const availDocs = activeDoctorsList.filter(d => isDoctorAvailableAt(d, startTime, date));
+        if (availDocs.length === 0) {
+          showToast('No doctors are available at the selected start time. Please choose another time.', true);
+        } else {
+          showToast('Please select a doctor.', true);
+        }
         consultDoctor?.focus();
         return;
       }
