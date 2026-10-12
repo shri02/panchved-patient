@@ -5239,7 +5239,8 @@ body {
     gap: 8px;
   }
 
-  .modal-form-row {
+  .modal-form-row,
+  .modal-form-row-dates {
     grid-template-columns: 1fr;
     gap: 12px;
   }

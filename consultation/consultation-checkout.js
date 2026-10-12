@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
           appointment_date: dateText,
           appointment_time: timeText,
           duration: '45 min',
-          agenda: activeBookingData?.agenda || `Online consultation with ${docName}`,
+          agenda: activeBookingData?.complaint || activeBookingData?.agenda || `Online consultation with ${docName}`,
           payment_method: payMethod,
           amount: 500.00
         };

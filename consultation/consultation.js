@@ -55,8 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const startTimeDropdown = document.getElementById('startTimeDropdown');
   const consultEndTime = document.getElementById('consultEndTime');
   const btnEndTimeClock = document.getElementById('btnEndTimeClock');
-  const endTimeDropdown = document.getElementById('endTimeDropdown');
-  const consultAgenda = document.getElementById('consultAgenda');
+  const consultAgenda = document.getElementById('consultAgenda') || document.getElementById('consultComplaint');
   const submitConsultationBtn = document.getElementById('submitConsultationBtn');
 
   // Helper: Toast Message
@@ -1336,7 +1335,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   setupTimePicker(consultStartTime, btnStartTimeClock, startTimeDropdown, true);
-  setupTimePicker(consultEndTime, btnEndTimeClock, endTimeDropdown, false);
+  if (consultEndTime && btnEndTimeClock && endTimeDropdown) {
+    setupTimePicker(consultEndTime, btnEndTimeClock, endTimeDropdown, false);
+  }
 
   // Close time dropdowns when clicking outside
   document.addEventListener('click', (e) => {
@@ -1370,7 +1371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     consultationModal.classList.add('active');
     consultationModal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    setTimeout(() => consultDoctor?.focus(), 80);
+    setTimeout(() => (consultName || consultDoctor)?.focus(), 80);
   };
 
   const closeBookingModal = () => {
@@ -1403,14 +1404,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const email = consultEmail?.value.trim();
       const date = consultDate?.value.trim();
       const startTime = consultStartTime?.value.trim();
-      const endTime = consultEndTime?.value.trim();
       const agenda = consultAgenda?.value.trim();
-
-      if (!docVal) {
-        showToast('Please select a doctor.', true);
-        consultDoctor?.focus();
-        return;
-      }
 
       if (!name) {
         showToast('Please enter your full name.', true);
@@ -1449,22 +1443,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (!endTime) {
-        showToast('Please select an end time.', true);
-        consultEndTime?.focus();
-        return;
-      }
-
-      const startMins = parseTimeToMinutes(startTime);
-      const endMins = parseTimeToMinutes(endTime);
-      if (startMins === null || endMins === null || endMins <= startMins) {
-        showToast('End time must be after start time.', true);
-        consultEndTime?.focus();
+      if (!docVal) {
+        showToast('Please select a doctor.', true);
+        consultDoctor?.focus();
         return;
       }
 
       if (!agenda) {
-        showToast('Please enter an agenda for the consultation.', true);
+        showToast('Please enter your complaint for the consultation.', true);
         consultAgenda?.focus();
         return;
       }
@@ -1474,7 +1460,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const doctorRole = selectedDocOption?.getAttribute('data-role') || 'Ayurveda Physician';
       const doctorInitials = selectedDocOption?.getAttribute('data-initials') || 'DR';
       const doctorId = selectedDocOption?.getAttribute('data-id') || '1';
-      const timeFormatted = `${startTime} - ${endTime}`;
+
+      const startMins = parseTimeToMinutes(startTime);
+      const computedEndTime = startMins !== null ? minutesToFormattedTime(startMins + 45) : '';
+      const timeFormatted = computedEndTime ? `${startTime} - ${computedEndTime}` : startTime;
 
       // Save consultation booking info to localStorage
       const bookingData = {
@@ -1488,9 +1477,10 @@ document.addEventListener('DOMContentLoaded', () => {
         patientPhone: mobile,
         date: date,
         startTime: startTime,
-        endTime: endTime,
+        endTime: computedEndTime,
         time: timeFormatted,
         slot: timeFormatted,
+        complaint: agenda,
         agenda: agenda || `Ayurvedic consultation with ${doctorName}`,
         fee: '₹500.00'
       };
