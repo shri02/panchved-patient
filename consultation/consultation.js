@@ -127,12 +127,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  let cachedUser = null;
+  let cachedPatient = null;
   let cachedPhone = '';
   let cachedPatientId = '';
   try {
     const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
     const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
+      cachedUser = storedUser;
+      cachedPatient = storedPatient;
       applyUserHeader(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
       cachedPatientId = storedPatient?.patient_id || '';
@@ -148,6 +152,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
+          if (data.patient) {
+            cachedPatient = data.patient;
+            try { localStorage.setItem('ocayur_patient', JSON.stringify(data.patient)); } catch (e) {}
+            if (data.patient.phone_number) cachedPhone = data.patient.phone_number;
+            if (data.patient.patient_id) cachedPatientId = data.patient.patient_id;
+          }
+          if (data.user) {
+            cachedUser = data.user;
+            try { localStorage.setItem('ocayur_user', JSON.stringify(data.user)); } catch (e) {}
+            if (!cachedPhone && data.user.phone_number) cachedPhone = data.user.phone_number;
+          }
           applyUserHeader(data.user, data.patient);
         }
       }
@@ -1468,6 +1483,101 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Helper to reliably extract authenticated user login details (full name & mobile number)
+  const getLoggedInUserData = () => {
+    let name = '';
+    let phone = '';
+
+    // 1. In-memory cached session data (from initial load or background sync from DB)
+    if (cachedPatient && typeof cachedPatient === 'object') {
+      name = cachedPatient.full_name || cachedPatient.fullName || cachedPatient.name || '';
+      phone = cachedPatient.phone_number || cachedPatient.phoneNumber || cachedPatient.phone || cachedPatient.mobile || '';
+    }
+    if (cachedUser && typeof cachedUser === 'object') {
+      if (!name) name = cachedUser.full_name || cachedUser.fullName || cachedUser.name || cachedUser.username || '';
+      if (!phone) phone = cachedUser.phone_number || cachedUser.phoneNumber || cachedUser.phone || cachedUser.mobile || '';
+    }
+
+    // 2. LocalStorage and SessionStorage sources
+    const storages = [localStorage, sessionStorage];
+    for (const storage of storages) {
+      if (!storage) continue;
+
+      if (!name || !phone) {
+        try {
+          const pat = JSON.parse(storage.getItem('ocayur_patient') || storage.getItem('panchved_patient') || 'null');
+          if (pat && typeof pat === 'object') {
+            if (!name) name = pat.full_name || pat.fullName || pat.name || '';
+            if (!phone) phone = pat.phone_number || pat.phoneNumber || pat.phone || pat.mobile || '';
+          }
+        } catch (e) {}
+      }
+
+      if (!name || !phone) {
+        try {
+          const usr = JSON.parse(storage.getItem('ocayur_user') || storage.getItem('panchved_user') || 'null');
+          if (usr && typeof usr === 'object') {
+            if (!name) name = usr.full_name || usr.fullName || usr.name || usr.username || '';
+            if (!phone) phone = usr.phone_number || usr.phoneNumber || usr.phone || usr.mobile || '';
+          }
+        } catch (e) {}
+      }
+
+      if (!name || !phone) {
+        try {
+          const reg = JSON.parse(storage.getItem('ocayur_registration_data') || storage.getItem('panchved_registration_data') || 'null');
+          if (reg && typeof reg === 'object') {
+            if (!name) name = reg.fullName || reg.full_name || reg.name || '';
+            if (!phone) phone = reg.phone || reg.phone_number || reg.mobile || '';
+          }
+        } catch (e) {}
+      }
+
+      if (!phone) {
+        const regP = storage.getItem('ocayur_registration_phone') || storage.getItem('panchved_registration_phone');
+        if (regP) phone = regP;
+      }
+
+      if (!name || !phone) {
+        try {
+          const booking = JSON.parse(storage.getItem('ocayur_consultation_booking') || storage.getItem('panchved_consultation_booking') || 'null');
+          if (booking && typeof booking === 'object') {
+            if (!name) name = booking.patientName || booking.name || '';
+            if (!phone) phone = booking.patientPhone || booking.phone || booking.mobile || '';
+          }
+        } catch (e) {}
+      }
+    }
+
+    // 3. Fallback to module cachedPhone
+    if (!phone && cachedPhone) {
+      phone = cachedPhone;
+    }
+
+    // 4. Fallback to DOM user header if updated from login/profile
+    if (!name) {
+      const headerName = document.getElementById('userName')?.textContent?.trim();
+      if (headerName) name = headerName;
+    }
+
+    // Fallbacks if no user session data exists
+    if (!name) name = 'Rahul Sharma';
+    if (!phone) phone = '9876543210';
+
+    // Format phone to 10 digits
+    let cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+      cleanPhone = cleanPhone.slice(2);
+    } else if (cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.slice(-10);
+    }
+
+    return {
+      name: name.trim(),
+      phone: cleanPhone
+    };
+  };
+
   // Open booking modal ensuring user name and phone number are automatically pre-filled and editable
   const openBookingModal = () => {
     if (!consultationModal) return;
@@ -1477,31 +1587,27 @@ document.addEventListener('DOMContentLoaded', () => {
       consultationBookingForm.reset();
     }
 
-    // Auto pre-fill authenticated patient name and mobile number (both remain editable)
-    let prefillName = '';
-    let prefillPhone = '';
-    try {
-      const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
-      const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
-      prefillName = storedPatient?.full_name || storedUser?.full_name || document.getElementById('userName')?.textContent?.trim() || 'Rahul Sharma';
-      prefillPhone = storedPatient?.phone_number || storedUser?.phone_number || cachedPhone || '9876543210';
-    } catch (e) {
-      prefillName = document.getElementById('userName')?.textContent?.trim() || 'Rahul Sharma';
-      prefillPhone = cachedPhone || '9876543210';
-    }
-    // Clean phone number to 10 digits
-    prefillPhone = String(prefillPhone || '').replace(/\D/g, '');
-    if (prefillPhone.length > 10) prefillPhone = prefillPhone.slice(-10);
+    // Retrieve active logged-in user credentials
+    const userData = getLoggedInUserData();
+    const prefillName = userData.name;
+    const prefillPhone = userData.phone;
 
+    // Auto pre-fill user login name and phone number into respective fields, ensuring both remain editable
     if (consultName) {
       consultName.value = prefillName;
+      consultName.defaultValue = prefillName;
       consultName.readOnly = false;
       consultName.disabled = false;
+      consultName.removeAttribute('readonly');
+      consultName.removeAttribute('disabled');
     }
     if (consultMobile) {
       consultMobile.value = prefillPhone;
+      consultMobile.defaultValue = prefillPhone;
       consultMobile.readOnly = false;
       consultMobile.disabled = false;
+      consultMobile.removeAttribute('readonly');
+      consultMobile.removeAttribute('disabled');
     }
 
     if (consultEmail) consultEmail.value = '';
