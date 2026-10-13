@@ -745,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = '';
       }
       if (isPackageCheckout) {
-        window.location.href = 'package.html';
+        window.location.href = 'package.html#my-packages';
       } else if (isWorkshopCheckout) {
         window.location.href = '../courses/courses.html#my-workshops';
       } else {

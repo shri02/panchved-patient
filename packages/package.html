@@ -167,6 +167,38 @@
         </a>
       </header>
 
+      <!-- Packages Navigation Tabs (Categories: All Packages, Recommended Packages, My Packages) -->
+      <nav class="consultations-tabs-bar packages-tabs-bar" id="packagesTabsBar" aria-label="Health Packages Categories">
+        <!-- Tab 1: All Packages -->
+        <button type="button" class="consult-tab-btn active" id="tabAllPackages" role="tab" aria-selected="true" data-category="all" aria-controls="packagesListSection">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span>All Packages</span>
+          <span class="tab-count-badge" id="badgeAllCount">0</span>
+        </button>
+
+        <!-- Tab 2: Recommended Packages -->
+        <button type="button" class="consult-tab-btn" id="tabRecommendedPackages" role="tab" aria-selected="false" data-category="recommended" aria-controls="packagesListSection">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+          <span>Recommended Packages</span>
+          <span class="tab-count-badge" id="badgeRecommendedCount">0</span>
+        </button>
+
+        <!-- Tab 3: My Packages -->
+        <button type="button" class="consult-tab-btn" id="tabMyPackages" role="tab" aria-selected="false" data-category="my" aria-controls="packagesListSection">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <span>My Packages</span>
+          <span class="tab-count-badge" id="badgeMyCount">0</span>
+        </button>
+      </nav>
+
       <!-- SCREEN 1: Packages Grid (List View) -->
       <section class="packages-grid" id="packagesListSection" aria-label="Available Health Packages">
         

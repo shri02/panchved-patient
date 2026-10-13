@@ -243,5 +243,63 @@ INSERT INTO `workshops` (`id`, `workshop_id`, `title`, `subtitle`, `assign_speak
 (5, 'WS-005', 'Garbhasanskaar & Future Approach of Ayurveda', 'Holistic Health & Ayurveda Insights', 'Dr. Pooja Joshi', 'https://meet.google.com/bmq-ypeq-eur', 'Dr. Pooja Joshi', 'Dr. Pooja Joshi', 'Ayurveda Physician', 'Doctor', '2026-09-03', '8:00 AM', '90 mins', 'Ocayur Center Hall A', 50, 2, 499.00, 499.00, 'Ayurveda Prenatal Guidance, Mind-Body Preparation and lifestyle harmony.', 'assets/courses/course_garbhasanskaar.jpg', 'Upcoming')
 ON DUPLICATE KEY UPDATE `title` = VALUES(`title`), `attendee_type` = VALUES(`attendee_type`), `instructor` = VALUES(`instructor`);
 
+
+-- ----------------------------------------------------------------------------
+-- Table: recommended_packages (Packages specifically recommended by doctor for patient)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `recommended_packages` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `patient_id` INT(11) DEFAULT NULL,
+  `patient_phone` VARCHAR(20) DEFAULT NULL,
+  `package_id` INT(11) DEFAULT NULL,
+  `package_name` VARCHAR(150) NOT NULL,
+  `doctor_id` INT(11) DEFAULT NULL,
+  `doctor_name` VARCHAR(150) NOT NULL DEFAULT 'Dr. Nidhi Jha',
+  `recommendation_note` TEXT DEFAULT NULL,
+  `status` ENUM('Recommended', 'Accepted', 'Dismissed') NOT NULL DEFAULT 'Recommended',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_rec_patient` (`patient_id`),
+  KEY `idx_rec_phone` (`patient_phone`),
+  KEY `idx_rec_pkg` (`package_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Sample Seed Data for Recommended Packages
+INSERT INTO `recommended_packages` (`id`, `patient_id`, `patient_phone`, `package_id`, `package_name`, `doctor_id`, `doctor_name`, `recommendation_note`, `status`) VALUES
+(1, 1, '9876543210', 2, 'Reset Your Hormones', 1, 'Dr. Nidhi Jha', 'Recommended based on your recent metabolic and hormonal assessment to restore endocrine balance.', 'Recommended'),
+(2, 1, '9876543210', 4, 'Work On Metabolism & Weight Rehab', 2, 'Dr. Rohit Mehra', 'Recommended for improving digestive fire (Agni) and postural core strengthening.', 'Recommended')
+ON DUPLICATE KEY UPDATE `recommendation_note` = VALUES(`recommendation_note`);
+
+
+-- ----------------------------------------------------------------------------
+-- Table: patient_packages (Packages booked and enrolled by patients)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `patient_packages` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `booking_id` VARCHAR(50) DEFAULT NULL,
+  `patient_id` INT(11) DEFAULT NULL,
+  `patient_phone` VARCHAR(20) DEFAULT NULL,
+  `package_id` INT(11) DEFAULT NULL,
+  `package_name` VARCHAR(150) NOT NULL,
+  `doctor_id` INT(11) DEFAULT NULL,
+  `doctor_name` VARCHAR(150) DEFAULT 'Dr. Nidhi Jha',
+  `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `booking_date` DATE DEFAULT NULL,
+  `status` ENUM('Active', 'Ongoing', 'Completed', 'Cancelled') NOT NULL DEFAULT 'Active',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_pp_patient` (`patient_id`),
+  KEY `idx_pp_phone` (`patient_phone`),
+  KEY `idx_pp_pkg` (`package_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Sample Seed Data for Patient Packages
+INSERT INTO `patient_packages` (`id`, `booking_id`, `patient_id`, `patient_phone`, `package_id`, `package_name`, `doctor_id`, `doctor_name`, `price`, `booking_date`, `status`) VALUES
+(1, '#842195', 1, '9876543210', 1, 'Gut Reset Workshop', 1, 'Dr. Nidhi Jha', 5000.00, CURDATE(), 'Active'),
+(2, '#731409', 1, '9876543210', 3, 'Stresscare & Sleep Optimization', 1, 'Dr. Nidhi Jha', 4500.00, DATE_SUB(CURDATE(), INTERVAL 14 DAY), 'Ongoing')
+ON DUPLICATE KEY UPDATE `package_name` = VALUES(`package_name`), `status` = VALUES(`status`);
+
 COMMIT;
+
 

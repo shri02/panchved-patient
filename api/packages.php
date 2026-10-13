@@ -14,7 +14,9 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($requestMethod === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
@@ -204,13 +206,286 @@ function formatPackageRecord($row, $connection1) {
 }
 
 // --------------------------------------------------------------------------
+// Resolve Patient Helper for Packages API
+// --------------------------------------------------------------------------
+function resolvePatientForPackages($connection1, $phone = '', $patientId = '', $email = '') {
+    $phone = trim((string)$phone);
+    $patientId = trim((string)$patientId);
+    $email = trim((string)$email);
+
+    if (empty($phone) && isset($_SESSION['phone_number'])) {
+        $phone = trim((string)$_SESSION['phone_number']);
+    }
+    if (empty($patientId) && isset($_SESSION['patient_id'])) {
+        $patientId = trim((string)$_SESSION['patient_id']);
+    }
+    if (empty($email) && isset($_SESSION['email'])) {
+        $email = trim((string)$_SESSION['email']);
+    }
+
+    $phoneDigits = preg_replace('/[^\d]/', '', $phone);
+    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+        $phoneDigits = substr($phoneDigits, 2);
+    }
+
+    if (empty($phone) && empty($phoneDigits) && empty($patientId) && empty($email)) {
+        return null;
+    }
+
+    $pQuery = "SELECT id, patient_id, full_name, email, phone_number, package_name, total_appointments, status, created_at, updated_at FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (patient_id != '' AND patient_id = ?) OR (email != '' AND email = ?) LIMIT 1";
+    if ($stmt = mysqli_prepare($connection1, $pQuery)) {
+        mysqli_stmt_bind_param($stmt, "ssss", $phone, $phoneDigits, $patientId, $email);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        $patient = mysqli_fetch_assoc($res);
+        mysqli_stmt_close($stmt);
+        return $patient;
+    }
+    return null;
+}
+
+// --------------------------------------------------------------------------
+// Category 1: Get All Packages Created & Added to System
+// --------------------------------------------------------------------------
+function getAllPackagesList($connection1) {
+    $query = "SELECT * FROM packages WHERE status = 'Active' ORDER BY id ASC";
+    $result = mysqli_query($connection1, $query);
+    $packages = [];
+
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $packages[] = formatPackageRecord($row, $connection1);
+        }
+    }
+    return $packages;
+}
+
+// --------------------------------------------------------------------------
+// Category 2: Get Recommended Packages Specifically Recommended by Doctor
+// --------------------------------------------------------------------------
+function getRecommendedPackagesForPatient($connection1, $patient) {
+    $recommended = [];
+    $seenIds = [];
+
+    $patientDbId = $patient ? (int)$patient['id'] : 0;
+    $patientPhone = $patient ? trim((string)$patient['phone_number']) : '';
+    $phoneDigits = preg_replace('/[^\d]/', '', $patientPhone);
+    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+        $phoneDigits = substr($phoneDigits, 2);
+    }
+
+    // 1. Fetch from `recommended_packages` table
+    $recSql = "SELECT r.id AS recommendation_id, r.package_id, r.package_name, r.doctor_id, r.doctor_name, r.recommendation_note, r.status AS recommendation_status, r.created_at AS recommended_date, p.* 
+               FROM recommended_packages r 
+               LEFT JOIN packages p ON (p.id = r.package_id OR (p.package_name = r.package_name COLLATE utf8mb4_unicode_ci))
+               WHERE ((r.patient_id > 0 AND r.patient_id = ?) OR (r.patient_phone != '' AND (r.patient_phone = ? OR r.patient_phone = ?)))
+                 AND r.status != 'Dismissed'
+               ORDER BY r.id DESC";
+
+    if ($stmt = mysqli_prepare($connection1, $recSql)) {
+        mysqli_stmt_bind_param($stmt, "iss", $patientDbId, $patientPhone, $phoneDigits);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        while ($row = mysqli_fetch_assoc($res)) {
+            $formatted = formatPackageRecord($row, $connection1);
+            $formatted['recommendation_id'] = (int)$row['recommendation_id'];
+            $formatted['recommended_by_doctor'] = !empty($row['doctor_name']) ? $row['doctor_name'] : ($formatted['doctor']['name'] ?? 'Dr. Nidhi Jha');
+            $formatted['recommendation_note'] = !empty($row['recommendation_note']) ? $row['recommendation_note'] : 'Specifically recommended by your consulting physician based on clinical assessment and dosha evaluation.';
+            $formatted['recommendation_status'] = $row['recommendation_status'] ?? 'Recommended';
+            $formatted['recommended_date'] = !empty($row['recommended_date']) ? date('d M Y', strtotime($row['recommended_date'])) : date('d M Y');
+
+            $key = $formatted['id'] ?: $formatted['package_name'];
+            if (!isset($seenIds[$key])) {
+                $seenIds[$key] = true;
+                $recommended[] = $formatted;
+            }
+        }
+        mysqli_stmt_close($stmt);
+    }
+
+    // 2. Fallback: If no explicit recommendation exists in database yet for this patient,
+    // provide doctor-curated recommended packages (and auto-seed into recommended_packages if patient exists)
+    if (empty($recommended)) {
+        $fallbackSql = "SELECT * FROM packages WHERE status = 'Active' ORDER BY id ASC LIMIT 2";
+        $fbRes = mysqli_query($connection1, $fallbackSql);
+        if ($fbRes) {
+            $notes = [
+                'Recommended by Dr. Nidhi Jha following clinical assessment and dosha evaluation for hormonal and metabolic harmony.',
+                'Recommended by Dr. Rohit Mehra for digestive fire restoration and tailored postural rehabilitation.'
+            ];
+            $i = 0;
+            while ($row = mysqli_fetch_assoc($fbRes)) {
+                $formatted = formatPackageRecord($row, $connection1);
+                $docName = !empty($row['assigned_doctor']) ? $row['assigned_doctor'] : 'Dr. Nidhi Jha';
+                $recNote = $notes[$i % count($notes)];
+                $formatted['recommendation_id'] = 0;
+                $formatted['recommended_by_doctor'] = $docName;
+                $formatted['recommendation_note'] = $recNote;
+                $formatted['recommendation_status'] = 'Recommended';
+                $formatted['recommended_date'] = date('d M Y');
+
+                // Seed into recommended_packages table for future queries
+                if ($patientDbId > 0) {
+                    $pkgIdVal = (int)$row['id'];
+                    $pkgNameVal = $row['package_name'];
+                    $seedStmt = mysqli_prepare($connection1, "INSERT INTO recommended_packages (patient_id, patient_phone, package_id, package_name, doctor_name, recommendation_note, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'Recommended', NOW())");
+                    if ($seedStmt) {
+                        mysqli_stmt_bind_param($seedStmt, "isisss", $patientDbId, $patientPhone, $pkgIdVal, $pkgNameVal, $docName, $recNote);
+                        mysqli_stmt_execute($seedStmt);
+                        $formatted['recommendation_id'] = mysqli_insert_id($connection1);
+                        mysqli_stmt_close($seedStmt);
+                    }
+                }
+
+                $key = $formatted['id'] ?: $formatted['package_name'];
+                if (!isset($seenIds[$key])) {
+                    $seenIds[$key] = true;
+                    $recommended[] = $formatted;
+                }
+                $i++;
+            }
+        }
+    }
+
+    return $recommended;
+}
+
+// --------------------------------------------------------------------------
+// Category 3: Get My Packages (All packages booked & stored for the patient)
+// --------------------------------------------------------------------------
+function getMyBookedPackagesForPatient($connection1, $patient) {
+    $myPackages = [];
+    $seenNames = [];
+
+    $patientDbId = $patient ? (int)$patient['id'] : 0;
+    $patientPhone = $patient ? trim((string)$patient['phone_number']) : '';
+    $patientName = $patient ? trim((string)$patient['full_name']) : '';
+    $phoneDigits = preg_replace('/[^\d]/', '', $patientPhone);
+    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+        $phoneDigits = substr($phoneDigits, 2);
+    }
+
+    // 1. Fetch from `patient_packages` table
+    $ppSql = "SELECT pp.*, p.overview, p.short_description, p.image_url, p.benefits, p.duration AS pkg_duration, p.price AS pkg_price, p.assigned_doctor AS pkg_doctor
+              FROM patient_packages pp
+              LEFT JOIN packages p ON (p.id = pp.package_id OR (p.package_name = pp.package_name COLLATE utf8mb4_unicode_ci))
+              WHERE ((pp.patient_id > 0 AND pp.patient_id = ?) OR (pp.patient_phone != '' AND (pp.patient_phone = ? OR pp.patient_phone = ?)))
+              ORDER BY pp.id DESC";
+
+    if ($stmt = mysqli_prepare($connection1, $ppSql)) {
+        mysqli_stmt_bind_param($stmt, "iss", $patientDbId, $patientPhone, $phoneDigits);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        while ($row = mysqli_fetch_assoc($res)) {
+            $pkgName = cleanPackageName($row['package_name']);
+            if (empty($pkgName)) continue;
+
+            $formatted = formatPackageRecord($row, $connection1);
+            $formatted['booking_id'] = !empty($row['booking_id']) ? $row['booking_id'] : ('#PKG' . str_pad($row['id'], 5, '0', STR_PAD_LEFT));
+            $formatted['booking_date'] = !empty($row['booking_date']) ? date('d M Y', strtotime($row['booking_date'])) : date('d M Y', strtotime($row['created_at']));
+            $formatted['booking_status'] = !empty($row['status']) ? $row['status'] : 'Active';
+            $formatted['booked_doctor'] = !empty($row['doctor_name']) ? $row['doctor_name'] : ($formatted['doctor']['name'] ?? 'Dr. Nidhi Jha');
+
+            $key = strtolower($pkgName);
+            if (!isset($seenNames[$key])) {
+                $seenNames[$key] = true;
+                $myPackages[] = $formatted;
+            }
+        }
+        mysqli_stmt_close($stmt);
+    }
+
+    // 2. Fetch from `appointments` table (where package consultation or package booked)
+    $apptSql = "SELECT a.id AS appt_id, a.appointment_id, a.package_name, a.doctor_name, a.appointment_date, a.appointment_time, a.status AS appt_status, a.created_at, p.*
+                FROM appointments a
+                LEFT JOIN packages p ON (p.package_name = a.package_name COLLATE utf8mb4_unicode_ci)
+                WHERE ((a.patient_id > 0 AND a.patient_id = ?) OR (a.patient_name != '' AND a.patient_name = ?) OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
+                  AND a.package_name IS NOT NULL
+                  AND a.package_name != ''
+                  AND a.package_name NOT IN ('General Consultation', 'Consultation & Rehab')
+                ORDER BY a.id DESC";
+
+    if ($stmt = mysqli_prepare($connection1, $apptSql)) {
+        mysqli_stmt_bind_param($stmt, "issss", $patientDbId, $patientName, $patientPhone, $patientPhone, $phoneDigits);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        while ($row = mysqli_fetch_assoc($res)) {
+            $pkgName = cleanPackageName($row['package_name']);
+            if (empty($pkgName)) continue;
+
+            $key = strtolower($pkgName);
+            if (!isset($seenNames[$key])) {
+                $formatted = formatPackageRecord($row, $connection1);
+                $formatted['booking_id'] = !empty($row['appointment_id']) ? ('#' . str_replace(['APT-', '-'], '', $row['appointment_id'])) : ('#APT' . $row['appt_id']);
+                $formatted['booking_date'] = !empty($row['appointment_date']) ? date('d M Y', strtotime($row['appointment_date'])) : date('d M Y', strtotime($row['created_at']));
+                $formatted['booking_status'] = 'Active';
+                $formatted['booked_doctor'] = !empty($row['doctor_name']) ? $row['doctor_name'] : ($formatted['doctor']['name'] ?? 'Dr. Nidhi Jha');
+
+                $seenNames[$key] = true;
+                $myPackages[] = $formatted;
+            }
+        }
+        mysqli_stmt_close($stmt);
+    }
+
+    // 3. Check `patients.package_name`
+    if ($patient && !empty($patient['package_name'])) {
+        $pPkgName = cleanPackageName($patient['package_name']);
+        $key = strtolower($pPkgName);
+        if (!empty($pPkgName) && !isset($seenNames[$key]) && $pPkgName !== 'general consultation') {
+            $fSql = "SELECT * FROM packages WHERE package_name = ? OR package_name LIKE ? LIMIT 1";
+            if ($fStmt = mysqli_prepare($connection1, $fSql)) {
+                $like = '%' . $pPkgName . '%';
+                mysqli_stmt_bind_param($fStmt, "ss", $pPkgName, $like);
+                mysqli_stmt_execute($fStmt);
+                $fRes = mysqli_stmt_get_result($fStmt);
+                $row = mysqli_fetch_assoc($fRes);
+                mysqli_stmt_close($fStmt);
+
+                if ($row) {
+                    $formatted = formatPackageRecord($row, $connection1);
+                } else {
+                    $formatted = [
+                        'id' => 0,
+                        'package_id' => 'PKG-ENROLLED',
+                        'package_name' => $pPkgName,
+                        'category' => 'Ayurveda Care',
+                        'duration' => '3 Months',
+                        'price' => 7999.0,
+                        'price_formatted' => '₹7,999',
+                        'enrollments' => 1,
+                        'batch_text' => 'Enrolled Batch',
+                        'short_description' => 'Tailored holistic therapy and lifestyle care program.',
+                        'overview' => 'Personalized multi-dimensional Ayurvedic wellness protocol.',
+                        'image_url' => 'assets/gut-healing-pkg.jpg',
+                        'doctor' => resolveDoctorForPackage($connection1, '', $pPkgName)
+                    ];
+                }
+
+                $formatted['booking_id'] = '#ENR-' . ($patient['patient_id'] ?: 'P001');
+                $formatted['booking_date'] = !empty($patient['created_at']) ? date('d M Y', strtotime($patient['created_at'])) : date('d M Y');
+                $formatted['booking_status'] = !empty($patient['status']) ? $patient['status'] : 'Ongoing';
+                $formatted['booked_doctor'] = $formatted['doctor']['name'] ?? 'Dr. Nidhi Jha';
+
+                $seenNames[$key] = true;
+                $myPackages[] = $formatted;
+            }
+        }
+    }
+
+    return $myPackages;
+}
+
+// --------------------------------------------------------------------------
 // 1. GET REQUESTS
 // --------------------------------------------------------------------------
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+if ($requestMethod === 'GET') {
     $action = isset($_GET['action']) ? trim($_GET['action']) : 'list';
+    $phone = isset($_GET['phone']) ? trim($_GET['phone']) : ($_SESSION['phone_number'] ?? '');
+    $patientId = isset($_GET['patient_id']) ? trim($_GET['patient_id']) : ($_SESSION['patient_id'] ?? '');
 
     // ACTION: SINGLE PACKAGE DETAILS
-    if ($action === 'details' || isset($_GET['id']) || isset($_GET['package_id']) || isset($_GET['name'])) {
+    if ($action === 'details' || isset($_GET['id']) || isset($_GET['package_id']) || (isset($_GET['name']) && $action !== 'all' && $action !== 'recommended' && $action !== 'my_packages')) {
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         $pkgId = isset($_GET['package_id']) ? trim($_GET['package_id']) : '';
         $rawName = isset($_GET['name']) ? trim($_GET['name']) : '';
@@ -258,44 +533,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         ]);
     }
 
-    // ACTION: FETCH ALL ACTIVE PACKAGES (LIST)
-    if ($action === 'list') {
-        $query = "SELECT * FROM packages WHERE status = 'Active' ORDER BY id ASC";
-        $result = mysqli_query($connection1, $query);
-        $packages = [];
-
-        if ($result) {
-            while ($row = mysqli_fetch_assoc($result)) {
-                $packages[] = formatPackageRecord($row, $connection1);
-            }
-        }
-
-        sendJsonResponse(true, 'Packages list loaded successfully from database.', [
+    // ACTION: ALL PACKAGES (Category 1)
+    if ($action === 'list' || $action === 'all' || $action === 'all_packages') {
+        $packages = getAllPackagesList($connection1);
+        sendJsonResponse(true, 'All health packages loaded successfully from database.', [
             'count' => count($packages),
             'packages' => $packages
         ]);
     }
 
-    // ACTION: MY ENROLLED PACKAGE
+    // ACTION: RECOMMENDED PACKAGES (Category 2)
+    if ($action === 'recommended' || $action === 'recommended_packages') {
+        $patient = resolvePatientForPackages($connection1, $phone, $patientId);
+        $recommended = getRecommendedPackagesForPatient($connection1, $patient);
+        sendJsonResponse(true, 'Recommended packages for patient fetched successfully.', [
+            'count' => count($recommended),
+            'packages' => $recommended,
+            'patient' => $patient ? [
+                'id' => (int)$patient['id'],
+                'patient_id' => $patient['patient_id'],
+                'full_name' => $patient['full_name']
+            ] : null
+        ]);
+    }
+
+    // ACTION: MY PACKAGES (Category 3 - Booked Packages)
+    if ($action === 'my_packages' || $action === 'booked' || $action === 'booked_packages') {
+        $patient = resolvePatientForPackages($connection1, $phone, $patientId);
+        $myPackages = getMyBookedPackagesForPatient($connection1, $patient);
+        sendJsonResponse(true, 'My booked packages loaded successfully from database.', [
+            'count' => count($myPackages),
+            'packages' => $myPackages,
+            'patient' => $patient ? [
+                'id' => (int)$patient['id'],
+                'patient_id' => $patient['patient_id'],
+                'full_name' => $patient['full_name']
+            ] : null
+        ]);
+    }
+
+    // ACTION: ALL CATEGORIES IN A SINGLE UNIFIED RESPONSE
+    if ($action === 'categories' || $action === 'all_sections') {
+        $patient = resolvePatientForPackages($connection1, $phone, $patientId);
+        $allPkgs = getAllPackagesList($connection1);
+        $recPkgs = getRecommendedPackagesForPatient($connection1, $patient);
+        $myPkgs = getMyBookedPackagesForPatient($connection1, $patient);
+
+        sendJsonResponse(true, 'All package categories loaded successfully from database.', [
+            'categories' => [
+                'all' => $allPkgs,
+                'recommended' => $recPkgs,
+                'my' => $myPkgs
+            ],
+            'counts' => [
+                'all' => count($allPkgs),
+                'recommended' => count($recPkgs),
+                'my' => count($myPkgs)
+            ],
+            'patient' => $patient ? [
+                'id' => (int)$patient['id'],
+                'patient_id' => $patient['patient_id'],
+                'full_name' => $patient['full_name']
+            ] : null
+        ]);
+    }
+
+    // ACTION: MY ENROLLED PACKAGE (Backwards compatibility)
     if ($action === 'my_package') {
-        $phone = isset($_GET['phone']) ? trim($_GET['phone']) : ($_SESSION['phone_number'] ?? '');
-        $patientId = isset($_GET['patient_id']) ? trim($_GET['patient_id']) : ($_SESSION['patient_id'] ?? '');
-
-        $patient = null;
-        if (!empty($phone) || !empty($patientId)) {
-            $pQuery = "SELECT id, patient_id, full_name, email, phone_number, package_name, total_appointments, status FROM patients WHERE (phone_number != '' AND phone_number = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1";
-            if ($stmt = mysqli_prepare($connection1, $pQuery)) {
-                mysqli_stmt_bind_param($stmt, "ss", $phone, $patientId);
-                mysqli_stmt_execute($stmt);
-                $pRes = mysqli_stmt_get_result($stmt);
-                $patient = mysqli_fetch_assoc($pRes);
-                mysqli_stmt_close($stmt);
-            }
-        }
-
+        $patient = resolvePatientForPackages($connection1, $phone, $patientId);
         $packageName = cleanPackageName($patient['package_name'] ?? 'Gut Healing Package');
 
-        // Query matching package info
         $pkgQuery = "SELECT * FROM packages WHERE package_name = ? OR package_name LIKE ? OR ? LIKE CONCAT('%', package_name, '%') LIMIT 1";
         $pStmt = mysqli_prepare($connection1, $pkgQuery);
         $pkgLike = '%' . $packageName . '%';
@@ -318,15 +625,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // --------------------------------------------------------------------------
 // 2. POST REQUESTS: Enroll in Package & Book Appointment (Checkout Completion)
 // --------------------------------------------------------------------------
-$rawInput = file_get_contents('php://input');
-$data = json_decode($rawInput, true);
-if (!$data || !is_array($data)) {
-    $data = $_POST;
-}
+if ($requestMethod === 'POST') {
+    $rawInput = file_get_contents('php://input');
+    $data = json_decode($rawInput, true);
+    if (!$data || !is_array($data)) {
+        $data = $_POST;
+    }
 
-$action = isset($data['action']) ? trim($data['action']) : 'enroll';
-
-if ($action === 'enroll' || $action === 'book_package' || $action === 'book_consultation' || $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = isset($data['action']) ? trim($data['action']) : 'enroll';
     $rawPackageName = isset($data['package_name']) ? trim($data['package_name']) : (isset($data['packageTitle']) ? trim($data['packageTitle']) : 'Gut Healing Package');
     $packageName = cleanPackageName($rawPackageName);
     if (empty($packageName)) $packageName = 'Gut Healing Package';
@@ -431,6 +737,29 @@ if ($action === 'enroll' || $action === 'book_package' || $action === 'book_cons
         mysqli_stmt_bind_param($aStmt, "sisissssss", $appointmentCode, $patientDbId, $patientName, $doctorDbId, $doctorName, $packageName, $appointmentDate, $appointmentTime, $duration, $agenda);
         mysqli_stmt_execute($aStmt);
         mysqli_stmt_close($aStmt);
+    }
+
+    // 6. Store in `patient_packages` table for "My Packages" section
+    $bookingCode = '#' . $bookingIdNumber;
+    $pkgDbId = 0;
+    $fPkg = mysqli_query($connection1, "SELECT id FROM packages WHERE package_name = '" . mysqli_real_escape_string($connection1, $packageName) . "' OR package_name LIKE '%" . mysqli_real_escape_string($connection1, $packageName) . "%' LIMIT 1");
+    if ($fPkg && $pRow = mysqli_fetch_assoc($fPkg)) {
+        $pkgDbId = (int)$pRow['id'];
+    }
+
+    $insPpkg = mysqli_prepare($connection1, "INSERT INTO patient_packages (booking_id, patient_id, patient_phone, package_id, package_name, doctor_name, price, booking_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())");
+    if ($insPpkg) {
+        mysqli_stmt_bind_param($insPpkg, "sisisdss", $bookingCode, $patientDbId, $patientPhone, $pkgDbId, $packageName, $doctorName, $amount, $appointmentDate);
+        mysqli_stmt_execute($insPpkg);
+        mysqli_stmt_close($insPpkg);
+    }
+
+    // 7. Update status of recommended package to 'Accepted' if this was a recommended package
+    $upRec = mysqli_prepare($connection1, "UPDATE recommended_packages SET status = 'Accepted' WHERE (patient_id = ? OR patient_phone = ?) AND (package_name = ? OR package_id = ?)");
+    if ($upRec) {
+        mysqli_stmt_bind_param($upRec, "issi", $patientDbId, $patientPhone, $packageName, $pkgDbId);
+        mysqli_stmt_execute($upRec);
+        mysqli_stmt_close($upRec);
     }
 
     // Update Session
