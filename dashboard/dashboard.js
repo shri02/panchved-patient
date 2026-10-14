@@ -137,61 +137,83 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // Render Dynamic Bar Chart for a specific metric and timeframe
-  // Render chart using API data only. Never generate fallback readings.
-const renderChart = (metricKey, timeframe = '6w') => {
-  const container = document.getElementById(`${metricKey}BarsArea`);
-  if (!container) return;
+  // Render Dynamic Bar Chart for a specific metric and timeframe
+  // Render chart using dynamic API data only; if no data is added, show clean empty state instead of graph.
+  const renderChart = (metricKey, timeframe = '6w') => {
+    const container = document.getElementById(`${metricKey}BarsArea`);
+    if (!container) return;
 
-  const metricGraph = cachedDashboardData?.graphs?.[metricKey];
+    const metricGraph = cachedDashboardData?.graphs?.[metricKey];
+    const dataset = (metricGraph && Array.isArray(metricGraph.timeframes?.[timeframe]))
+      ? metricGraph.timeframes[timeframe]
+      : [];
 
-  if (!metricGraph) {
+    // Check if any readings exist across all timeframes for this metric
+    const allTimeframes = metricGraph?.timeframes || {};
+    const totalReadings = Object.values(allTimeframes).reduce(
+      (sum, list) => sum + (Array.isArray(list) ? list.length : 0),
+      0
+    );
+
     container.replaceChildren();
-    const emptyMessage = document.createElement('div');
-    emptyMessage.className = 'chart-empty-msg';
-    emptyMessage.textContent = 'No health data available';
-    container.appendChild(emptyMessage);
-    return;
-  }
 
-  const dataset = metricGraph.timeframes?.[timeframe] || [];
-  container.replaceChildren();
+    // If no dynamic data is added/present for this metric or timeframe
+    if (!metricGraph || dataset.length === 0) {
+      container.classList.add('has-no-data');
 
-  if (dataset.length === 0) {
-    const emptyMessage = document.createElement('div');
-    emptyMessage.className = 'chart-empty-msg';
-    emptyMessage.textContent = 'No readings recorded for this timeframe';
-    container.appendChild(emptyMessage);
-    return;
-  }
+      const emptyWrapper = document.createElement('div');
+      emptyWrapper.className = 'chart-empty-state';
 
-  dataset.forEach(item => {
-    const column = document.createElement('div');
-    column.className = 'chart-col';
-    column.title = `${item.date_label || ''}: ${item.val_label || ''} ${metricGraph.unit || ''}`;
+      const emptyMsg = totalReadings === 0
+        ? 'No health data recorded yet'
+        : 'No readings recorded for this timeframe';
 
-    const valueLabel = document.createElement('span');
-    valueLabel.className = 'bar-val-label';
-    valueLabel.textContent = item.val_label ?? '';
+      emptyWrapper.innerHTML = `
+        <div class="chart-empty-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <p class="chart-empty-title">${emptyMsg}</p>
+        <span class="chart-empty-hint">Use "Add New Reading" to record data</span>
+      `;
+      container.appendChild(emptyWrapper);
+      return;
+    }
 
-    const track = document.createElement('div');
-    track.className = 'bar-track';
+    // Dynamic data is present: render the bar chart
+    container.classList.remove('has-no-data');
 
-    const fill = document.createElement('div');
-    fill.className = `bar-fill ${metricGraph.color_class || 'bar-teal'}`;
+    dataset.forEach(item => {
+      const column = document.createElement('div');
+      column.className = 'chart-col';
+      column.title = `${item.date_label || ''}: ${item.val_label || ''} ${metricGraph.unit || ''}`;
 
-    const height = Number(item.height_percent);
-    fill.style.height = `${Number.isFinite(height) ? Math.max(0, Math.min(100, height)) : 0}%`;
+      const valueLabel = document.createElement('span');
+      valueLabel.className = 'bar-val-label';
+      valueLabel.textContent = item.val_label ?? '';
 
-    track.appendChild(fill);
+      const track = document.createElement('div');
+      track.className = 'bar-track';
 
-    const dateLabel = document.createElement('span');
-    dateLabel.className = 'bar-date-label';
-    dateLabel.textContent = item.date_label ?? '';
+      const fill = document.createElement('div');
+      fill.className = `bar-fill ${metricGraph.color_class || 'bar-teal'}`;
 
-    column.append(valueLabel, track, dateLabel);
-    container.appendChild(column);
-  });
-};
+      const height = Number(item.height_percent);
+      fill.style.height = `${Number.isFinite(height) ? Math.max(0, Math.min(100, height)) : 0}%`;
+
+      track.appendChild(fill);
+
+      const dateLabel = document.createElement('span');
+      dateLabel.className = 'bar-date-label';
+      dateLabel.textContent = item.date_label ?? '';
+
+      column.append(valueLabel, track, dateLabel);
+      container.appendChild(column);
+    });
+  };
 
 
   // Render All 4 Health Metric Charts
@@ -362,6 +384,7 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
     }
   };
 
+  renderAllCharts();
   fetchDashboardData();
 
   // Timeframe Dropdown Select Filter Handlers
@@ -458,13 +481,15 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
 
       try {
         const payload = {
-  action: 'add_reading',
-  date: dateInput || new Date().toISOString().split('T')[0],
-  weight: weightInput || null,
-  abdomen: abdomenInput || null,
-  bp: bpInput || null,
-  sugar: sugarInput || null
-};
+          action: 'add_reading',
+          phone: cachedPhone || undefined,
+          patient_id: cachedPatientId || undefined,
+          date: dateInput || new Date().toISOString().split('T')[0],
+          weight: weightInput || null,
+          abdomen: abdomenInput || null,
+          bp: bpInput || null,
+          sugar: sugarInput || null
+        };
 
         const res = await fetch('../api/dashboard.php', {
           method: 'POST',

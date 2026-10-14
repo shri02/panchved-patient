@@ -143,8 +143,9 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
 
     $sql = "SELECT id, weight, abdomen, bp, sugar, recorded_date
             FROM health_metrics
-            WHERE (patient_id = ? AND ? > 0)
-               OR (patient_phone = ? AND ? <> '')
+            WHERE ((patient_id = ? AND ? > 0) OR (patient_phone = ? AND ? <> ''))
+              AND recorded_date IS NOT NULL
+              AND recorded_date <> '0000-00-00'
             ORDER BY recorded_date ASC, id ASC";
 
     $stmt = mysqli_prepare($connection, $sql);
@@ -162,28 +163,27 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
     }
     mysqli_stmt_close($stmt);
 
-    $now = time();
-    $latestRow = !empty($readings) ? end($readings) : null;
-
-    if ($latestRow) {
-        if ($latestRow['weight'] !== null && $latestRow['weight'] !== '') {
-            $v = (float)$latestRow['weight'];
+    // Resolve latest non-null reading for each metric individually
+    for ($i = count($readings) - 1; $i >= 0; $i--) {
+        $row = $readings[$i];
+        if ($metrics['weight'] === null && $row['weight'] !== null && $row['weight'] !== '') {
+            $v = (float)$row['weight'];
             $metrics['weight_raw'] = $v;
             $metrics['weight'] = formatNumber($v) . ' kgs';
         }
 
-        if ($latestRow['abdomen'] !== null && $latestRow['abdomen'] !== '') {
-            $v = (float)$latestRow['abdomen'];
+        if ($metrics['abdomen'] === null && $row['abdomen'] !== null && $row['abdomen'] !== '') {
+            $v = (float)$row['abdomen'];
             $metrics['abdomen_raw'] = $v;
             $metrics['abdomen'] = formatNumber($v) . ' cm';
         }
 
-        if ($latestRow['bp'] !== null && trim($latestRow['bp']) !== '') {
-            $metrics['bp'] = trim($latestRow['bp']) . (stripos($latestRow['bp'], 'mm') === false ? ' mm Hg' : '');
+        if ($metrics['bp'] === null && $row['bp'] !== null && trim($row['bp']) !== '') {
+            $metrics['bp'] = trim($row['bp']) . (stripos($row['bp'], 'mm') === false ? ' mm Hg' : '');
         }
 
-        if ($latestRow['sugar'] !== null && $latestRow['sugar'] !== '') {
-            $v = (float)$latestRow['sugar'];
+        if ($metrics['sugar'] === null && $row['sugar'] !== null && $row['sugar'] !== '') {
+            $v = (float)$row['sugar'];
             $metrics['sugar_raw'] = $v;
             $metrics['sugar'] = formatNumber($v) . ' mg/dL';
         }
@@ -194,6 +194,7 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
         '3m' => strtotime('-3 months'),
         '6m' => strtotime('-6 months')
     ];
+    $maxFuture = strtotime('+1 day 23:59:59');
 
     foreach ($readings as $row) {
         $timestamp = strtotime($row['recorded_date']);
@@ -227,7 +228,7 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
             ];
 
             foreach ($ranges as $timeframe => $start) {
-                if ($timestamp >= $start && $timestamp <= $now) {
+                if ($timestamp >= $start && $timestamp <= $maxFuture) {
                     $graphs[$metric]['timeframes'][$timeframe][] = $item;
                 }
             }
@@ -237,6 +238,8 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
             $bp = trim($row['bp']);
             $systolic = 0;
             if (preg_match('/^(\d{2,3})\s*\/\s*(\d{2,3})/', $bp, $match)) {
+                $systolic = (int)$match[1];
+            } elseif (preg_match('/^(\d{2,3})/', $bp, $match)) {
                 $systolic = (int)$match[1];
             }
 
@@ -249,7 +252,7 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
             ];
 
             foreach ($ranges as $timeframe => $start) {
-                if ($timestamp >= $start && $timestamp <= $now) {
+                if ($timestamp >= $start && $timestamp <= $maxFuture) {
                     $graphs['bp']['timeframes'][$timeframe][] = $item;
                 }
             }
@@ -601,11 +604,12 @@ if ($requestMethod === 'POST' && in_array($action, ['add_reading', 'save_metrics
         }
     }
 
-    $date = trim((string)($data['date'] ?? date('Y-m-d')));
-    $recordedDate = DateTime::createFromFormat('Y-m-d', $date);
-
-    if (!$recordedDate || $recordedDate->format('Y-m-d') !== $date) {
-        sendJsonResponse(false, 'Invalid reading date.', [], 400);
+    $rawDate = trim((string)($data['date'] ?? ''));
+    if ($rawDate !== '') {
+        $parsedTime = strtotime($rawDate);
+        $date = ($parsedTime !== false) ? date('Y-m-d', $parsedTime) : date('Y-m-d');
+    } else {
+        $date = date('Y-m-d');
     }
 
     $cleanNumber = static function ($value) {
