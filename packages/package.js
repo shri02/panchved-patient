@@ -73,22 +73,25 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const getPackageImage = (pkg) => {
-  const image = pkg.image_url || pkg.image || '';
+    const image = String(pkg.image_url || pkg.image || '').trim();
 
-  if (!image) {
-    return '../assets/gut-healing-pkg.jpg';
-  }
+    if (!image) {
+      return '../assets/gut-healing-pkg.jpg';
+    }
 
-  if (/^(https?:\/\/|data:|blob:)/i.test(image)) {
-    return image;
-  }
+    // External URL or embedded image
+    if (/^(https?:\/\/|data:image\/|blob:)/i.test(image)) {
+      return image;
+    }
 
-  if (image.startsWith('../')) {
-    return image;
-  }
+    // Already a relative path
+    if (image.startsWith('../') || image.startsWith('./')) {
+      return image;
+    }
 
-  return `../${image.replace(/^\/+/, '')}`;
-};
+    // Remove leading slash and build a relative path
+    return `../${image.replace(/^\/+/, '')}`;
+  };
 
   // Mobile Menu Drawer Toggle
   const toggleMobileSidebar = (open) => {
@@ -146,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
       cachedPatientId = storedPatient?.patient_id || '';
     }
-  } catch (err) {}
+  } catch (err) { }
 
   // Fetch header profile from database
   const syncHeaderFromDB = async () => {
@@ -161,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
           applyUserHeader(data.user, data.patient);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   };
   syncHeaderFromDB();
 
@@ -220,12 +223,12 @@ document.addEventListener('DOMContentLoaded', () => {
         </svg>
         <span>Logging out...</span>
       `;
-      try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) {}
+      try { await fetch('../api/logout.php', { method: 'POST' }); } catch (err) { }
       try {
         localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
         localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
         localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
-      } catch (e) {}
+      } catch (e) { }
       showToast('Logged out successfully.');
       setTimeout(() => { window.location.href = '../index.html'; }, 350);
     });
@@ -248,9 +251,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (detailPkgImg) {
-      const rawImg = pkg.image_url || 'assets/gut-healing-pkg.jpg';
-      detailPkgImg.src = (rawImg.startsWith('http') || rawImg.startsWith('../')) ? rawImg : '../' + rawImg;
-      detailPkgImg.alt = `${pkg.package_name || 'Package'} - Ocayur Ayurveda Lifestyle`;
+      detailPkgImg.src = getPackageImage(pkg);
+      detailPkgImg.alt =
+        `${pkg.package_name || 'Package'} - Ocayur Ayurveda Lifestyle`;
+
+      detailPkgImg.onerror = () => {
+        detailPkgImg.onerror = null;
+        detailPkgImg.style.display = 'none';
+      };
+
+      detailPkgImg.style.display = 'block';
     }
 
     // Dynamic Doctor details from database schema
@@ -282,9 +292,9 @@ document.addEventListener('DOMContentLoaded', () => {
       targetName = pkgOrCard.getAttribute('data-package') || pkgOrCard.querySelector('.package-title')?.textContent.trim() || null;
 
       if (targetId || targetPkgCode || targetName) {
-        pkgData = loadedPackages.find(p => 
-          (targetId && p.id == targetId) || 
-          (targetPkgCode && p.package_id === targetPkgCode) || 
+        pkgData = loadedPackages.find(p =>
+          (targetId && p.id == targetId) ||
+          (targetPkgCode && p.package_id === targetPkgCode) ||
           (targetName && p.package_name && p.package_name.toLowerCase() === targetName.toLowerCase())
         );
       }
@@ -526,7 +536,18 @@ document.addEventListener('DOMContentLoaded', () => {
       // Category 2: Recommended Packages Section
       packagesListSection.innerHTML = pkgs.map(pkg => `
         <article class="package-card recommended-card" id="pkg_${pkg.package_id || pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-id="${pkg.id}" data-package="${pkg.package_name}">
-          <div class="package-header">
+         
+         <div class="package-card-image-wrapper">
+  <img
+    class="package-card-image"
+    src="${getPackageImage(pkg)}"
+    alt="${pkg.package_name || 'Health Package'}"
+    loading="lazy"
+    onerror="this.onerror=null; this.src='../assets/gut-healing-pkg.jpg';"
+  />
+</div>
+        
+        <div class="package-header">
             <div class="package-recommend-pill">
               <svg width="13" height="13" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
@@ -589,7 +610,18 @@ document.addEventListener('DOMContentLoaded', () => {
       // Category 3: My Packages Section (Booked packages)
       packagesListSection.innerHTML = pkgs.map(pkg => `
         <article class="package-card my-booked-card" id="pkg_${pkg.package_id || pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-id="${pkg.id}" data-package="${pkg.package_name}">
-          <div class="package-header">
+          
+        <div class="package-card-image-wrapper">
+  <img
+    class="package-card-image"
+    src="${getPackageImage(pkg)}"
+    alt="${pkg.package_name || 'Health Package'}"
+    loading="lazy"
+    onerror="this.onerror=null; this.src='../assets/gut-healing-pkg.jpg';"
+  />
+</div>
+        
+        <div class="package-header">
             <div class="package-card-top-row">
               <span class="package-booking-meta-badge">${pkg.booking_id || '#PKG-ENROLLED'}</span>
               <span class="package-status-pill status-${(pkg.booking_status || 'active').toLowerCase()}">
@@ -647,7 +679,17 @@ document.addEventListener('DOMContentLoaded', () => {
       // Category 1: All Packages Section (All health packages added to the portal system)
       packagesListSection.innerHTML = pkgs.map(pkg => `
         <article class="package-card" id="pkg_${pkg.package_id || pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-id="${pkg.id}" data-package="${pkg.package_name}">
-          <div class="package-header">
+          <div class="package-card-image-wrapper">
+  <img
+    class="package-card-image"
+    src="${getPackageImage(pkg)}"
+    alt="${pkg.package_name || 'Health Package'}"
+    loading="lazy"
+    onerror="this.onerror=null; this.src='../assets/gut-healing-pkg.jpg';"
+  />
+</div>
+        
+        <div class="package-header">
             <h2 class="package-title">${pkg.package_name}</h2>
             <p class="package-subtitle">${pkg.short_description || pkg.overview || 'Suitable for holistic health restoration.'}</p>
           </div>
@@ -775,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
           pPhone = storedPatient?.phone_number || storedUser?.phone_number || pPhone;
           pId = storedPatient?.patient_id || (storedUser?.id ? ('P00' + storedUser.id) : pId);
         }
-      } catch (err) {}
+      } catch (err) { }
 
       const priceFormatted = detailPkgPrice?.textContent.trim() || currentSelectedPackage?.price_formatted || '₹7,999';
       const durationText = detailPkgDuration?.textContent.trim() || currentSelectedPackage?.duration || '3 Months';
