@@ -137,34 +137,62 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // Render Dynamic Bar Chart for a specific metric and timeframe
-  const renderChart = (metricKey, timeframe = '6w') => {
-    const container = document.getElementById(`${metricKey}BarsArea`);
-    if (!container) return;
+  // Render chart using API data only. Never generate fallback readings.
+const renderChart = (metricKey, timeframe = '6w') => {
+  const container = document.getElementById(`${metricKey}BarsArea`);
+  if (!container) return;
 
-    const metricGraph = cachedDashboardData?.graphs?.[metricKey];
-    if (!metricGraph) {
-      container.innerHTML = '<div class="chart-empty-msg">No data available</div>';
-      return;
-    }
+  const metricGraph = cachedDashboardData?.graphs?.[metricKey];
 
-    const colorClass = metricGraph.color_class || 'bar-teal';
-    const dataset = metricGraph.timeframes?.[timeframe] || metricGraph.timeframes?.['6w'] || [];
+  if (!metricGraph) {
+    container.replaceChildren();
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'chart-empty-msg';
+    emptyMessage.textContent = 'No health data available';
+    container.appendChild(emptyMessage);
+    return;
+  }
 
-    if (!Array.isArray(dataset) || dataset.length === 0) {
-      container.innerHTML = '<div class="chart-empty-msg">No readings recorded for this timeframe</div>';
-      return;
-    }
+  const dataset = metricGraph.timeframes?.[timeframe] || [];
+  container.replaceChildren();
 
-    container.innerHTML = dataset.map(item => `
-      <div class="chart-col" title="${item.date_label || ''}: ${item.val_label || ''} ${metricGraph.unit || ''}">
-        <span class="bar-val-label">${item.val_label}</span>
-        <div class="bar-track">
-          <div class="bar-fill ${colorClass}" style="height: ${item.height_percent || 0}%;"></div>
-        </div>
-        <span class="bar-date-label">${item.date_label || ''}</span>
-      </div>
-    `).join('');
-  };
+  if (dataset.length === 0) {
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'chart-empty-msg';
+    emptyMessage.textContent = 'No readings recorded for this timeframe';
+    container.appendChild(emptyMessage);
+    return;
+  }
+
+  dataset.forEach(item => {
+    const column = document.createElement('div');
+    column.className = 'chart-col';
+    column.title = `${item.date_label || ''}: ${item.val_label || ''} ${metricGraph.unit || ''}`;
+
+    const valueLabel = document.createElement('span');
+    valueLabel.className = 'bar-val-label';
+    valueLabel.textContent = item.val_label ?? '';
+
+    const track = document.createElement('div');
+    track.className = 'bar-track';
+
+    const fill = document.createElement('div');
+    fill.className = `bar-fill ${metricGraph.color_class || 'bar-teal'}`;
+
+    const height = Number(item.height_percent);
+    fill.style.height = `${Number.isFinite(height) ? Math.max(0, Math.min(100, height)) : 0}%`;
+
+    track.appendChild(fill);
+
+    const dateLabel = document.createElement('span');
+    dateLabel.className = 'bar-date-label';
+    dateLabel.textContent = item.date_label ?? '';
+
+    column.append(valueLabel, track, dateLabel);
+    container.appendChild(column);
+  });
+};
+
 
   // Render All 4 Health Metric Charts
   const renderAllCharts = () => {
@@ -221,12 +249,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (nameEl) nameEl.textContent = pkgData.package_name || 'Gut Healing Package';
+    if (nameEl) nameEl.textContent = pkgData.package_name || '--';
     if (startEl) startEl.textContent = pkgData.start_date ? `Started on ${pkgData.start_date}` : 'Ongoing Health Program';
-    const percent = pkgData.progress_percent !== undefined ? pkgData.progress_percent : 50;
+    const percent = Number(pkgData.progress_percent ?? 0);
     if (fillEl) fillEl.style.width = `${percent}%`;
     if (percentEl) percentEl.textContent = pkgData.progress_text || `${percent} %`;
-    if (weekEl) weekEl.textContent = pkgData.week_info || 'Week 2 of 4';
+    if (weekEl) weekEl.textContent = pkgData.week_info || '--';
   };
 
   // Step 1: Populate from cached session immediately
@@ -298,20 +326,25 @@ document.addEventListener('DOMContentLoaded', () => {
             populateDietUI(cachedDietPlan);
           }
 
-          // 4. Latest Health Metric Badges
-          if (data.metrics) {
-            const weightVal = document.getElementById('weightMetricValue');
-            if (weightVal && data.metrics.weight) weightVal.textContent = data.metrics.weight;
+         // 4. Latest Health Metric Badges — API data only
+const metricFields = {
+  weight: 'weightMetricValue',
+  abdomen: 'abdomenMetricValue',
+  bp: 'bpMetricValue',
+  sugar: 'sugarMetricValue'
+};
 
-            const abdVal = document.getElementById('abdomenMetricValue');
-            if (abdVal && data.metrics.abdomen) abdVal.textContent = data.metrics.abdomen;
+Object.entries(metricFields).forEach(([key, elementId]) => {
+  const element = document.getElementById(elementId);
+  if (!element) return;
 
-            const bpVal = document.getElementById('bpMetricValue');
-            if (bpVal && data.metrics.bp) bpVal.textContent = data.metrics.bp;
+  const value = data.metrics?.[key];
 
-            const sugarVal = document.getElementById('sugarMetricValue');
-            if (sugarVal && data.metrics.sugar) sugarVal.textContent = data.metrics.sugar;
-          }
+  element.textContent =
+    value !== null && value !== undefined && value !== ''
+      ? value
+      : '--';
+});
 
           // 5. Render Dynamic Graphs
           if (data.graphs) {
@@ -425,15 +458,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const payload = {
-          action: 'add_reading',
-          phone: cachedPhone || '9876543210',
-          patient_id: cachedPatientId || 'P001',
-          date: dateInput || null,
-          weight: weightInput || null,
-          abdomen: abdomenInput || null,
-          bp: bpInput || null,
-          sugar: sugarInput || null
-        };
+  action: 'add_reading',
+  date: dateInput || new Date().toISOString().split('T')[0],
+  weight: weightInput || null,
+  abdomen: abdomenInput || null,
+  bp: bpInput || null,
+  sugar: sugarInput || null
+};
 
         const res = await fetch('../api/dashboard.php', {
           method: 'POST',
