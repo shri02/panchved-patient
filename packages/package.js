@@ -72,6 +72,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3200);
   };
 
+  const getPackageImage = (pkg) => {
+  const image = pkg.image_url || pkg.image || '';
+
+  if (!image) {
+    return '../assets/gut-healing-pkg.jpg';
+  }
+
+  if (/^(https?:\/\/|data:|blob:)/i.test(image)) {
+    return image;
+  }
+
+  if (image.startsWith('../')) {
+    return image;
+  }
+
+  return `../${image.replace(/^\/+/, '')}`;
+};
+
   // Mobile Menu Drawer Toggle
   const toggleMobileSidebar = (open) => {
     if (!dashboardSidebar || !sidebarOverlay) return;

@@ -303,50 +303,8 @@ function getRecommendedPackagesForPatient($connection1, $patient) {
         mysqli_stmt_close($stmt);
     }
 
-    // 2. Fallback: If no explicit recommendation exists in database yet for this patient,
-    // provide doctor-curated recommended packages (and auto-seed into recommended_packages if patient exists)
-    if (empty($recommended)) {
-        $fallbackSql = "SELECT * FROM packages WHERE status = 'Active' ORDER BY id ASC LIMIT 2";
-        $fbRes = mysqli_query($connection1, $fallbackSql);
-        if ($fbRes) {
-            $notes = [
-                'Recommended by Dr. Nidhi Jha following clinical assessment and dosha evaluation for hormonal and metabolic harmony.',
-                'Recommended by Dr. Rohit Mehra for digestive fire restoration and tailored postural rehabilitation.'
-            ];
-            $i = 0;
-            while ($row = mysqli_fetch_assoc($fbRes)) {
-                $formatted = formatPackageRecord($row, $connection1);
-                $docName = !empty($row['assigned_doctor']) ? $row['assigned_doctor'] : 'Dr. Nidhi Jha';
-                $recNote = $notes[$i % count($notes)];
-                $formatted['recommendation_id'] = 0;
-                $formatted['recommended_by_doctor'] = $docName;
-                $formatted['recommendation_note'] = $recNote;
-                $formatted['recommendation_status'] = 'Recommended';
-                $formatted['recommended_date'] = date('d M Y');
-
-                // Seed into recommended_packages table for future queries
-                if ($patientDbId > 0) {
-                    $pkgIdVal = (int)$row['id'];
-                    $pkgNameVal = $row['package_name'];
-                    $seedStmt = mysqli_prepare($connection1, "INSERT INTO recommended_packages (patient_id, patient_phone, package_id, package_name, doctor_name, recommendation_note, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'Recommended', NOW())");
-                    if ($seedStmt) {
-                        mysqli_stmt_bind_param($seedStmt, "isisss", $patientDbId, $patientPhone, $pkgIdVal, $pkgNameVal, $docName, $recNote);
-                        mysqli_stmt_execute($seedStmt);
-                        $formatted['recommendation_id'] = mysqli_insert_id($connection1);
-                        mysqli_stmt_close($seedStmt);
-                    }
-                }
-
-                $key = $formatted['id'] ?: $formatted['package_name'];
-                if (!isset($seenIds[$key])) {
-                    $seenIds[$key] = true;
-                    $recommended[] = $formatted;
-                }
-                $i++;
-            }
-        }
-    }
-
+    // Strict requirement: Only display packages specifically assigned by the doctor.
+    // If no packages are assigned by the doctor for this patient, return empty array (no other packages appear).
     return $recommended;
 }
 
