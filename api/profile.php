@@ -34,6 +34,39 @@ function sendJsonResponse($success, $message, $data = [], $statusCode = 200) {
     exit;
 }
 
+/**
+ * Generate the next patient profile ID.
+ * Format: OCA001, OCA002, OCA003...
+ */
+function generatePatientProfileId($connection1) {
+    $prefix = 'OCA';
+
+    // Find the highest existing numeric OCA ID.
+    $query = "
+        SELECT MAX(CAST(SUBSTRING(patient_id, 4) AS UNSIGNED)) AS last_number
+        FROM patients
+        WHERE patient_id REGEXP '^OCA[0-9]+$'
+    ";
+
+    $result = mysqli_query($connection1, $query);
+
+    if (!$result) {
+        throw new RuntimeException(
+            'Unable to generate patient profile ID.'
+        );
+    }
+
+    $row = mysqli_fetch_assoc($result);
+    $nextNumber = ((int)($row['last_number'] ?? 0)) + 1;
+
+    return $prefix . str_pad(
+        (string)$nextNumber,
+        3,
+        '0',
+        STR_PAD_LEFT
+    );
+}
+
 // --------------------------------------------------------------------------
 // 1. GET REQUEST: Fetch Patient & User Profile from Database
 // --------------------------------------------------------------------------
@@ -115,7 +148,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || (isset($_GET['action']) && $_GET['ac
     $finalFullName = $patient['full_name'] ?? ($user['full_name'] ?? '');
     $finalPhone = $patient['phone_number'] ?? ($user['phone_number'] ?? $phone);
     $finalEmail = $patient['email'] ?? ($user['email'] ?? $email);
-    $finalPatientId = $patient['patient_id'] ?? ('P' . str_pad($user['id'] ?? 1, 3, '0', STR_PAD_LEFT));
+   $finalPatientId = !empty($patient['patient_id'])
+    ? $patient['patient_id']
+    : 'OCA' . str_pad(
+        (string)($patient['id'] ?? $user['id'] ?? 1),
+        3,
+        '0',
+        STR_PAD_LEFT
+    );
 
     $finalPatientData = [
         'id' => (int)($patient['id'] ?? ($user['id'] ?? 1)),
@@ -304,11 +344,160 @@ if ($action === 'update_profile') {
     $sessionEmail = $_SESSION['email'] ?? $email;
 
     // 1. Update in `patients` table
-    $updatePat = "UPDATE patients SET full_name = ?, dob = ?, age = ?, phone_number = ?, gender = ?, email = ?, updated_at = NOW() WHERE phone_number = ? OR phone_number = ? OR email = ? OR email = ? LIMIT 1";
-    $pStmt = mysqli_prepare($connection1, $updatePat);
-    if ($pStmt) {
-        mysqli_stmt_bind_param($pStmt, "ssisssssss", $fullName, $mysqlDob, $age, $phoneDigits, $gender, $email, $sessionPhone, $phoneDigits, $sessionEmail, $email);
-        mysqli_stmt_execute($pStmt);
+   // 1. Find or create the patient record
+    $findPatientQuery = "
+        SELECT id, patient_id
+        FROM patients
+        WHERE
+            (phone_number != '' AND phone_number = ?)
+            OR (email != '' AND email = ?)
+        LIMIT 1
+    ";
+
+    $findStmt = mysqli_prepare(
+        $connection1,
+        $findPatientQuery
+    );
+
+    if (!$findStmt) {
+        sendJsonResponse(
+            false,
+            'Unable to prepare patient lookup.',
+            [],
+            500
+        );
+    }
+
+    mysqli_stmt_bind_param(
+        $findStmt,
+        "ss",
+        $phoneDigits,
+        $email
+    );
+
+    mysqli_stmt_execute($findStmt);
+    $findResult = mysqli_stmt_get_result($findStmt);
+    $existingPatient = mysqli_fetch_assoc($findResult);
+    mysqli_stmt_close($findStmt);
+
+    if (!$existingPatient) {
+
+        // Generate a new patient profile ID
+        $newPatientId = generatePatientProfileId($connection1);
+
+        $insertPatientQuery = "
+            INSERT INTO patients
+                (
+                    patient_id,
+                    full_name,
+                    dob,
+                    age,
+                    phone_number,
+                    gender,
+                    email,
+                    status,
+                    created_at,
+                    updated_at
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Ongoing', NOW(), NOW())
+        ";
+
+        $insertStmt = mysqli_prepare(
+            $connection1,
+            $insertPatientQuery
+        );
+
+        if (!$insertStmt) {
+            sendJsonResponse(
+                false,
+                'Unable to prepare patient record.',
+                [],
+                500
+            );
+        }
+
+        mysqli_stmt_bind_param(
+            $insertStmt,
+            "sssisss",
+            $newPatientId,
+            $fullName,
+            $mysqlDob,
+            $age,
+            $phoneDigits,
+            $gender,
+            $email
+        );
+
+        if (!mysqli_stmt_execute($insertStmt)) {
+            mysqli_stmt_close($insertStmt);
+
+            sendJsonResponse(
+                false,
+                'Unable to create patient record.',
+                [],
+                500
+            );
+        }
+
+        mysqli_stmt_close($insertStmt);
+
+        $existingPatient = ['patient_id' => $newPatientId];
+
+
+    } else {
+
+        // Update the existing patient record
+        $updatePat = "
+            UPDATE patients
+            SET
+                full_name = ?,
+                dob = ?,
+                age = ?,
+                phone_number = ?,
+                gender = ?,
+                email = ?,
+                updated_at = NOW()
+            WHERE id = ?
+            LIMIT 1
+        ";
+
+        $pStmt = mysqli_prepare(
+            $connection1,
+            $updatePat
+        );
+
+        if (!$pStmt) {
+            sendJsonResponse(
+                false,
+                'Unable to prepare patient update.',
+                [],
+                500
+            );
+        }
+
+        mysqli_stmt_bind_param(
+            $pStmt,
+            "ssisssi",
+            $fullName,
+            $mysqlDob,
+            $age,
+            $phoneDigits,
+            $gender,
+            $email,
+            $existingPatient['id']
+        );
+
+        if (!mysqli_stmt_execute($pStmt)) {
+            mysqli_stmt_close($pStmt);
+
+            sendJsonResponse(
+                false,
+                'Unable to update patient record.',
+                [],
+                500
+            );
+        }
+
         mysqli_stmt_close($pStmt);
     }
 
@@ -326,22 +515,35 @@ if ($action === 'update_profile') {
     $_SESSION['phone_number'] = $phoneDigits;
     $_SESSION['email'] = $email;
 
-    sendJsonResponse(true, 'Profile updated successfully!', [
-        'user' => [
-            'full_name' => $fullName,
-            'phone_number' => $phoneDigits,
-            'email' => $email
-        ],
-        'patient' => [
-            'full_name' => $fullName,
-            'dob' => $mysqlDob,
-            'dob_formatted' => date('d/m/Y', strtotime($mysqlDob)),
-            'age' => $age,
-            'gender' => $gender,
-            'phone_number' => $phoneDigits,
-            'email' => $email
-        ]
-    ]);
+    // 3. Update Session
+$_SESSION['full_name'] = $fullName;
+$_SESSION['phone_number'] = $phoneDigits;
+$_SESSION['email'] = $email;
+
+// Keep the actual patient ID from the database
+$savedPatientId = $existingPatient['patient_id']
+    ?? ($newPatientId ?? '');
+
+$_SESSION['patient_id'] = $savedPatientId;
+
+// Return the updated profile, including Patient ID
+sendJsonResponse(true, 'Profile updated successfully!', [
+    'user' => [
+        'full_name' => $fullName,
+        'phone_number' => $phoneDigits,
+        'email' => $email
+    ],
+    'patient' => [
+        'patient_id' => $savedPatientId,
+        'full_name' => $fullName,
+        'dob' => $mysqlDob,
+        'dob_formatted' => date('d/m/Y', strtotime($mysqlDob)),
+        'age' => $age,
+        'gender' => $gender,
+        'phone_number' => $phoneDigits,
+        'email' => $email
+    ]
+]);
 }
 
 sendJsonResponse(false, 'Invalid request action.', [], 400);

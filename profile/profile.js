@@ -228,8 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = patientData?.email || userData?.email;
     const dob = patientData?.dob_formatted || patientData?.dob;
     const gender = patientData?.gender || 'Male';
-    const patientId = patientData?.patient_id || ('P' + strPad(userData?.id || 1, 3));
-
+    const patientId = patientData?.patient_id ||
+  ('OCA' + strPad(patientData?.id || userData?.id || 1, 3));
     if (fullName) {
       if (fnInput) fnInput.value = fullName;
       if (unEl) unEl.textContent = fullName;
@@ -462,6 +462,29 @@ document.addEventListener('DOMContentLoaded', () => {
               localStorage.setItem('ocayur_workshop_booking', JSON.stringify(workshopStored));
             }
           } catch (e) {}
+
+          // Update the displayed Patient ID using the ID returned by PHP
+const savedPatientId = result.patient?.patient_id;
+
+if (savedPatientId) {
+  if (pidEl) {
+    pidEl.textContent = savedPatientId;
+  }
+
+  if (userProfileCard) {
+    userProfileCard.setAttribute(
+      'aria-label',
+      `User profile: ${fullName}, Patient ID ${savedPatientId}`
+    );
+  }
+
+  if (mobileUserAvatar) {
+    mobileUserAvatar.setAttribute(
+      'title',
+      `${fullName} (${savedPatientId})`
+    );
+  }
+}
 
           if (unEl) unEl.textContent = fullName;
           if (ugEl) ugEl.textContent = `Good Morning ${fullName}!`;
