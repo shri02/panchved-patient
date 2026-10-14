@@ -526,7 +526,11 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
             }
 
             showToast('Health reading recorded successfully!');
-            closeReadingModal();
+
+// Redirect to the dashboard after saving.
+setTimeout(() => {
+  window.location.href = 'dashboard.html';
+}, 500);
           } else {
             showToast(resData.message || 'Failed to record health reading.', true);
           }

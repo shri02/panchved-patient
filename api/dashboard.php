@@ -650,16 +650,16 @@ if ($requestMethod === 'POST' && in_array($action, ['add_reading', 'save_metrics
     $patientPhone = (string)($patient['phone_number'] ?? '');
 
     mysqli_stmt_bind_param(
-        $stmt,
-        'isddssd',
-        $dbPatientId,
-        $patientPhone,
-        $weight,
-        $abdomen,
-        $bp,
-        $sugar,
-        $date
-    );
+    $stmt,
+    'isddsds',
+    $dbPatientId,
+    $patientPhone,
+    $weight,
+    $abdomen,
+    $bp,
+    $sugar,
+    $date
+);
 
     if (!mysqli_stmt_execute($stmt)) {
         mysqli_stmt_close($stmt);
