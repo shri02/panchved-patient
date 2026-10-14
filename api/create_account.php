@@ -242,17 +242,28 @@ if ($pittaScore >= $vataScore && $pittaScore >= $kaphaScore && $pittaScore >= 4)
     $profileDescription = 'Your assessment indicates steady Kapha constitution. Focus on metabolic boosting herbs, active physical exercise, and light digestive spices.';
 }
 
-// Generate Next Unique Patient ID (e.g. P011, P012...)
-$patientIdQuery = "SELECT patient_id FROM patients WHERE patient_id LIKE 'P%' ORDER BY id DESC LIMIT 1";
+/**
+ * Generate Next Unique Patient ID (OCA001, OCA002, OCA003...)
+ */
+$patientIdQuery = "
+    SELECT patient_id
+    FROM patients
+    WHERE patient_id REGEXP '^OCA[0-9]+$'
+    ORDER BY CAST(SUBSTRING(patient_id, 4) AS UNSIGNED) DESC
+    LIMIT 1
+";
+
 $pidRes = mysqli_query($connection1, $patientIdQuery);
-$nextNum = 11;
+
+$nextNum = 1;
 
 if ($pidRes && $pRow = mysqli_fetch_assoc($pidRes)) {
-    if (preg_match('/P(\d+)/', $pRow['patient_id'], $m)) {
-        $nextNum = intval($m[1]) + 1;
+    if (preg_match('/^OCA(\d+)$/', $pRow['patient_id'], $m)) {
+        $nextNum = (int)$m[1] + 1;
     }
 }
-$newPatientId = 'P' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+
+$newPatientId = 'OCA' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
 
 // Password Bcrypt Hash
 $passwordHash = password_hash($password, PASSWORD_BCRYPT);
