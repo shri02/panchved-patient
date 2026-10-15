@@ -162,6 +162,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
           applyUserHeader(data.user, data.patient);
+          const newPhone = data.patient?.phone_number || data.user?.phone_number || '';
+          const newPid = data.patient?.patient_id || '';
+          if (!cachedPhone && newPhone) {
+            cachedPhone = newPhone;
+            cachedPatientId = newPid;
+            fetchPackagesCategoriesFromDB();
+          }
         }
       }
     } catch (e) { }
@@ -228,6 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
         localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
         localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
+        localStorage.removeItem('ocayur_booked_packages');
+        localStorage.removeItem('ocayur_consultation_booking');
+        localStorage.removeItem('ocayur_checkout_type');
       } catch (e) { }
       showToast('Logged out successfully.');
       setTimeout(() => { window.location.href = '../index.html'; }, 350);
@@ -272,6 +282,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (doctorAvatarText) {
       doctorAvatarText.textContent = doc.initials || 'DR';
+    }
+
+    // Check if the current package is already booked
+    if (bookConsultationBtn) {
+      const isAlreadyBooked = categoriesData.my && categoriesData.my.some(bp => bp.package_name && bp.package_name.toLowerCase() === (pkg.package_name || '').toLowerCase());
+      if (isAlreadyBooked) {
+        bookConsultationBtn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Enrolled (Active Package)</span>
+        `;
+        bookConsultationBtn.style.backgroundColor = '#15803d';
+      } else {
+        bookConsultationBtn.innerHTML = `<span>Book Package (₹500)</span>`;
+        bookConsultationBtn.style.backgroundColor = '';
+      }
     }
   };
 
@@ -381,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
       packagesListSection.style.animation = 'fadeInCard 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards';
     }
 
-    history.replaceState(null, '', 'package.html');
+    history.replaceState(null, '', 'package.html' + (currentActiveCategory && currentActiveCategory !== 'all' ? `#${currentActiveCategory}` : ''));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -726,9 +753,14 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
 
           <div class="package-card-footer">
-            <button type="button" class="btn-package-action" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}" data-subtitle="${pkg.short_description || ''}" data-price="${pkg.price_formatted || ('₹' + pkg.price)}">
-              <span>View Details</span>
-            </button>
+            <div class="package-card-actions-group">
+              <button type="button" class="btn-package-secondary btn-package-action" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
+                <span>View Details</span>
+              </button>
+              <button type="button" class="btn-package-action btn-direct-book-package" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
+                <span>Book Package</span>
+              </button>
+            </div>
           </div>
         </article>
       `).join('');
@@ -753,6 +785,31 @@ document.addEventListener('DOMContentLoaded', () => {
           categoriesData.recommended = data.categories.recommended || [];
           categoriesData.my = data.categories.my || [];
 
+          // Also sync any locally booked packages that match this patient
+          try {
+            const localBooked = JSON.parse(localStorage.getItem('ocayur_booked_packages') || '[]');
+            if (Array.isArray(localBooked) && localBooked.length > 0) {
+              localBooked.forEach(lb => {
+                const phoneMatch = !cachedPhone || !lb.patient_phone || lb.patient_phone === cachedPhone;
+                if (phoneMatch && lb.package_name) {
+                  const alreadyInMy = categoriesData.my.some(p => p.package_name && p.package_name.toLowerCase() === lb.package_name.toLowerCase());
+                  if (!alreadyInMy) {
+                    const allMatch = categoriesData.all.find(p => p.package_name && p.package_name.toLowerCase() === lb.package_name.toLowerCase());
+                    if (allMatch) {
+                      categoriesData.my.unshift({
+                        ...allMatch,
+                        booking_id: lb.booking_id || '#PKG-BOOKED',
+                        booking_date: lb.booking_date || 'Today',
+                        booking_status: lb.booking_status || 'Active',
+                        booked_doctor: lb.doctor_name || allMatch.doctor?.name || 'Dr. Nidhi Jha'
+                      });
+                    }
+                  }
+                }
+              });
+            }
+          } catch (e) {}
+
           loadedPackages = [
             ...categoriesData.all,
             ...categoriesData.recommended,
@@ -761,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (badgeAllCount) badgeAllCount.textContent = data.counts?.all ?? categoriesData.all.length;
           if (badgeRecommendedCount) badgeRecommendedCount.textContent = data.counts?.recommended ?? categoriesData.recommended.length;
-          if (badgeMyCount) badgeMyCount.textContent = data.counts?.my ?? categoriesData.my.length;
+          if (badgeMyCount) badgeMyCount.textContent = categoriesData.my.length;
 
           renderCurrentCategory();
           return categoriesData;

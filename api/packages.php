@@ -311,23 +311,38 @@ function getRecommendedPackagesForPatient($connection1, $patient) {
 // --------------------------------------------------------------------------
 // Category 3: Get My Packages (All packages booked & stored for the patient)
 // --------------------------------------------------------------------------
-function getMyBookedPackagesForPatient($connection1, $patient) {
+function getMyBookedPackagesForPatient($connection1, $patient, $phone = '', $patientId = '') {
     $myPackages = [];
     $seenNames = [];
 
     $patientDbId = $patient ? (int)$patient['id'] : 0;
-    $patientPhone = $patient ? trim((string)$patient['phone_number']) : '';
+    $patientPhone = $patient ? trim((string)$patient['phone_number']) : trim((string)$phone);
     $patientName = $patient ? trim((string)$patient['full_name']) : '';
+
+    if (empty($patientPhone) && !empty($phone)) {
+        $patientPhone = trim((string)$phone);
+    }
+    if ($patientDbId <= 0 && !empty($patientId) && is_numeric($patientId)) {
+        $patientDbId = (int)$patientId;
+    }
+
     $phoneDigits = preg_replace('/[^\d]/', '', $patientPhone);
     if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
         $phoneDigits = substr($phoneDigits, 2);
     }
 
-    // 1. Fetch from `patient_packages` table
+    // STRICT: If no authenticated patient ID or phone is available, return empty array immediately
+    if ($patientDbId <= 0 && empty($patientPhone) && empty($phoneDigits)) {
+        return [];
+    }
+
+    // 1. Fetch strictly from `patient_packages` table (actual packages booked by patient)
+    // INNER JOIN with active packages so only valid packages appear
     $ppSql = "SELECT pp.*, p.overview, p.short_description, p.image_url, p.benefits, p.duration AS pkg_duration, p.price AS pkg_price, p.assigned_doctor AS pkg_doctor
               FROM patient_packages pp
-              LEFT JOIN packages p ON (p.id = pp.package_id OR (p.package_name = pp.package_name COLLATE utf8mb4_unicode_ci))
+              INNER JOIN packages p ON (p.id = pp.package_id OR p.package_name = pp.package_name COLLATE utf8mb4_unicode_ci)
               WHERE ((pp.patient_id > 0 AND pp.patient_id = ?) OR (pp.patient_phone != '' AND (pp.patient_phone = ? OR pp.patient_phone = ?)))
+                AND pp.status != 'Cancelled'
               ORDER BY pp.id DESC";
 
     if ($stmt = mysqli_prepare($connection1, $ppSql)) {
@@ -342,7 +357,16 @@ function getMyBookedPackagesForPatient($connection1, $patient) {
             $formatted['booking_id'] = !empty($row['booking_id']) ? $row['booking_id'] : ('#PKG' . str_pad($row['id'], 5, '0', STR_PAD_LEFT));
             $formatted['booking_date'] = !empty($row['booking_date']) ? date('d M Y', strtotime($row['booking_date'])) : date('d M Y', strtotime($row['created_at']));
             $formatted['booking_status'] = !empty($row['status']) ? $row['status'] : 'Active';
-            $formatted['booked_doctor'] = !empty($row['doctor_name']) ? $row['doctor_name'] : ($formatted['doctor']['name'] ?? 'Dr. Nidhi Jha');
+
+            $docName = '';
+            if (!empty($row['doctor_name']) && $row['doctor_name'] !== '0') {
+                $docName = $row['doctor_name'];
+            } elseif (!empty($formatted['doctor']['name'])) {
+                $docName = $formatted['doctor']['name'];
+            } else {
+                $docName = 'Dr. Nidhi Jha';
+            }
+            $formatted['booked_doctor'] = $docName;
 
             $key = strtolower($pkgName);
             if (!isset($seenNames[$key])) {
@@ -353,14 +377,16 @@ function getMyBookedPackagesForPatient($connection1, $patient) {
         mysqli_stmt_close($stmt);
     }
 
-    // 2. Fetch from `appointments` table (where package consultation or package booked)
+    // 2. Fetch from `appointments` table ONLY where service_type is explicitly 'Package Consultation'
+    // and package_name matches an active package in `packages` table
     $apptSql = "SELECT a.id AS appt_id, a.appointment_id, a.package_name, a.doctor_name, a.appointment_date, a.appointment_time, a.status AS appt_status, a.created_at, p.*
                 FROM appointments a
-                LEFT JOIN packages p ON (p.package_name = a.package_name COLLATE utf8mb4_unicode_ci)
+                INNER JOIN packages p ON (p.package_name = a.package_name COLLATE utf8mb4_unicode_ci)
                 WHERE ((a.patient_id > 0 AND a.patient_id = ?) OR (a.patient_name != '' AND a.patient_name = ?) OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
+                  AND a.service_type = 'Package Consultation'
                   AND a.package_name IS NOT NULL
                   AND a.package_name != ''
-                  AND a.package_name NOT IN ('General Consultation', 'Consultation & Rehab')
+                  AND a.status != 'Cancelled'
                 ORDER BY a.id DESC";
 
     if ($stmt = mysqli_prepare($connection1, $apptSql)) {
@@ -386,50 +412,9 @@ function getMyBookedPackagesForPatient($connection1, $patient) {
         mysqli_stmt_close($stmt);
     }
 
-    // 3. Check `patients.package_name`
-    if ($patient && !empty($patient['package_name'])) {
-        $pPkgName = cleanPackageName($patient['package_name']);
-        $key = strtolower($pPkgName);
-        if (!empty($pPkgName) && !isset($seenNames[$key]) && $pPkgName !== 'general consultation') {
-            $fSql = "SELECT * FROM packages WHERE package_name = ? OR package_name LIKE ? LIMIT 1";
-            if ($fStmt = mysqli_prepare($connection1, $fSql)) {
-                $like = '%' . $pPkgName . '%';
-                mysqli_stmt_bind_param($fStmt, "ss", $pPkgName, $like);
-                mysqli_stmt_execute($fStmt);
-                $fRes = mysqli_stmt_get_result($fStmt);
-                $row = mysqli_fetch_assoc($fRes);
-                mysqli_stmt_close($fStmt);
-
-                if ($row) {
-                    $formatted = formatPackageRecord($row, $connection1);
-                } else {
-                    $formatted = [
-                        'id' => 0,
-                        'package_id' => 'PKG-ENROLLED',
-                        'package_name' => $pPkgName,
-                        'category' => 'Ayurveda Care',
-                        'duration' => '3 Months',
-                        'price' => 7999.0,
-                        'price_formatted' => '₹7,999',
-                        'enrollments' => 1,
-                        'batch_text' => 'Enrolled Batch',
-                        'short_description' => 'Tailored holistic therapy and lifestyle care program.',
-                        'overview' => 'Personalized multi-dimensional Ayurvedic wellness protocol.',
-                        'image_url' => 'assets/gut-healing-pkg.jpg',
-                        'doctor' => resolveDoctorForPackage($connection1, '', $pPkgName)
-                    ];
-                }
-
-                $formatted['booking_id'] = '#ENR-' . ($patient['patient_id'] ?: 'P001');
-                $formatted['booking_date'] = !empty($patient['created_at']) ? date('d M Y', strtotime($patient['created_at'])) : date('d M Y');
-                $formatted['booking_status'] = !empty($patient['status']) ? $patient['status'] : 'Ongoing';
-                $formatted['booked_doctor'] = $formatted['doctor']['name'] ?? 'Dr. Nidhi Jha';
-
-                $seenNames[$key] = true;
-                $myPackages[] = $formatted;
-            }
-        }
-    }
+    // NOTE: We deliberately do NOT fall back to `patients.package_name` here.
+    // In the database schema, patients.package_name has a default value ('Ayurveda Holistic Care' / 'Stress Management')
+    // which is not a genuine package booking. If a user has not booked a package, My Packages must remain empty.
 
     return $myPackages;
 }
@@ -518,7 +503,7 @@ if ($requestMethod === 'GET') {
     // ACTION: MY PACKAGES (Category 3 - Booked Packages)
     if ($action === 'my_packages' || $action === 'booked' || $action === 'booked_packages') {
         $patient = resolvePatientForPackages($connection1, $phone, $patientId);
-        $myPackages = getMyBookedPackagesForPatient($connection1, $patient);
+        $myPackages = getMyBookedPackagesForPatient($connection1, $patient, $phone, $patientId);
         sendJsonResponse(true, 'My booked packages loaded successfully from database.', [
             'count' => count($myPackages),
             'packages' => $myPackages,
@@ -535,7 +520,7 @@ if ($requestMethod === 'GET') {
         $patient = resolvePatientForPackages($connection1, $phone, $patientId);
         $allPkgs = getAllPackagesList($connection1);
         $recPkgs = getRecommendedPackagesForPatient($connection1, $patient);
-        $myPkgs = getMyBookedPackagesForPatient($connection1, $patient);
+        $myPkgs = getMyBookedPackagesForPatient($connection1, $patient, $phone, $patientId);
 
         sendJsonResponse(true, 'All package categories loaded successfully from database.', [
             'categories' => [
@@ -705,9 +690,9 @@ if ($requestMethod === 'POST') {
         $pkgDbId = (int)$pRow['id'];
     }
 
-    $insPpkg = mysqli_prepare($connection1, "INSERT INTO patient_packages (booking_id, patient_id, patient_phone, package_id, package_name, doctor_name, price, booking_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())");
+    $insPpkg = mysqli_prepare($connection1, "INSERT INTO patient_packages (booking_id, patient_id, patient_phone, package_id, package_name, doctor_id, doctor_name, price, booking_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())");
     if ($insPpkg) {
-        mysqli_stmt_bind_param($insPpkg, "sisisdss", $bookingCode, $patientDbId, $patientPhone, $pkgDbId, $packageName, $doctorName, $amount, $appointmentDate);
+        mysqli_stmt_bind_param($insPpkg, "sisisisds", $bookingCode, $patientDbId, $patientPhone, $pkgDbId, $packageName, $doctorDbId, $doctorName, $amount, $appointmentDate);
         mysqli_stmt_execute($insPpkg);
         mysqli_stmt_close($insPpkg);
     }
@@ -722,6 +707,12 @@ if ($requestMethod === 'POST') {
 
     // Update Session
     $_SESSION['package_name'] = $packageName;
+    if (!empty($patientPhone)) {
+        $_SESSION['phone_number'] = $patientPhone;
+    }
+    if (!empty($finalPatientCode)) {
+        $_SESSION['patient_id'] = $finalPatientCode;
+    }
 
     sendJsonResponse(true, 'Package consultation booked and package enrolled successfully!', [
         'booking_id' => '#' . $bookingIdNumber,
@@ -738,4 +729,6 @@ if ($requestMethod === 'POST') {
     ], 200);
 }
 
-sendJsonResponse(false, 'Invalid request method or action.', [], 400);
+if (!defined('IN_TEST_RUNNER')) {
+    sendJsonResponse(false, 'Invalid request method or action.', [], 400);
+}

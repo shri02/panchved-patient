@@ -709,6 +709,29 @@ document.addEventListener('DOMContentLoaded', () => {
               if (resData.patient_id) currentPatient.patient_id = resData.patient_id;
               localStorage.setItem('ocayur_patient', JSON.stringify(currentPatient));
             } catch (e) {}
+
+            // Also store booked package record in localStorage for instant client-side sync
+            try {
+              let localBooked = JSON.parse(localStorage.getItem('ocayur_booked_packages') || '[]');
+              if (!Array.isArray(localBooked)) localBooked = [];
+              const targetTitle = resData.package_name || bookingPayload.package_name;
+              const existingIdx = localBooked.findIndex(b => b.package_name && b.package_name.toLowerCase() === targetTitle.toLowerCase());
+              const newBookedRecord = {
+                booking_id: bookingId,
+                package_name: targetTitle,
+                doctor_name: resData.doctor_name || bookingPayload.doctor_name,
+                patient_phone: pPhone,
+                patient_id: resData.patient_id || bookingPayload.patient_id,
+                booking_date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                booking_status: 'Active'
+              };
+              if (existingIdx >= 0) {
+                localBooked[existingIdx] = newBookedRecord;
+              } else {
+                localBooked.unshift(newBookedRecord);
+              }
+              localStorage.setItem('ocayur_booked_packages', JSON.stringify(localBooked));
+            } catch (e) {}
           }
         }
       } catch (backendErr) {
