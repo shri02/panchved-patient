@@ -79,7 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Synchronize dynamic user & patient data across dashboard headers and forms
   const syncAppUserData = () => {
     try {
-      const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+      let storedUser = JSON.parse((localStorage.getItem('ocayur_patient_user') || localStorage.getItem('panchved_patient_user') || localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+      if (storedUser && storedUser.role && String(storedUser.role).toLowerCase() !== 'patient') {
+        storedUser = null;
+      }
       const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
       if (storedUser || storedPatient) {
         const fullName = storedPatient?.full_name || storedUser?.full_name;
@@ -828,10 +831,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (response.ok && result.success) {
           if (result.user) {
-            try { localStorage.setItem('ocayur_user', JSON.stringify(result.user)); } catch (e) {}
+            try {
+              localStorage.setItem('ocayur_patient_user', JSON.stringify(result.user));
+              localStorage.setItem('panchved_patient_user', JSON.stringify(result.user));
+              localStorage.setItem('ocayur_user', JSON.stringify(result.user));
+            } catch (e) {}
           }
           if (result.patient) {
-            try { localStorage.setItem('ocayur_patient', JSON.stringify(result.patient)); } catch (e) {}
+            try {
+              localStorage.setItem('ocayur_patient', JSON.stringify(result.patient));
+              localStorage.setItem('panchved_patient', JSON.stringify(result.patient));
+            } catch (e) {}
           }
 
           showToast(result.message || 'Login successful! Welcome to Dashboard.');

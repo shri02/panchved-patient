@@ -283,12 +283,18 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedPhone = '';
   let cachedPatientId = '';
   try {
-    const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    let storedUser = JSON.parse((localStorage.getItem('ocayur_patient_user') || localStorage.getItem('panchved_patient_user') || localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+    if (storedUser && storedUser.role && String(storedUser.role).toLowerCase() !== 'patient') {
+      storedUser = null;
+    }
     const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
     if (storedUser || storedPatient) {
       applyDashboardPatient(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
       cachedPatientId = storedPatient?.patient_id || '';
+    } else {
+      window.location.replace('../index.html');
+      return;
     }
   } catch (err) {
     console.warn('Unable to load stored dashboard session', err);

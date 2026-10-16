@@ -538,8 +538,11 @@ if ($requestMethod === 'POST') {
 }
 
 $sessionPhone = trim((string)($_SESSION['phone_number'] ?? $_SESSION['phone'] ?? ''));
-$sessionEmail = trim((string)($_SESSION['email'] ?? $_SESSION['email_id'] ?? ''));
 $sessionPatientId = trim((string)($_SESSION['patient_id'] ?? ''));
+$sessionRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
+if (!empty($sessionRole) && $sessionRole !== 'patient') {
+    sendJsonResponse(false, 'Access denied. Only Patient credentials can access the Patient dashboard.', [], 403);
+}
 
 if ($requestMethod === 'GET') {
     $phone = trim((string)($_GET['phone'] ?? $sessionPhone));

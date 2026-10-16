@@ -75,30 +75,55 @@ $authenticated = false;
 $foundUser = null;
 
 if ($user) {
-    // Check if account is active
-    if (isset($user['status']) && strtolower($user['status']) === 'inactive') {
-        sendJsonResponse(false, 'Your account is currently inactive. Please contact support.', [], 403);
-    }
-
-    // Verify Password
+    // Verify Password first
+    $passwordMatches = false;
     if (password_verify($password, $user['password_hash'])) {
-        $authenticated = true;
-    } elseif ($user['password_hash'] === md5($password)) {
-        $authenticated = true;
-    } elseif ($user['password_hash'] === $password) {
-        $authenticated = true;
-    } elseif ($password === 'admin123' && ($user['username'] === 'admin' || $user['role'] === 'Admin')) {
-        // Fallback for default seed admin
-        $authenticated = true;
+        $passwordMatches = true;
+    } elseif ($user['password_hash'] === md5($password) || $user['password_hash'] === $password) {
+        $passwordMatches = true;
     }
 
-    if ($authenticated) {
+    $userRole = strtolower(trim((string)($user['role'] ?? '')));
+
+    // If credentials belong to an Admin or Doctor, strictly reject
+    if ($userRole === 'admin' || $userRole === 'super admin' || $userRole === 'doctor' || $userRole === 'staff') {
+        if ($passwordMatches) {
+            sendJsonResponse(false, 'Access denied. ' . ucfirst($user['role']) . ' credentials cannot be used to log in to the Patient portal.', [], 403);
+        } else {
+            sendJsonResponse(false, 'Invalid phone number or password. Please check your credentials.', [], 401);
+        }
+    }
+
+    if ($passwordMatches) {
+        // Check if account is active
+        if (isset($user['status']) && strtolower($user['status']) === 'inactive') {
+            sendJsonResponse(false, 'Your account is currently inactive. Please contact support.', [], 403);
+        }
+        $authenticated = true;
         $foundUser = $user;
+    }
+} else if ($connection1) {
+    // Check if credentials belong to doctors table
+    $docCheck = mysqli_prepare($connection1, "SELECT id, password FROM doctors WHERE phone_number = ? OR phone_number = ? OR email = ? OR doctorid = ? LIMIT 1");
+    if ($docCheck) {
+        mysqli_stmt_bind_param($docCheck, "ssss", $phone, $phoneDigits, $phone, $phone);
+        mysqli_stmt_execute($docCheck);
+        $dRes = mysqli_stmt_get_result($docCheck);
+        $docRow = mysqli_fetch_assoc($dRes);
+        mysqli_stmt_close($docCheck);
+
+        if ($docRow) {
+            $storedP = (string)($docRow['password'] ?? '');
+            $isDocPw = ($password === $storedP) || (strlen($storedP) >= 60 && password_verify($password, $storedP));
+            if ($isDocPw) {
+                sendJsonResponse(false, 'Access denied. Doctor credentials cannot be used to log in to the Patient portal.', [], 403);
+            }
+        }
     }
 }
 
 // 2. If not found in `users`, check `patients` table for matching patient who has a user account
-if (!$authenticated && !$user) {
+if (!$authenticated && !$user && $connection1) {
     $patQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, package_name, status FROM patients WHERE phone_number = ? OR phone_number = ? OR email = ? LIMIT 1";
     $pStmt = mysqli_prepare($connection1, $patQuery);
     if ($pStmt) {
@@ -119,9 +144,17 @@ if (!$authenticated && !$user) {
                 $uPat = mysqli_fetch_assoc($upRes);
                 mysqli_stmt_close($upStmt);
 
-                if ($uPat && (password_verify($password, $uPat['password_hash']) || $uPat['password_hash'] === md5($password) || $uPat['password_hash'] === $password)) {
-                    $authenticated = true;
-                    $foundUser = $uPat;
+                if ($uPat) {
+                    $uRole = strtolower(trim((string)($uPat['role'] ?? '')));
+                    $pwValid = password_verify($password, $uPat['password_hash']) || $uPat['password_hash'] === md5($password) || $uPat['password_hash'] === $password;
+                    if ($uRole !== 'patient' && $uRole !== '') {
+                        if ($pwValid) {
+                            sendJsonResponse(false, 'Access denied. ' . ucfirst($uPat['role']) . ' credentials cannot be used to log in to the Patient portal.', [], 403);
+                        }
+                    } else if ($pwValid) {
+                        $authenticated = true;
+                        $foundUser = $uPat;
+                    }
                 }
             }
         }
@@ -130,6 +163,12 @@ if (!$authenticated && !$user) {
 
 if (!$authenticated || !$foundUser) {
     sendJsonResponse(false, 'Invalid phone number or password. Please check your credentials.', [], 401);
+}
+
+// Final check to guarantee user is a patient
+$finalRole = strtolower(trim((string)($foundUser['role'] ?? 'patient')));
+if ($finalRole !== 'patient' && $finalRole !== '') {
+    sendJsonResponse(false, 'Access denied. Only Patient credentials are permitted on the Patient portal.', [], 403);
 }
 
 // 3. Fetch full patient profile details

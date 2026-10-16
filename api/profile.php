@@ -130,6 +130,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || (isset($_GET['action']) && $_GET['ac
         }
     }
 
+    if ($user && isset($user['role']) && strtolower(trim((string)$user['role'])) !== 'patient') {
+        sendJsonResponse(false, 'Access denied. ' . ucfirst($user['role']) . ' credentials cannot be used to access Patient profile.', [
+            'authenticated' => false
+        ], 403);
+    }
+
     if (!$patient && !$user) {
         sendJsonResponse(false, 'Patient record not found for the requested credentials.', [
             'authenticated' => false

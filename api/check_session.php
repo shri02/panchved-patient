@@ -20,11 +20,12 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/database.php';
 
-if (empty($_SESSION['user_id']) && empty($_SESSION['phone_number'])) {
+$sessionRole = strtolower(trim((string)($_SESSION['role'] ?? 'patient')));
+if ((empty($_SESSION['user_id']) && empty($_SESSION['phone_number'])) || ($sessionRole !== 'patient' && !empty($_SESSION['role']))) {
     http_response_code(200);
     echo json_encode([
         'authenticated' => false,
-        'message' => 'No active session found.'
+        'message' => 'No active patient session found.'
     ]);
     exit;
 }
