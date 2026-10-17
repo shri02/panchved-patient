@@ -1,0 +1,490 @@
+/* ==========================================================================
+   Ocayur Patient Portal - Chat Stylesheet
+   Theme: Warm Terracotta (#723f1e), Deep Olive (#484831), Cream (#FAF6EE)
+   ========================================================================== */
+
+.patient-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 140px);
+  min-height: 560px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #E8E1D5;
+  box-shadow: 0 8px 24px -6px rgba(72, 72, 49, 0.08);
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.patient-chat-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Doctors Sidebar */
+.chat-doctors-sidebar {
+  border-right: 1px solid #E8E1D5;
+  background: #FCF8F2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-doctors-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid #E8E1D5;
+  background: #FFFFFF;
+}
+
+.chat-doctors-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #25231F;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-doctors-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #F1F3EA;
+  color: #484831;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.chat-doc-search-wrap {
+  position: relative;
+}
+
+.chat-doc-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  border: 1px solid #E8E1D5;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  background: #FAF6EE;
+  color: #25231F;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.chat-doc-search-input:focus {
+  border-color: #723F1E;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(114, 63, 30, 0.12);
+}
+
+.chat-doc-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8E877B;
+  pointer-events: none;
+}
+
+.chat-doctors-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+}
+
+.doctor-conv-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+}
+
+.doctor-conv-item:hover {
+  background: #F6EEE0;
+}
+
+.doctor-conv-item.active {
+  background: #FBF2EB;
+  border-color: rgba(114, 63, 30, 0.25);
+}
+
+.doctor-conv-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #723F1E;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+
+.doctor-conv-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.doctor-conv-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.doctor-conv-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #25231F;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doctor-conv-time {
+  font-size: 0.72rem;
+  color: #8E877B;
+}
+
+.doctor-conv-role {
+  font-size: 0.76rem;
+  color: #5C564D;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doctor-conv-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.doctor-conv-snippet {
+  font-size: 0.76rem;
+  color: #8E877B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+/* Right Chat Area */
+.patient-chat-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #FFFFFF;
+}
+
+/* Chat Header */
+.patient-chat-header {
+  padding: 14px 24px;
+  border-bottom: 1px solid #E8E1D5;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 5;
+}
+
+.patient-chat-header-doctor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.patient-chat-doc-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #484831;
+  color: #FAF6EE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.patient-chat-doc-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #25231F;
+  margin: 0 0 2px;
+}
+
+.patient-chat-doc-meta {
+  font-size: 0.8rem;
+  color: #5C564D;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Manual Refresh Button */
+.btn-refresh-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: #FAF6EE;
+  color: #723F1E;
+  border: 1px solid #E8E1D5;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh-chat:hover {
+  background: #723F1E;
+  color: #ffffff;
+  border-color: #723F1E;
+  box-shadow: 0 4px 12px rgba(114, 63, 30, 0.18);
+}
+
+.btn-refresh-chat svg {
+  transition: transform 0.4s ease;
+}
+
+.btn-refresh-chat.refreshing svg {
+  animation: spinRefresh 0.8s linear infinite;
+}
+
+@keyframes spinRefresh {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.refresh-timestamp-text {
+  font-size: 0.75rem;
+  color: #8E877B;
+}
+
+/* Chat Messages Container */
+.patient-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: #FAF6EE;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-date-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.chat-date-pill {
+  background: #EAE3D6;
+  color: #5C564D;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Message Rows */
+.chat-message-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 68%;
+  animation: messageFadeIn 0.22s ease-out;
+}
+
+@keyframes messageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Patient sent this message (right side) */
+.chat-message-row.patient-msg {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+/* Doctor sent this message (left side) */
+.chat-message-row.doctor-msg {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.chat-bubble {
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  word-break: break-word;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.patient-msg .chat-bubble {
+  background: #723F1E;
+  color: #ffffff;
+  border-bottom-right-radius: 3px;
+}
+
+.doctor-msg .chat-bubble {
+  background: #FFFFFF;
+  color: #25231F;
+  border: 1px solid #E8E1D5;
+  border-bottom-left-radius: 3px;
+}
+
+.chat-msg-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #8E877B;
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+.read-receipt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+}
+
+.read-receipt-badge.seen {
+  color: #2E7D32;
+}
+
+.read-receipt-badge.unseen {
+  color: #8E877B;
+}
+
+/* Input Bar */
+.patient-chat-input-bar {
+  padding: 16px 24px;
+  background: #FFFFFF;
+  border-top: 1px solid #E8E1D5;
+}
+
+.patient-chat-form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.patient-chat-textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 120px;
+  resize: none;
+  padding: 11px 14px;
+  border: 1px solid #E8E1D5;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.patient-chat-textarea:focus {
+  border-color: #723F1E;
+  box-shadow: 0 0 0 3px rgba(114, 63, 30, 0.12);
+}
+
+.btn-send-message {
+  height: 44px;
+  padding: 0 20px;
+  background: #723F1E;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-send-message:hover:not(:disabled) {
+  background: #5D3318;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(114, 63, 30, 0.25);
+}
+
+.btn-send-message:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.chat-hint-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 0.73rem;
+  color: #8E877B;
+}
+
+.chat-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #8E877B;
+  text-align: center;
+  padding: 40px;
+}
+
+.chat-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #F1F3EA;
+  color: #484831;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .patient-chat-layout {
+    grid-template-columns: 1fr;
+  }
+  .chat-doctors-sidebar {
+    display: none;
+  }
+}

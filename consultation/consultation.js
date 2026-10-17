@@ -358,7 +358,13 @@ document.addEventListener('DOMContentLoaded', () => {
               <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
               <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
               <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
-              <td class="table-action-cell">
+              <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
+                <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #FAF6EE; color: #723F1E; border: 1px solid #ECE5D9; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>Chat</span>
+                </a>
                 <button 
                   type="button" 
                   class="btn-view-history" 
@@ -445,7 +451,13 @@ document.addEventListener('DOMContentLoaded', () => {
               <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
               <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
               <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
-              <td class="table-action-cell">
+              <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
+                <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #723F1E; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>Chat</span>
+                </a>
                 <button type="button" class="meet-link-btn" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
                   <span>meet.google...</span>
                   <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -644,7 +656,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
           <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
           <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
-          <td class="table-action-cell">
+          <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
+            <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #723F1E; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Chat</span>
+            </a>
             <button type="button" class="meet-link-btn" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
               <span>meet.google...</span>
               <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -711,7 +729,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
           <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
           <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
-          <td class="table-action-cell">
+          <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
+            <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #FAF6EE; color: #723F1E; border: 1px solid #ECE5D9; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Chat</span>
+            </a>
             <button 
               type="button" 
               class="btn-view-history" 

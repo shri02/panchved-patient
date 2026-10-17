@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages | Ocayur Patient Portal</title>
+  
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Base Style & Dashboard Style & Chat Style -->
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../dashboard.css">
+  <link rel="stylesheet" href="chat.css">
+</head>
+<body class="dashboard-body">
+
+  <!-- Mobile Header -->
+  <header class="mobile-top-bar" aria-label="Mobile Navigation">
+    <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Open sidebar menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    <a href="../dashboard/dashboard.html" class="mobile-logo-link">
+      <img src="../assets/logo.svg" alt="Ocayur Logo" class="mobile-logo-img">
+    </a>
+    <a href="../profile/profile.html" class="mobile-user-avatar" title="Patient profile">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </a>
+  </header>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- Main Layout -->
+  <div class="dashboard-layout">
+    
+    <!-- Left Sidebar Navigation -->
+    <aside class="dashboard-sidebar" id="dashboardSidebar">
+      <div class="sidebar-brand-header">
+        <a href="../dashboard/dashboard.html" class="brand-logo-link" title="Ocayur Ayurveda Lifestyle">
+          <img src="../assets/logo.svg" alt="Ocayur Ayurveda Lifestyle" class="brand-logo-img" width="160" height="88">
+        </a>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Main Navigation">
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="../dashboard/dashboard.html" class="nav-link" id="navDashboard">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </span>
+              <span class="nav-label">Dashboard</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="../packages/package.html" class="nav-link" id="navPackages">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Packages</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="../consultation/consultation.html" class="nav-link" id="navConsultations">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+              </span>
+              <span class="nav-label">Consultations</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="chat.html" class="nav-link active" id="navChat">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Messages</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="../courses/courses.html" class="nav-link" id="navCourses">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Workshops</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="../billing/billing.html" class="nav-link" id="navBilling">
+              <span class="nav-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                  <line x1="2" y1="10" x2="22" y2="10"></line>
+                </svg>
+              </span>
+              <span class="nav-label">Billing</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="../index.html" class="btn-logout" id="logoutBtn" title="Log out from patient portal">
+          <span class="logout-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </span>
+          <span>Log out</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main-content">
+      
+      <!-- Top Header -->
+      <header class="dashboard-top-header">
+        <div class="header-titles">
+          <h1 class="dashboard-heading">Doctor Consultation Messages</h1>
+          <p class="greeting-subtitle">Chat directly with your assigned Ayurvedic doctors.</p>
+        </div>
+
+        <a href="../profile/profile.html" class="user-profile-card" id="userProfileCard" aria-label="User profile">
+          <div class="user-avatar" id="patientAvatarEl" aria-hidden="true">RS</div>
+          <div class="user-meta">
+            <span class="user-name" id="patientNameHeader">Rahul Sharma</span>
+            <span class="patient-id" id="patientIdHeader">P001</span>
+          </div>
+        </a>
+      </header>
+
+      <!-- Chat Container -->
+      <div class="patient-chat-container">
+        <div class="patient-chat-layout">
+          
+          <!-- Left Column: Doctors List -->
+          <aside class="chat-doctors-sidebar">
+            <div class="chat-doctors-header">
+              <div class="chat-doctors-title">
+                <span>Doctors</span>
+                <span class="chat-doctors-count" id="docCountBadge">0 Available</span>
+              </div>
+              <div class="chat-doc-search-wrap">
+                <span class="chat-doc-search-icon" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </span>
+                <input type="text" id="doctorFilterInput" class="chat-doc-search-input" placeholder="Search doctor name...">
+              </div>
+            </div>
+
+            <!-- List of Doctors -->
+            <ul class="chat-doctors-list" id="chatDoctorsList">
+              <li style="padding: 24px; text-align: center; color: #8E877B; font-size: 0.85rem;">
+                Loading doctors...
+              </li>
+            </ul>
+          </aside>
+
+          <!-- Right Column: Main Chat Window -->
+          <section class="patient-chat-main">
+            
+            <!-- Chat Header -->
+            <header class="patient-chat-header">
+              <div class="patient-chat-header-doctor">
+                <div class="patient-chat-doc-avatar" id="activeDocAvatar">DR</div>
+                <div>
+                  <h2 class="patient-chat-doc-name" id="activeDocName">Dr. Nidhi Jha</h2>
+                  <div class="patient-chat-doc-meta">
+                    <span id="activeDocRole">Ayurveda Physician</span>
+                    <span>•</span>
+                    <span id="activeDocExp">12 yrs exp</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Manual Refresh Button & Timestamp -->
+              <div class="chat-header-actions">
+                <span class="refresh-timestamp-text" id="refreshTimestampText">Updated just now</span>
+                <button type="button" class="btn-refresh-chat" id="btnManualRefresh" title="Click to manually refresh chat logs and see read receipts">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <span>Refresh Messages</span>
+                </button>
+              </div>
+            </header>
+
+            <!-- Messages Stream -->
+            <div class="patient-chat-messages" id="patientChatMessages">
+              <div class="chat-empty-state">
+                <div class="chat-empty-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
+                <h3 style="font-size: 1.05rem; color: #25231F; margin: 0 0 4px;">Loading consultation messages...</h3>
+              </div>
+            </div>
+
+            <!-- Message Input Bar -->
+            <footer class="patient-chat-input-bar">
+              <form class="patient-chat-form" id="patientChatForm">
+                <textarea 
+                  id="patientChatInput" 
+                  class="patient-chat-textarea" 
+                  placeholder="Type a message to doctor... (Press Enter to send, Shift+Enter for new line)"
+                  rows="1"
+                  required
+                ></textarea>
+                <button type="submit" class="btn-send-message" id="btnSendMessage">
+                  <span>Send</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </form>
+              <div class="chat-hint-bar">
+                <span>Secure medical consultation chat.</span>
+                <span>Click <strong>Refresh Messages</strong> to view new doctor replies &amp; read receipts.</span>
+              </div>
+            </footer>
+
+          </section>
+
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" role="alert" aria-live="polite">
+    <span id="toastMsg"></span>
+  </div>
+
+  <!-- Chat Script -->
+  <script src="chat.js"></script>
+</body>
+</html>
