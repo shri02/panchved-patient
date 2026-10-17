@@ -52,6 +52,30 @@ document.addEventListener('DOMContentLoaded', () => {
   // Memory store for DB patient workshops
   let loadedWorkshops = [];
   let currentSelectedWorkshop = null;
+  const registeredWorkshopsMap = new Map();
+
+  const isWorkshopRegistered = (ws) => {
+    if (!ws) return false;
+    if (ws.is_registered === true) return true;
+    const numId = Number(ws.id);
+    if (!isNaN(numId) && numId > 0 && registeredWorkshopsMap.has(numId)) return true;
+    const wsIdNum = Number(ws.workshop_id);
+    if (!isNaN(wsIdNum) && wsIdNum > 0 && registeredWorkshopsMap.has(wsIdNum)) return true;
+    if (ws.workshop_id && registeredWorkshopsMap.has(String(ws.workshop_id).trim().toLowerCase())) return true;
+    if (ws.title && registeredWorkshopsMap.has(String(ws.title).trim().toLowerCase())) return true;
+    return false;
+  };
+
+  const getRegisteredWorkshopData = (ws) => {
+    if (!ws) return null;
+    const numId = Number(ws.id);
+    if (!isNaN(numId) && numId > 0 && registeredWorkshopsMap.has(numId)) return registeredWorkshopsMap.get(numId);
+    const wsIdNum = Number(ws.workshop_id);
+    if (!isNaN(wsIdNum) && wsIdNum > 0 && registeredWorkshopsMap.has(wsIdNum)) return registeredWorkshopsMap.get(wsIdNum);
+    if (ws.workshop_id && registeredWorkshopsMap.has(String(ws.workshop_id).trim().toLowerCase())) return registeredWorkshopsMap.get(String(ws.workshop_id).trim().toLowerCase());
+    if (ws.title && registeredWorkshopsMap.has(String(ws.title).trim().toLowerCase())) return registeredWorkshopsMap.get(String(ws.title).trim().toLowerCase());
+    return null;
+  };
 
   // Helper: Toast Message
   const showToast = (message, isError = false) => {
@@ -332,6 +356,80 @@ document.addEventListener('DOMContentLoaded', () => {
       const avatarEl = document.querySelector('.doctor-avatar span');
       if (avatarEl) avatarEl.textContent = initials;
     }
+
+    // Check if current workshop is already registered by the patient
+    const isRegistered = ws.is_registered === true || isWorkshopRegistered(ws);
+    const registeredData = isRegistered ? (getRegisteredWorkshopData(ws) || ws) : null;
+    const meetLink = registeredData?.meet_link || ws.meet_link || 'https://meet.google.com/xyz-abcd-efg';
+
+    // Remove any previous already-enrolled box
+    const oldEnrolledBox = document.getElementById('workshopAlreadyEnrolledBox');
+    if (oldEnrolledBox) oldEnrolledBox.remove();
+
+    if (btnRegisterWorkshop) {
+      if (isRegistered) {
+        btnRegisterWorkshop.disabled = true;
+        btnRegisterWorkshop.classList.add('is-registered-btn');
+        btnRegisterWorkshop.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Already Registered</span>
+        `;
+
+        // Insert enrolled message & direct action buttons
+        const enrolledBox = document.createElement('div');
+        enrolledBox.id = 'workshopAlreadyEnrolledBox';
+        enrolledBox.className = 'workshop-already-enrolled-box';
+        enrolledBox.innerHTML = `
+          <div class="workshop-already-enrolled-banner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" style="flex-shrink: 0; margin-top: 2px;">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <div>
+              <strong>You are already enrolled in this workshop!</strong>
+              <p>Registration is confirmed. You can join the Google Meet session directly or view this workshop under My Workshops.</p>
+            </div>
+          </div>
+          <div class="workshop-enrolled-action-row">
+            <button type="button" class="btn-join-meet-from-details" id="btnJoinMeetFromDetails" data-link="${meetLink}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+              <span>Join Google Meet</span>
+            </button>
+            <button type="button" class="btn-goto-my-workshops" id="btnGoToMyWorkshopsFromDetails">
+              <span>View in My Workshops</span>
+            </button>
+          </div>
+        `;
+        btnRegisterWorkshop.parentNode.insertBefore(enrolledBox, btnRegisterWorkshop.nextSibling);
+
+        const btnJoin = document.getElementById('btnJoinMeetFromDetails');
+        if (btnJoin) {
+          btnJoin.addEventListener('click', (e) => {
+            e.preventDefault();
+            const link = btnJoin.getAttribute('data-link') || meetLink;
+            showToast('Opening Google Meet session...');
+            window.open(link, '_blank');
+          });
+        }
+
+        const btnMyWs = document.getElementById('btnGoToMyWorkshopsFromDetails');
+        if (btnMyWs) {
+          btnMyWs.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchTab('my');
+          });
+        }
+      } else {
+        btnRegisterWorkshop.disabled = false;
+        btnRegisterWorkshop.classList.remove('is-registered-btn');
+        btnRegisterWorkshop.innerHTML = '<span>Register</span>';
+      }
+    }
   };
 
   const showWorkshopDetails = (wsOrCard) => {
@@ -461,6 +559,56 @@ document.addEventListener('DOMContentLoaded', () => {
       const speakerRole = ws.speaker_role || 'Ayurveda Physician';
       const speakerBio = ws.speaker_bio || '';
       const aboutText = ws.about || subtitleText;
+      const isRegistered = ws.is_registered === true || isWorkshopRegistered(ws);
+
+      const enrolledChip = isRegistered ? `
+        <div class="workshop-enrolled-badge" title="You are registered for this workshop">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Enrolled</span>
+        </div>
+      ` : '';
+
+      const actionBtnHtml = isRegistered ? `
+        <button type="button" class="btn-join-meet btn-view-workshop-details is-enrolled" 
+          data-id="${ws.id}"
+          data-workshop-id="${ws.workshop_id || ws.id}"
+          data-title="${ws.title}" 
+          data-subtitle="${subtitleText}" 
+          data-price="${priceText}" 
+          data-type="${duration}" 
+          data-date="${dateText}" 
+          data-time="${timeText}" 
+          data-img="${img}"
+          data-about="${aboutText.replace(/"/g, '&quot;')}"
+          data-doctor-name="${speakerName.replace(/"/g, '&quot;')}"
+          data-doctor-role="${speakerRole.replace(/"/g, '&quot;')}"
+          data-doctor-bio="${speakerBio.replace(/"/g, '&quot;')}"
+          data-registered="true"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Enrolled &bull; View Details</span>
+        </button>
+      ` : `
+        <button type="button" class="btn-join-meet btn-view-workshop-details" 
+          data-id="${ws.id}"
+          data-workshop-id="${ws.workshop_id || ws.id}"
+          data-title="${ws.title}" 
+          data-subtitle="${subtitleText}" 
+          data-price="${priceText}" 
+          data-type="${duration}" 
+          data-date="${dateText}" 
+          data-time="${timeText}" 
+          data-img="${img}"
+          data-about="${aboutText.replace(/"/g, '&quot;')}"
+          data-doctor-name="${speakerName.replace(/"/g, '&quot;')}"
+          data-doctor-role="${speakerRole.replace(/"/g, '&quot;')}"
+          data-doctor-bio="${speakerBio.replace(/"/g, '&quot;')}"
+        >
+          <span>View Details</span>
+        </button>
+      `;
 
       return `
         <article class="workshop-card" 
@@ -479,9 +627,11 @@ document.addEventListener('DOMContentLoaded', () => {
           data-doctor-role="${speakerRole.replace(/"/g, '&quot;')}"
           data-doctor-bio="${speakerBio.replace(/"/g, '&quot;')}"
           data-attendee="${ws.attendee_type || 'Patient'}"
+          data-registered="${isRegistered ? 'true' : 'false'}"
         >
           <div class="workshop-card-img-wrap">
             <img src="${img}" alt="${ws.title}" class="workshop-card-img" />
+            ${enrolledChip}
           </div>
           <div class="workshop-card-content">
             <div class="workshop-card-header">
@@ -520,23 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             </div>
 
-            <button type="button" class="btn-join-meet btn-view-workshop-details" 
-              data-id="${ws.id}"
-              data-workshop-id="${ws.workshop_id || ws.id}"
-              data-title="${ws.title}" 
-              data-subtitle="${subtitleText}" 
-              data-price="${priceText}" 
-              data-type="${duration}" 
-              data-date="${dateText}" 
-              data-time="${timeText}" 
-              data-img="${img}"
-              data-about="${aboutText.replace(/"/g, '&quot;')}"
-              data-doctor-name="${speakerName.replace(/"/g, '&quot;')}"
-              data-doctor-role="${speakerRole.replace(/"/g, '&quot;')}"
-              data-doctor-bio="${speakerBio.replace(/"/g, '&quot;')}"
-            >
-              <span>View Details</span>
-            </button>
+            ${actionBtnHtml}
           </div>
         </article>
       `;
@@ -609,6 +743,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     } catch (e) {}
+
+    // Populate registeredWorkshopsMap
+    registeredWorkshopsMap.clear();
+    registered.forEach(ws => {
+      if (ws.id) registeredWorkshopsMap.set(Number(ws.id), ws);
+      if (ws.workshop_id) registeredWorkshopsMap.set(Number(ws.workshop_id), ws);
+      if (ws.workshop_id) registeredWorkshopsMap.set(String(ws.workshop_id).trim().toLowerCase(), ws);
+      if (ws.title) registeredWorkshopsMap.set(String(ws.title).trim().toLowerCase(), ws);
+    });
 
     if (registered.length === 0) {
       myWorkshopsSection.innerHTML = `
@@ -721,7 +864,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========================================================
   const fetchPatientWorkshopsFromDB = async () => {
     try {
-      const res = await fetch('../api/workshops.php?action=list&attendee_type=Patient');
+      // 1. Fetch registered workshops first so registeredWorkshopsMap is populated
+      await fetchMyWorkshopsFromDB();
+
+      // 2. Fetch list of workshops with patient identity parameters
+      const params = new URLSearchParams();
+      params.append('action', 'list');
+      params.append('attendee_type', 'Patient');
+      if (cachedPhone) params.append('phone', cachedPhone);
+      if (cachedPatientId) params.append('patient_id', cachedPatientId);
+      if (cachedPatientObj?.email || cachedUserObj?.email) {
+        params.append('email', cachedPatientObj?.email || cachedUserObj?.email);
+      }
+
+      const res = await fetch(`../api/workshops.php?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.workshops)) {
@@ -737,7 +893,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Notice: Error fetching workshops from DB:', err);
       renderAllWorkshopsList([]);
     } finally {
-      await fetchMyWorkshopsFromDB();
       hidePageLoader();
     }
   };
@@ -768,6 +923,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnRegisterWorkshop) {
     btnRegisterWorkshop.addEventListener('click', (e) => {
       e.preventDefault();
+
+      // Guard: Do not allow registration if already registered
+      if (isWorkshopRegistered(currentSelectedWorkshop) || currentSelectedWorkshop?.is_registered) {
+        showToast('You are already registered for this workshop.', true);
+        switchTab('my');
+        return;
+      }
 
       const title = detailWorkshopTitle?.textContent.trim() || 'Ayurveda Lifestyle Workshop';
       const date = detailWorkshopDate?.textContent.trim() || '2 September 2026';

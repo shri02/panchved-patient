@@ -361,6 +361,104 @@ document.addEventListener('DOMContentLoaded', () => {
         patientPhone: pPhone
       });
     }
+
+    if (activeWorkshopData) {
+      await checkAlreadyRegisteredStatus(activeWorkshopData);
+    }
+  };
+
+  let isAlreadyRegisteredForActiveWorkshop = false;
+
+  const applyAlreadyRegisteredCheckoutUI = (bookingInfo) => {
+    isAlreadyRegisteredForActiveWorkshop = true;
+
+    // Show warning banner
+    let banner = document.getElementById('checkoutAlreadyRegisteredAlert');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'checkoutAlreadyRegisteredAlert';
+      banner.className = 'checkout-already-registered-alert';
+      banner.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" style="flex-shrink: 0; margin-top: 2px;">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <div>
+          <strong>You are already enrolled in this workshop!</strong>
+          <p>Your registration for this workshop is already confirmed. Re-registering or paying again is not required.</p>
+          <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="courses.html#my-workshops" class="btn-goto-my-workshops" style="padding: 8px 16px; font-size: 13px;">View in My Workshops</a>
+            <a href="courses.html" class="btn-goto-my-workshops" style="padding: 8px 16px; font-size: 13px;">Back to Workshops</a>
+          </div>
+        </div>
+      `;
+      const container = document.querySelector('.checkout-container') || document.querySelector('.checkout-grid') || document.querySelector('main');
+      if (container) {
+        container.insertBefore(banner, container.firstChild);
+      }
+    }
+
+    // Disable Confirm Payment Button
+    if (confirmPaymentBtn) {
+      confirmPaymentBtn.disabled = true;
+      confirmPaymentBtn.style.backgroundColor = '#059669';
+      confirmPaymentBtn.style.opacity = '0.85';
+      confirmPaymentBtn.style.cursor = 'not-allowed';
+      confirmPaymentBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span style="margin-left: 8px;">Already Registered</span>
+      `;
+    }
+  };
+
+  const checkAlreadyRegisteredStatus = async (ws) => {
+    if (!ws) return false;
+    const wsId = ws.workshopId || ws.workshop_id || ws.id;
+    const wsTitle = ws.workshopTitle || ws.title;
+
+    // 1. Check local storage
+    try {
+      const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
+      const matchInLocal = storedList.some(item => 
+        (wsId && (item.id == wsId || item.workshop_id == wsId)) ||
+        (wsTitle && item.title && item.title.trim().toLowerCase() === wsTitle.trim().toLowerCase())
+      );
+      if (matchInLocal) {
+        applyAlreadyRegisteredCheckoutUI();
+        return true;
+      }
+    } catch (e) {}
+
+    // 2. Query backend API action=check_registration
+    try {
+      const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+      const storedPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
+      const pPhone = storedPat?.phone_number || storedUser?.phone_number || cachedPhone;
+      const pEmail = storedPat?.email || storedUser?.email;
+      const pId = storedPat?.id || storedUser?.id || cachedPatientId;
+
+      const params = new URLSearchParams();
+      params.append('action', 'check_registration');
+      if (wsId) params.append('workshop_id', wsId);
+      if (ws.id) params.append('id', ws.id);
+      if (wsTitle) params.append('title', wsTitle);
+      if (pPhone) params.append('phone', pPhone);
+      if (pEmail) params.append('email', pEmail);
+      if (pId) params.append('patient_id', pId);
+
+      const res = await fetch(`../api/workshops.php?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.is_registered) {
+          applyAlreadyRegisteredCheckoutUI(data.booking);
+          return true;
+        }
+      }
+    } catch (err) {}
+
+    return false;
   };
 
   initCheckoutData();
@@ -571,6 +669,11 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmPaymentBtn.addEventListener('click', async (e) => {
       e.preventDefault();
 
+      if (isAlreadyRegisteredForActiveWorkshop) {
+        showToast('You are already registered for this workshop.', true);
+        return;
+      }
+
       const wsTitle = checkoutWorkshopTitle?.textContent.trim() || activeWorkshopData?.workshopTitle || 'Ayurveda Lifestyle Workshop';
       const dateText = checkoutDateVal?.textContent.trim() || activeWorkshopData?.date || '2 September 2026';
       const timeText = checkoutTimeVal?.textContent.trim() || activeWorkshopData?.time || '08:00 AM';
@@ -597,40 +700,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let generatedBookingId = '#' + Math.floor(100000 + Math.random() * 900000);
 
+      const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+      const storedPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
+      const pId = storedPat?.id || storedUser?.id || activeWorkshopData?.patient_id || activeWorkshopData?.patientId || 1;
+
+      const payload = {
+        action: 'register',
+        workshop_id: activeWorkshopData?.workshopId || activeWorkshopData?.id || 'WS-002',
+        id: activeWorkshopData?.id || 1,
+        workshop_title: wsTitle,
+        patient_id: pId,
+        patient_name: patName,
+        patient_email: patEmail,
+        patient_phone: patPhone,
+        amount: numericAmount,
+        payment_method: selectedPaymentMethod,
+        date: dateText,
+        time: timeText
+      };
+
+      let registrationError = null;
       try {
-        const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
-        const storedPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
-        const pId = storedPat?.id || storedUser?.id || activeWorkshopData?.patient_id || activeWorkshopData?.patientId || 1;
-
-        const payload = {
-          action: 'register',
-          workshop_id: activeWorkshopData?.workshopId || activeWorkshopData?.id || 'WS-002',
-          id: activeWorkshopData?.id || 1,
-          workshop_title: wsTitle,
-          patient_id: pId,
-          patient_name: patName,
-          patient_email: patEmail,
-          patient_phone: patPhone,
-          amount: numericAmount,
-          payment_method: selectedPaymentMethod,
-          date: dateText,
-          time: timeText
-        };
-
         const res = await fetch('../api/workshops.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.booking_id) {
-            generatedBookingId = data.booking_id;
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok || !data?.success) {
+          registrationError = data?.message || 'Could not complete registration. Please try again.';
+          if (data?.already_registered) {
+            applyAlreadyRegisteredCheckoutUI(data);
           }
+        } else if (data && data.success && data.booking_id) {
+          generatedBookingId = data.booking_id;
         }
       } catch (err) {
-        console.warn('Notice: API call completed with offline fallback.', err);
+        registrationError = 'Network error during registration. Please check your connection.';
+      }
+
+      if (registrationError) {
+        confirmPaymentBtn.disabled = isAlreadyRegisteredForActiveWorkshop;
+        confirmPaymentBtn.style.opacity = isAlreadyRegisteredForActiveWorkshop ? '0.85' : '1';
+        if (!isAlreadyRegisteredForActiveWorkshop) {
+          confirmPaymentBtn.innerHTML = originalHtml;
+        }
+        showToast(registrationError, true);
+        return;
       }
 
       confirmPaymentBtn.disabled = false;

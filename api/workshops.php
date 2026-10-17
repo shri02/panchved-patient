@@ -200,6 +200,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action === 'register' || $action =
         }
     }
 
+    // Clean phone number for matching
+    $cleanPhone = preg_replace('/\D/', '', $patientPhone);
+    if (strlen($cleanPhone) > 10 && substr($cleanPhone, 0, 2) === '91') {
+        $cleanPhone = substr($cleanPhone, 2);
+    }
+
+    // Check if patient is ALREADY registered in this workshop to prevent duplicate registration
+    if ($connection1 && $wsNumericId > 0) {
+        $chkQuery = "SELECT id, booking_id, booking_date FROM `workshop_bookings` 
+                     WHERE `workshop_id` = ? 
+                     AND `payment_status` = 'Success'
+                     AND (
+                       (`doctor_id` = ? AND ? > 0) OR 
+                       (`doctor_phone` = ? AND ? != '') OR 
+                       (`doctor_phone` = ? AND ? != '') OR 
+                       (`doctor_email` = ? AND ? != '')
+                     ) 
+                     LIMIT 1";
+        if ($chkStmt = mysqli_prepare($connection1, $chkQuery)) {
+            mysqli_stmt_bind_param($chkStmt, "iissssss", 
+                $wsNumericId,
+                $patientId, $patientId, 
+                $patientPhone, $patientPhone, 
+                $cleanPhone, $cleanPhone, 
+                $patientEmail, $patientEmail
+            );
+            mysqli_stmt_execute($chkStmt);
+            $chkRes = mysqli_stmt_get_result($chkStmt);
+            if ($chkRes && ($existingBooking = mysqli_fetch_assoc($chkRes))) {
+                mysqli_stmt_close($chkStmt);
+                sendJsonResponse(false, 'You have already registered for this workshop.', [
+                    'already_registered' => true,
+                    'booking_id' => $existingBooking['booking_id'],
+                    'workshop_id' => $wsNumericId,
+                    'workshop_title' => $wsTitle ?: 'Ayurveda Workshop',
+                    'booking_date' => $existingBooking['booking_date']
+                ], 400);
+            }
+            mysqli_stmt_close($chkStmt);
+        }
+    }
+
     $bookingId = '#' . rand(100000, 999999);
 
     // Insert into workshop_bookings in MySQL
@@ -320,6 +362,78 @@ if ($action === 'my_workshops') {
 }
 
 // --------------------------------------------------------------------------
+// 2B. CHECK IF PATIENT IS REGISTERED (action = check_registration)
+// --------------------------------------------------------------------------
+if ($action === 'check_registration') {
+    $wsId = isset($_GET['workshop_id']) ? trim((string)$_GET['workshop_id']) : '';
+    $wsNumericId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    $wsTitle = isset($_GET['title']) ? trim((string)$_GET['title']) : '';
+    $patientPhone = trim((string)($_GET['phone'] ?? $_GET['patient_phone'] ?? $_SESSION['phone_number'] ?? ''));
+    $patientEmail = trim((string)($_GET['email'] ?? $_GET['patient_email'] ?? $_SESSION['email'] ?? ''));
+    $patientId = intval($_GET['patient_id'] ?? $_SESSION['patient_id'] ?? 0);
+
+    $cleanPhone = preg_replace('/\D/', '', $patientPhone);
+    if (strlen($cleanPhone) > 10 && substr($cleanPhone, 0, 2) === '91') {
+        $cleanPhone = substr($cleanPhone, 2);
+    }
+
+    $isRegistered = false;
+    $bookingData = null;
+
+    if ($connection1) {
+        if ($wsNumericId <= 0 && (!empty($wsId) || !empty($wsTitle))) {
+            $findStmt = mysqli_prepare($connection1, "SELECT id, title FROM workshops WHERE id = ? OR workshop_id = ? OR title = ? LIMIT 1");
+            if ($findStmt) {
+                $wsIdInt = intval($wsId);
+                mysqli_stmt_bind_param($findStmt, "iss", $wsIdInt, $wsId, $wsTitle);
+                mysqli_stmt_execute($findStmt);
+                $fRes = mysqli_stmt_get_result($findStmt);
+                if ($fRow = mysqli_fetch_assoc($fRes)) {
+                    $wsNumericId = (int)$fRow['id'];
+                }
+                mysqli_stmt_close($findStmt);
+            }
+        }
+
+        if ($wsNumericId > 0 && (!empty($patientPhone) || !empty($cleanPhone) || !empty($patientEmail) || $patientId > 0)) {
+            $chkQuery = "SELECT wb.id, wb.booking_id, wb.booking_date, w.meet_link 
+                         FROM `workshop_bookings` wb
+                         LEFT JOIN `workshops` w ON wb.workshop_id = w.id
+                         WHERE wb.workshop_id = ? 
+                         AND wb.payment_status = 'Success'
+                         AND (
+                           (wb.doctor_id = ? AND ? > 0) OR 
+                           (wb.doctor_phone = ? AND ? != '') OR 
+                           (wb.doctor_phone = ? AND ? != '') OR 
+                           (wb.doctor_email = ? AND ? != '')
+                         ) 
+                         LIMIT 1";
+            if ($chkStmt = mysqli_prepare($connection1, $chkQuery)) {
+                mysqli_stmt_bind_param($chkStmt, "iissssss", 
+                    $wsNumericId,
+                    $patientId, $patientId, 
+                    $patientPhone, $patientPhone, 
+                    $cleanPhone, $cleanPhone, 
+                    $patientEmail, $patientEmail
+                );
+                mysqli_stmt_execute($chkStmt);
+                $chkRes = mysqli_stmt_get_result($chkStmt);
+                if ($chkRes && ($row = mysqli_fetch_assoc($chkRes))) {
+                    $isRegistered = true;
+                    $bookingData = $row;
+                }
+                mysqli_stmt_close($chkStmt);
+            }
+        }
+    }
+
+    sendJsonResponse(true, 'Registration status checked.', [
+        'is_registered' => $isRegistered,
+        'booking' => $bookingData
+    ]);
+}
+
+// --------------------------------------------------------------------------
 // 3. GET WORKSHOP DETAILS (action = details or ID provided)
 // --------------------------------------------------------------------------
 $queryId = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -348,6 +462,45 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
     }
 
     if ($workshop) {
+        $patientPhone = trim((string)($_GET['phone'] ?? $_GET['patient_phone'] ?? $_SESSION['phone_number'] ?? ''));
+        $patientEmail = trim((string)($_GET['email'] ?? $_GET['patient_email'] ?? $_SESSION['email'] ?? ''));
+        $patientId = intval($_GET['patient_id'] ?? $_SESSION['patient_id'] ?? 0);
+
+        $cleanPhone = preg_replace('/\D/', '', $patientPhone);
+        if (strlen($cleanPhone) > 10 && substr($cleanPhone, 0, 2) === '91') {
+            $cleanPhone = substr($cleanPhone, 2);
+        }
+
+        $workshop['is_registered'] = false;
+        if ($connection1 && ($workshop['id'] > 0) && (!empty($patientPhone) || !empty($cleanPhone) || !empty($patientEmail) || $patientId > 0)) {
+            $chkQuery = "SELECT id, booking_id FROM workshop_bookings 
+                         WHERE workshop_id = ? 
+                         AND payment_status = 'Success' 
+                         AND (
+                           (doctor_id = ? AND ? > 0) OR 
+                           (doctor_phone = ? AND ? != '') OR 
+                           (doctor_phone = ? AND ? != '') OR 
+                           (doctor_email = ? AND ? != '')
+                         ) LIMIT 1";
+            if ($chkStmt = mysqli_prepare($connection1, $chkQuery)) {
+                $wsNum = (int)$workshop['id'];
+                mysqli_stmt_bind_param($chkStmt, "iissssss", 
+                    $wsNum,
+                    $patientId, $patientId, 
+                    $patientPhone, $patientPhone, 
+                    $cleanPhone, $cleanPhone, 
+                    $patientEmail, $patientEmail
+                );
+                mysqli_stmt_execute($chkStmt);
+                $chkRes = mysqli_stmt_get_result($chkStmt);
+                if ($chkRes && ($chkRow = mysqli_fetch_assoc($chkRes))) {
+                    $workshop['is_registered'] = true;
+                    $workshop['booking_id'] = $chkRow['booking_id'];
+                }
+                mysqli_stmt_close($chkStmt);
+            }
+        }
+
         sendJsonResponse(true, 'Workshop details retrieved successfully.', ['workshop' => $workshop]);
     } else {
         sendJsonResponse(false, 'Workshop not found.', [], 404);
@@ -361,6 +514,44 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
 $workshops = [];
 
 if ($connection1) {
+    // If patient identity is passed, fetch all workshop IDs the patient is already enrolled in
+    $patientPhone = trim((string)($_GET['phone'] ?? $_GET['patient_phone'] ?? $_SESSION['phone_number'] ?? ''));
+    $patientEmail = trim((string)($_GET['email'] ?? $_GET['patient_email'] ?? $_SESSION['email'] ?? ''));
+    $patientId = intval($_GET['patient_id'] ?? $_SESSION['patient_id'] ?? 0);
+
+    $cleanPhone = preg_replace('/\D/', '', $patientPhone);
+    if (strlen($cleanPhone) > 10 && substr($cleanPhone, 0, 2) === '91') {
+        $cleanPhone = substr($cleanPhone, 2);
+    }
+
+    $bookedWorkshopIds = [];
+    if (!empty($patientPhone) || !empty($cleanPhone) || !empty($patientEmail) || $patientId > 0) {
+        $bQuery = "SELECT DISTINCT workshop_id FROM workshop_bookings 
+                   WHERE payment_status = 'Success' 
+                   AND (
+                     (doctor_id = ? AND ? > 0) OR 
+                     (doctor_phone = ? AND ? != '') OR 
+                     (doctor_phone = ? AND ? != '') OR 
+                     (doctor_email = ? AND ? != '')
+                   )";
+        if ($bStmt = mysqli_prepare($connection1, $bQuery)) {
+            mysqli_stmt_bind_param($bStmt, "iissssss", 
+                $patientId, $patientId, 
+                $patientPhone, $patientPhone, 
+                $cleanPhone, $cleanPhone, 
+                $patientEmail, $patientEmail
+            );
+            mysqli_stmt_execute($bStmt);
+            $bRes = mysqli_stmt_get_result($bStmt);
+            if ($bRes) {
+                while ($bRow = mysqli_fetch_assoc($bRes)) {
+                    $bookedWorkshopIds[] = (int)$bRow['workshop_id'];
+                }
+            }
+            mysqli_stmt_close($bStmt);
+        }
+    }
+
     // Select workshops with attendee_type = 'Patient' or 'Both' / 'All' or unassigned (exclude doctor-only)
     $sql = "SELECT * FROM workshops WHERE `status` != 'Cancelled' AND (LOWER(TRIM(attendee_type)) IN ('patient', 'both', 'all', '') OR attendee_type IS NULL OR attendee_type LIKE '%patient%' OR attendee_type LIKE '%both%' OR attendee_type LIKE '%all%') AND LOWER(TRIM(attendee_type)) != 'doctor' ORDER BY date ASC, id ASC";
     $result = mysqli_query($connection1, $sql);
@@ -369,13 +560,13 @@ if ($connection1) {
         while ($row = mysqli_fetch_assoc($result)) {
             $att = strtolower(trim((string)($row['attendee_type'] ?? '')));
             if ($att !== 'doctor') {
-                $workshops[] = formatWorkshopRecord($row);
+                $formatted = formatWorkshopRecord($row);
+                $formatted['is_registered'] = in_array((int)$row['id'], $bookedWorkshopIds, true);
+                $workshops[] = $formatted;
             }
         }
     }
 }
-
-
 
 sendJsonResponse(true, 'Patient workshops fetched successfully.', [
     'count' => count($workshops),
