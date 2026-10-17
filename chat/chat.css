@@ -488,3 +488,24 @@
     display: none;
   }
 }
+
+/* Ensure mobile header is completely hidden on desktop */
+.mobile-nav-bar,
+.mobile-top-bar {
+  display: none !important;
+}
+
+@media (max-width: 991px) {
+  .mobile-nav-bar,
+  .mobile-top-bar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background-color: #FFFFFF;
+    border-bottom: 1px solid #ECE5D9;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+}
