@@ -260,32 +260,61 @@ $action = isset($_GET['action']) ? trim($_GET['action']) : (isset($input['action
 // 1. POST WORKSHOP REGISTRATION / BOOKING
 // --------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action === 'register' || $action === 'book') {
-    $wsId = isset($input['workshop_id']) ? trim($input['workshop_id']) : (isset($_POST['workshop_id']) ? trim($_POST['workshop_id']) : '');
+    $wsId = isset($input['workshop_id']) ? trim((string)$input['workshop_id']) : (isset($_POST['workshop_id']) ? trim((string)$_POST['workshop_id']) : '');
     $wsNumericId = isset($input['id']) ? intval($input['id']) : (isset($_POST['id']) ? intval($_POST['id']) : 0);
-    $wsTitle = isset($input['workshop_title']) ? trim($input['workshop_title']) : (isset($input['title']) ? trim($input['title']) : '');
-    $patientName = isset($input['patient_name']) ? trim($input['patient_name']) : 'John Doe';
-    $patientEmail = isset($input['patient_email']) ? trim($input['patient_email']) : 'johndoe@gmail.com';
-    $patientPhone = isset($input['patient_phone']) ? trim($input['patient_phone']) : '9876543210';
-    $paymentMethod = isset($input['payment_method']) ? trim($input['payment_method']) : 'Card';
+    $wsTitle = isset($input['workshop_title']) ? trim((string)$input['workshop_title']) : (isset($input['title']) ? trim((string)$input['title']) : '');
+    $patientName = isset($input['patient_name']) ? trim((string)$input['patient_name']) : 'Rahul Sharma';
+    $patientEmail = isset($input['patient_email']) ? trim((string)$input['patient_email']) : 'rahulsharma@gmail.com';
+    $patientPhone = isset($input['patient_phone']) ? trim((string)$input['patient_phone']) : '9876543210';
+    $patientId = isset($input['patient_id']) ? intval($input['patient_id']) : (isset($_SESSION['patient_id']) ? intval($_SESSION['patient_id']) : 1);
+    $paymentMethod = isset($input['payment_method']) ? trim((string)$input['payment_method']) : 'Card';
     $amount = isset($input['amount']) ? (float)$input['amount'] : 500.00;
-    $date = isset($input['date']) ? trim($input['date']) : '2 September 2026';
-    $time = isset($input['time']) ? trim($input['time']) : '08:00 AM';
+    $date = isset($input['date']) ? trim((string)$input['date']) : date('j F Y');
+    $time = isset($input['time']) ? trim((string)$input['time']) : '08:00 AM';
 
-    // Increment workshop registrations in database if exists
-    if ($connection1 && ($wsNumericId > 0 || !empty($wsId) || !empty($wsTitle))) {
-        $upQuery = "UPDATE workshops SET registrations = registrations + 1 WHERE id = ? OR workshop_id = ? OR title = ? LIMIT 1";
-        if ($stmt = mysqli_prepare($connection1, $upQuery)) {
-            mysqli_stmt_bind_param($stmt, "iss", $wsNumericId, $wsId, $wsTitle);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
+    // Find numeric workshop ID if only string wsId or title was provided
+    if ($connection1 && $wsNumericId <= 0 && (!empty($wsId) || !empty($wsTitle))) {
+        $findStmt = mysqli_prepare($connection1, "SELECT id, fee, price, title FROM workshops WHERE id = ? OR workshop_id = ? OR title = ? LIMIT 1");
+        if ($findStmt) {
+            $wsIdInt = intval($wsId);
+            mysqli_stmt_bind_param($findStmt, "iss", $wsIdInt, $wsId, $wsTitle);
+            mysqli_stmt_execute($findStmt);
+            $fRes = mysqli_stmt_get_result($findStmt);
+            if ($fRow = mysqli_fetch_assoc($fRes)) {
+                $wsNumericId = (int)$fRow['id'];
+                if (empty($wsTitle)) $wsTitle = $fRow['title'];
+            }
+            mysqli_stmt_close($findStmt);
         }
     }
 
     $bookingId = '#' . rand(100000, 999999);
 
+    // Insert into workshop_bookings in MySQL
+    if ($connection1 && $wsNumericId > 0) {
+        $insQuery = "INSERT INTO `workshop_bookings` 
+            (`booking_id`, `workshop_id`, `doctor_id`, `doctor_name`, `doctor_email`, `doctor_phone`, `amount`, `payment_method`, `payment_status`, `booking_date`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Success', NOW())";
+        if ($stmt = mysqli_prepare($connection1, $insQuery)) {
+            mysqli_stmt_bind_param($stmt, "siisssds", 
+                $bookingId, $wsNumericId, $patientId, $patientName, $patientEmail, $patientPhone, $amount, $paymentMethod
+            );
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+
+        // Increment registrations count in workshops table
+        $upQuery = "UPDATE workshops SET registrations = registrations + 1 WHERE id = ?";
+        if ($stmt = mysqli_prepare($connection1, $upQuery)) {
+            mysqli_stmt_bind_param($stmt, "i", $wsNumericId);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+    }
+
     sendJsonResponse(true, 'Workshop registration completed successfully!', [
         'booking_id' => $bookingId,
-        'workshop_title' => $wsTitle ?: 'Ayurveda Lifestyle Workshop',
+        'workshop_title' => $wsTitle ?: 'Ayurveda Workshop',
         'patient_name' => $patientName,
         'patient_email' => $patientEmail,
         'patient_phone' => $patientPhone,
@@ -299,11 +328,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action === 'register' || $action =
 }
 
 // --------------------------------------------------------------------------
-// 2. GET WORKSHOP DETAILS (action = details or ID provided)
+// 2. GET MY REGISTERED WORKSHOPS (action = my_workshops)
+// --------------------------------------------------------------------------
+if ($action === 'my_workshops') {
+    $patientPhone = trim((string)($_GET['phone'] ?? $_GET['patient_phone'] ?? $_SESSION['phone_number'] ?? ''));
+    $patientEmail = trim((string)($_GET['email'] ?? $_GET['patient_email'] ?? $_SESSION['email'] ?? ''));
+    $patientId = intval($_GET['patient_id'] ?? $_GET['id'] ?? $_SESSION['patient_id'] ?? 0);
+
+    // Clean phone number
+    $cleanPhone = preg_replace('/\D/', '', $patientPhone);
+    if (strlen($cleanPhone) > 10 && substr($cleanPhone, 0, 2) === '91') {
+        $cleanPhone = substr($cleanPhone, 2);
+    }
+
+    $myWorkshops = [];
+
+    if ($connection1) {
+        $query = "SELECT wb.*, w.workshop_id as ws_code, w.title as ws_title, w.subtitle as ws_subtitle, 
+                         w.time as ws_time, w.date as ws_date, w.meet_link as ws_meet_link, 
+                         w.image_url as ws_image, w.fee as ws_fee, w.price as ws_price, 
+                         w.speaker, w.assign_speaker, w.instructor
+                  FROM `workshop_bookings` wb
+                  LEFT JOIN `workshops` w ON wb.workshop_id = w.id
+                  WHERE (
+                    (wb.doctor_id = ? AND ? > 0) OR 
+                    (wb.doctor_phone = ? AND ? != '') OR 
+                    (wb.doctor_phone = ? AND ? != '') OR 
+                    (wb.doctor_email = ? AND ? != '')
+                  )
+                  AND wb.payment_status = 'Success'
+                  ORDER BY wb.id DESC";
+
+        if ($stmt = mysqli_prepare($connection1, $query)) {
+            mysqli_stmt_bind_param($stmt, "iissssss", 
+                $patientId, $patientId, 
+                $patientPhone, $patientPhone, 
+                $cleanPhone, $cleanPhone, 
+                $patientEmail, $patientEmail
+            );
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            if ($res) {
+                while ($row = mysqli_fetch_assoc($res)) {
+                    $feeNum = floatval(($row['amount'] ?? 0) > 0 ? $row['amount'] : (($row['ws_fee'] ?? 0) > 0 ? $row['ws_fee'] : 499.00));
+                    $dateRaw = !empty($row['ws_date']) ? $row['ws_date'] : $row['booking_date'];
+                    $formattedDate = '3 September, Wednesday';
+                    if (!empty($dateRaw) && $dateRaw !== '0000-00-00') {
+                        $ts = strtotime($dateRaw);
+                        if ($ts !== false && (int)date('Y', $ts) > 1970) {
+                            $formattedDate = date('j F, l', $ts);
+                        }
+                    }
+
+                    $meetLink = !empty($row['ws_meet_link']) ? $row['ws_meet_link'] : 'https://meet.google.com/abc-xyz-pqrs';
+                    $rawImg = !empty($row['ws_image']) ? $row['ws_image'] : 'assets/courses/course_ayurveda_herbs.jpg';
+
+                    $myWorkshops[] = [
+                        'id' => (int)$row['id'],
+                        'booking_id' => $row['booking_id'],
+                        'workshop_id' => (int)($row['workshop_id'] ?? 0),
+                        'title' => !empty($row['ws_title']) ? $row['ws_title'] : 'Ayurveda Workshop',
+                        'price' => '₹' . number_format($feeNum, 0) . '/-',
+                        'fee' => $feeNum,
+                        'date' => $formattedDate,
+                        'time' => !empty($row['ws_time']) ? $row['ws_time'] : '8:00 AM',
+                        'meet_link' => $meetLink,
+                        'image_url' => $rawImg
+                    ];
+                }
+            }
+            mysqli_stmt_close($stmt);
+        }
+    }
+
+    sendJsonResponse(true, 'My registered workshops fetched successfully.', [
+        'count' => count($myWorkshops),
+        'workshops' => $myWorkshops
+    ]);
+}
+
+// --------------------------------------------------------------------------
+// 3. GET WORKSHOP DETAILS (action = details or ID provided)
 // --------------------------------------------------------------------------
 $queryId = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$queryWsId = isset($_GET['workshop_id']) ? trim($_GET['workshop_id']) : '';
-$queryTitle = isset($_GET['title']) ? trim($_GET['title']) : '';
+$queryWsId = isset($_GET['workshop_id']) ? trim((string)$_GET['workshop_id']) : '';
+$queryTitle = isset($_GET['title']) ? trim((string)$_GET['title']) : '';
 
 if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($queryTitle))) {
     $id = $queryId;
@@ -313,8 +422,8 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
     $workshop = null;
 
     if ($connection1 && ($id > 0 || !empty($wsId) || !empty($title))) {
-        // Query workshop filtering for Patient or Both attendee type
-        $query = "SELECT * FROM workshops WHERE (LOWER(TRIM(attendee_type)) IN ('patient', 'both', 'all') OR attendee_type LIKE '%patient%' OR attendee_type LIKE '%both%' OR attendee_type LIKE '%all%') AND (id = ? OR workshop_id = ? OR title = ?) LIMIT 1";
+        // Query workshop filtering for Patient, Both, or All attendee type (exclude doctor-only)
+        $query = "SELECT * FROM workshops WHERE (id = ? OR workshop_id = ? OR title = ?) AND LOWER(TRIM(attendee_type)) != 'doctor' LIMIT 1";
         if ($stmt = mysqli_prepare($connection1, $query)) {
             mysqli_stmt_bind_param($stmt, "iss", $id, $wsId, $title);
             mysqli_stmt_execute($stmt);
@@ -326,7 +435,7 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
         }
     }
 
-    if (!$workshop) {
+    if (!$workshop && !$connection1) {
         $fallbacks = getFallbackPatientWorkshops();
         foreach ($fallbacks as $fb) {
             if (($id > 0 && $fb['id'] === $id) || (!empty($wsId) && $fb['workshop_id'] === $wsId) || (!empty($title) && strcasecmp($fb['title'], $title) === 0)) {
@@ -344,31 +453,28 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
 }
 
 // --------------------------------------------------------------------------
-// 3. GET LIST OF WORKSHOPS FOR PATIENT PORTAL (action = list / default)
+// 4. GET LIST OF WORKSHOPS FOR PATIENT PORTAL (action = list / default)
 // Workshops where attendee_type is 'Patient' or 'Both' / 'All' (Doctor-only workshops are excluded)
 // --------------------------------------------------------------------------
 $workshops = [];
 
 if ($connection1) {
-    // Select workshops with attendee_type = 'Patient' or 'Both' / 'All' (exclude doctor-only)
-    $sql = "SELECT * FROM workshops WHERE (LOWER(TRIM(attendee_type)) IN ('patient', 'both', 'all') OR attendee_type LIKE '%patient%' OR attendee_type LIKE '%both%' OR attendee_type LIKE '%all%') AND LOWER(TRIM(attendee_type)) != 'doctor' ORDER BY id ASC";
+    // Select workshops with attendee_type = 'Patient' or 'Both' / 'All' or unassigned (exclude doctor-only)
+    $sql = "SELECT * FROM workshops WHERE `status` != 'Cancelled' AND (LOWER(TRIM(attendee_type)) IN ('patient', 'both', 'all', '') OR attendee_type IS NULL OR attendee_type LIKE '%patient%' OR attendee_type LIKE '%both%' OR attendee_type LIKE '%all%') AND LOWER(TRIM(attendee_type)) != 'doctor' ORDER BY date ASC, id ASC";
     $result = mysqli_query($connection1, $sql);
 
     if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {
-            // Verify attendee_type is Patient or Both
             $att = strtolower(trim((string)($row['attendee_type'] ?? '')));
-            if ($att === 'patient' || $att === 'both' || $att === 'all' || stripos($att, 'patient') !== false || stripos($att, 'both') !== false || stripos($att, 'all') !== false) {
-                if ($att !== 'doctor') {
-                    $workshops[] = formatWorkshopRecord($row);
-                }
+            if ($att !== 'doctor') {
+                $workshops[] = formatWorkshopRecord($row);
             }
         }
     }
 }
 
-// If no patient workshops found in DB, provide default fallback patient workshops
-if (empty($workshops)) {
+// If database connection is completely down, provide fallback
+if (empty($workshops) && !$connection1) {
     $workshops = getFallbackPatientWorkshops();
 }
 

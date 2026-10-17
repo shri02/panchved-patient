@@ -598,11 +598,16 @@ document.addEventListener('DOMContentLoaded', () => {
       let generatedBookingId = '#' + Math.floor(100000 + Math.random() * 900000);
 
       try {
+        const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
+        const storedPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
+        const pId = storedPat?.id || storedUser?.id || activeWorkshopData?.patient_id || activeWorkshopData?.patientId || 1;
+
         const payload = {
           action: 'register',
           workshop_id: activeWorkshopData?.workshopId || activeWorkshopData?.id || 'WS-002',
           id: activeWorkshopData?.id || 1,
           workshop_title: wsTitle,
+          patient_id: pId,
           patient_name: patName,
           patient_email: patEmail,
           patient_phone: patPhone,

@@ -548,21 +548,54 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========================================================
   // 4B. RENDER MY WORKSHOPS (Registered Workshops with Meet Links)
   // ========================================================
-  const renderMyWorkshopsList = () => {
+  // 4B. RENDER MY WORKSHOPS (Dynamically fetched from MySQL workshop_bookings)
+  // ========================================================
+  const fetchMyWorkshopsFromDB = async () => {
     if (!myWorkshopsSection) return;
 
     let registered = [];
+
+    // 1. Fetch live enrolled workshops from database
+    try {
+      const params = new URLSearchParams();
+      params.append('action', 'my_workshops');
+      if (cachedPhone) params.append('phone', cachedPhone);
+      if (cachedPatientId) params.append('patient_id', cachedPatientId);
+      if (cachedPatientObj?.email || cachedUserObj?.email) {
+        params.append('email', cachedPatientObj?.email || cachedUserObj?.email);
+      }
+
+      const res = await fetch(`../api/workshops.php?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.workshops)) {
+          registered = data.workshops;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch dynamic My Workshops from DB:', e);
+    }
+
+    // 2. Merge any local storage bookings so offline/instant bookings also appear seamlessly
     try {
       const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
-      if (Array.isArray(storedList)) registered = storedList;
+      if (Array.isArray(storedList)) {
+        storedList.forEach(item => {
+          const exists = registered.some(r => 
+            (r.booking_id && item.booking_id && r.booking_id === item.booking_id) || 
+            (r.title && item.title && r.title.toLowerCase() === item.title.toLowerCase())
+          );
+          if (!exists) registered.unshift(item);
+        });
+      }
     } catch (e) {}
 
-    // Check single booking from checkout if not already in list
+    // Single booking from checkout if not already in list
     try {
       const singleBooking = JSON.parse((localStorage.getItem('ocayur_workshop_booking') || localStorage.getItem('panchved_workshop_booking')) || 'null');
       if (singleBooking && (singleBooking.workshopTitle || singleBooking.title)) {
         const t = singleBooking.workshopTitle || singleBooking.title;
-        const already = registered.some(r => r.title === t || (r.id && r.id == singleBooking.id));
+        const already = registered.some(r => (r.title && r.title.toLowerCase() === t.toLowerCase()) || (r.id && r.id == singleBooking.id));
         if (!already) {
           registered.unshift({
             id: singleBooking.id || 1,
@@ -571,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
             date: singleBooking.date || '3 September, Wednesday',
             time: singleBooking.time || '8:00 AM',
             meet_link: 'https://meet.google.com/abc-xyz-pqrs',
-            image_url: singleBooking.image_url || '../assets/courses/course_pre_pregnancy.jpg'
+            image_url: singleBooking.image_url || '../assets/courses/course_ayurveda_herbs.jpg'
           });
         }
       }
@@ -615,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
     myWorkshopsSection.innerHTML = registered.map(ws => {
       const rawImg = ws.image_url || 'assets/courses/course_ayurveda_herbs.jpg';
       const img = (rawImg.startsWith('http') || rawImg.startsWith('../')) ? rawImg : '../' + rawImg;
-      const priceText = ws.price || ws.fee_formatted || '₹499/-';
+      const priceText = ws.price || ws.fee_formatted || (ws.fee ? `₹${ws.fee}/-` : '₹499/-');
       const dateText = ws.date || ws.formatted_date || '3 September, Wednesday';
       const timeText = ws.time || '8:00 AM';
       const meetLink = ws.meet_link || 'https://meet.google.com/abc-xyz-pqrs';
@@ -688,15 +721,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========================================================
   const fetchPatientWorkshopsFromDB = async () => {
     try {
-      const res = await fetch('../api/workshops.php?attendee_type=Patient');
+      const res = await fetch('../api/workshops.php?action=list&attendee_type=Patient');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.workshops)) {
-          // Filter to include workshops for Patient or Both (excluding doctor-only)
-          loadedWorkshops = data.workshops.filter(ws => {
-            const att = (ws.attendee_type || '').toLowerCase().trim();
-            return (att === 'patient' || att === 'both' || att === 'all' || att.includes('patient') || att.includes('both') || att.includes('all')) && att !== 'doctor';
-          });
+          loadedWorkshops = data.workshops;
           renderAllWorkshopsList(loadedWorkshops);
         } else {
           renderAllWorkshopsList([]);
@@ -708,7 +737,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Notice: Error fetching workshops from DB:', err);
       renderAllWorkshopsList([]);
     } finally {
-      renderMyWorkshopsList();
+      await fetchMyWorkshopsFromDB();
       hidePageLoader();
     }
   };
@@ -802,8 +831,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Check initial hash on load
-  if (window.location.hash === '#all-workshops' || window.location.hash === '#all') {
+  // Check URL query parameters and hash on load
+  const urlParams = new URLSearchParams(window.location.search);
+  const qId = urlParams.get('id') || urlParams.get('workshop_id');
+  const qTab = urlParams.get('tab');
+
+  if (qId) {
+    fetch(`../api/workshops.php?action=details&id=${encodeURIComponent(qId)}`)
+      .then(res => res.json())
+      .then(d => {
+        if (d.success && d.workshop) {
+          showWorkshopDetails(d.workshop);
+        }
+      })
+      .catch(() => {});
+  } else if (qTab === 'all' || qTab === 'all-workshops' || window.location.hash === '#all-workshops' || window.location.hash === '#all') {
     switchTab('all');
   } else if (window.location.hash === '#details') {
     const firstBtn = document.querySelector('.btn-view-workshop-details');
