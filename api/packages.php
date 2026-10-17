@@ -590,8 +590,15 @@ if ($requestMethod === 'POST') {
     $appointmentTime = isset($data['appointment_time']) ? trim($data['appointment_time']) : (isset($data['time']) ? trim($data['time']) : '07:00 - 07:45 PM');
     $duration = isset($data['duration']) ? trim($data['duration']) : '45 min';
     $agenda = isset($data['agenda']) ? trim($data['agenda']) : "Package Enrollment for {$packageName}";
-    $paymentMethod = isset($data['payment_method']) ? trim($data['payment_method']) : (isset($data['paymentMethod']) ? trim($data['paymentMethod']) : 'Card');
-    $amount = isset($data['amount']) ? (float)$data['amount'] : (isset($data['fee']) ? (float)str_replace(['₹', ','], '', $data['fee']) : 500.00);
+    $amount = 0.0;
+    if (isset($data['amount']) && is_numeric($data['amount'])) {
+        $amount = (float)$data['amount'];
+    } elseif (isset($data['fee'])) {
+        $cleanFee = preg_replace('/[^0-9.]/', '', (string)$data['fee']);
+        if (is_numeric($cleanFee)) {
+            $amount = (float)$cleanFee;
+        }
+    }
 
     // Normalize appointment date to YYYY-MM-DD
     $appointmentDate = date('Y-m-d');
@@ -685,9 +692,15 @@ if ($requestMethod === 'POST') {
     // 6. Store in `patient_packages` table for "My Packages" section
     $bookingCode = '#' . $bookingIdNumber;
     $pkgDbId = 0;
-    $fPkg = mysqli_query($connection1, "SELECT id FROM packages WHERE package_name = '" . mysqli_real_escape_string($connection1, $packageName) . "' OR package_name LIKE '%" . mysqli_real_escape_string($connection1, $packageName) . "%' LIMIT 1");
+    $fPkg = mysqli_query($connection1, "SELECT id, price FROM packages WHERE package_name = '" . mysqli_real_escape_string($connection1, $packageName) . "' OR package_name LIKE '%" . mysqli_real_escape_string($connection1, $packageName) . "%' LIMIT 1");
     if ($fPkg && $pRow = mysqli_fetch_assoc($fPkg)) {
         $pkgDbId = (int)$pRow['id'];
+        if ($amount <= 0 && isset($pRow['price']) && (float)$pRow['price'] > 0) {
+            $amount = (float)$pRow['price'];
+        }
+    }
+    if ($amount <= 0) {
+        $amount = 7999.00;
     }
 
     $insPpkg = mysqli_prepare($connection1, "INSERT INTO patient_packages (booking_id, patient_id, patient_phone, package_id, package_name, doctor_id, doctor_name, price, booking_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())");

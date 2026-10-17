@@ -36,6 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const paymentMethodItems = document.querySelectorAll('.payment-method-item');
   const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
 
+  // Summary Card Elements
+  const checkoutSummaryFeeLabel = document.getElementById('checkoutSummaryFeeLabel');
+  const checkoutSummaryFee = document.getElementById('checkoutSummaryFee') || document.querySelector('.summary-amount-teal');
+  const checkoutSummaryTotal = document.getElementById('checkoutSummaryTotal') || document.querySelector('.total-amount');
+
   // Success Modal Elements (Screen 5)
   const bookingSuccessModal = document.getElementById('bookingSuccessModal');
   const continueToDashboardBtn = document.getElementById('continueToDashboardBtn');
@@ -246,6 +251,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const checkoutPriceRow = document.getElementById('checkoutPriceRow');
   const checkoutDurationRow = document.getElementById('checkoutDurationRow');
 
+  // Helper: Format amount to Indian Rupees format with 2 decimals
+  const formatAmount = (num) => {
+    if (typeof num === 'string') {
+      const cleaned = num.replace(/[^0-9.]/g, '');
+      if (cleaned && !isNaN(parseFloat(cleaned))) {
+        num = parseFloat(cleaned);
+      }
+    }
+    const val = parseFloat(num);
+    if (isNaN(val)) return '₹0.00';
+    return '₹' + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const getNumericAmount = (val) => {
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (!val) return 0;
+    const cleaned = String(val).replace(/[^0-9.]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Helper: Update Payment Summary & Modal Confirmation amounts dynamically
+  const updatePaymentSummaryUI = (amountVal, feeLabel = 'Package fee') => {
+    const formatted = formatAmount(amountVal);
+    if (checkoutSummaryFeeLabel) checkoutSummaryFeeLabel.textContent = feeLabel;
+    if (checkoutSummaryFee) checkoutSummaryFee.textContent = formatted;
+    if (checkoutSummaryTotal) checkoutSummaryTotal.textContent = formatted;
+    if (successPaymentAmount) successPaymentAmount.textContent = formatted;
+    if (receiptAmount) receiptAmount.textContent = formatted;
+  };
+
   // 1. Synchronize Package & Doctor Details Dynamically from Database
   const applyPackageData = (pkg) => {
     if (!pkg) return;
@@ -259,6 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
     activeBookingData.doctorInitials = pkg.doctor?.initials || 'DR';
     activeBookingData.startingPrice = pkg.price_formatted || ('₹' + pkg.price);
     activeBookingData.duration = pkg.duration || '3 Months';
+    activeBookingData.price = pkg.price;
+    activeBookingData.amount = pkg.price;
 
     // Package Name Heading (Without 'Consultation')
     if (consultDetailsHeading) {
@@ -283,6 +321,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checkoutDurationVal) {
       checkoutDurationVal.textContent = activeBookingData.duration;
     }
+
+    // Update Summary Card & Modal Confirmation amounts dynamically
+    updatePaymentSummaryUI(pkg.price, 'Package fee');
 
     // Success Modal
     if (successServiceType) successServiceType.textContent = 'package';
@@ -362,6 +403,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (editPatientEmail) editPatientEmail.value = pEmail;
       if (editPatientPhone) editPatientPhone.value = pPhone;
 
+      const wsPrice = data.price ?? data.fee ?? data.amount ?? 500;
+      updatePaymentSummaryUI(wsPrice, 'Workshop fee');
+
       if (successServiceType) successServiceType.textContent = 'workshop';
       if (successEventDate) successEventDate.textContent = data.date || '2 Sept 2026';
       if (receiptWorkshopRow) receiptWorkshopRow.style.display = 'flex';
@@ -397,6 +441,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editPatientEmail) editPatientEmail.value = pEmail;
         if (editPatientPhone) editPatientPhone.value = pPhone;
 
+        const consultPrice = data.fee ?? data.amount ?? data.price ?? 500;
+        updatePaymentSummaryUI(consultPrice, 'Consultation fee');
+
         if (successServiceType) successServiceType.textContent = 'consultation';
         if (receiptWorkshopRow) receiptWorkshopRow.style.display = 'none';
         const receiptPackageTitle = document.getElementById('receiptPackageTitle');
@@ -422,6 +469,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (checkoutAvatarText && data.doctorInitials) checkoutAvatarText.textContent = data.doctorInitials;
         if (checkoutPriceVal && data.startingPrice) checkoutPriceVal.textContent = data.startingPrice;
         if (checkoutDurationVal && data.duration) checkoutDurationVal.textContent = data.duration;
+
+        const storedPkgPrice = data.price ?? data.amount ?? (data.fee ? getNumericAmount(data.fee) : getNumericAmount(data.startingPrice));
+        if (storedPkgPrice) {
+          updatePaymentSummaryUI(storedPkgPrice, 'Package fee');
+        }
       }
 
       const pName = currentProfileName || activeBookingData?.patientName || 'Rahul Sharma';
@@ -665,6 +717,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let bookingId = '#' + Math.floor(100000 + Math.random() * 900000);
 
+      // Determine correct payment amount
+      let finalAmount = 0;
+      if (activeBookingData?.price) {
+        finalAmount = getNumericAmount(activeBookingData.price);
+      } else if (activeBookingData?.amount) {
+        finalAmount = getNumericAmount(activeBookingData.amount);
+      } else if (checkoutSummaryTotal?.textContent) {
+        finalAmount = getNumericAmount(checkoutSummaryTotal.textContent);
+      } else if (checkoutPriceVal?.textContent) {
+        finalAmount = getNumericAmount(checkoutPriceVal.textContent);
+      }
+      if (finalAmount <= 0) {
+        finalAmount = 7999.00;
+      }
+
       try {
         // Handle Package enrollment via api/packages.php
         const bookingPayload = {
@@ -680,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
           appointment_time: '07:00 - 07:45 PM',
           agenda: `Package Enrollment for ${currentPkgTitle}`,
           payment_method: payMethod,
-          amount: 500.00
+          amount: finalAmount
         };
 
         const res = await fetch('../api/packages.php', {
@@ -722,6 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 doctor_name: resData.doctor_name || bookingPayload.doctor_name,
                 patient_phone: pPhone,
                 patient_id: resData.patient_id || bookingPayload.patient_id,
+                price: finalAmount,
                 booking_date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
                 booking_status: 'Active'
               };
@@ -745,6 +813,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (receiptBookingId) {
           receiptBookingId.textContent = bookingId;
+        }
+
+        const formattedFinalAmount = formatAmount(finalAmount);
+        if (receiptAmount) {
+          receiptAmount.textContent = formattedFinalAmount;
+        }
+        if (successPaymentAmount) {
+          successPaymentAmount.textContent = formattedFinalAmount;
         }
 
         // Open Screen 5: Booking Success Modal

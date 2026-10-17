@@ -296,7 +296,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         bookConsultationBtn.style.backgroundColor = '#15803d';
       } else {
-        bookConsultationBtn.innerHTML = `<span>Book Package (₹500)</span>`;
+        const priceLabel = pkg.price_formatted || (pkg.price ? `₹${parseFloat(pkg.price).toLocaleString('en-IN')}` : '');
+        bookConsultationBtn.innerHTML = `<span>Book Package${priceLabel ? ` (${priceLabel})` : ''}</span>`;
         bookConsultationBtn.style.backgroundColor = '';
       }
     }
@@ -365,12 +366,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const cardTitle = pkgOrCard.querySelector('.package-title')?.textContent.trim() || targetName || 'Health Package';
       const cardSubtitle = pkgOrCard.querySelector('.package-subtitle')?.textContent.trim() || '';
       const cardPrice = pkgOrCard.querySelector('.package-meta-item strong')?.textContent.trim() || '₹7,999';
+      const numCardPrice = parseFloat(cardPrice.replace(/[^0-9.]/g, '')) || 7999;
       pkgData = {
         id: targetId || 1,
         package_id: targetPkgCode || 'PKG-001',
         package_name: cardTitle,
         short_description: cardSubtitle,
         price_formatted: cardPrice,
+        price: numCardPrice,
         duration: '3 Months',
         batch_text: '18 Patient Batch',
         overview: cardSubtitle || 'A personalized, multi-dimensional Ayurvedic and rehabilitation wellness protocol tailored to your dosha.',
@@ -876,9 +879,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) { }
 
-      const priceFormatted = detailPkgPrice?.textContent.trim() || currentSelectedPackage?.price_formatted || '₹7,999';
+      const rawPrice = (currentSelectedPackage?.price !== undefined && currentSelectedPackage?.price !== null && !isNaN(parseFloat(currentSelectedPackage.price)))
+        ? parseFloat(currentSelectedPackage.price)
+        : (detailPkgPrice?.textContent ? parseFloat(detailPkgPrice.textContent.replace(/[^0-9.]/g, '')) : 7999);
+
+      const priceFormatted = currentSelectedPackage?.price_formatted || (rawPrice ? `₹${rawPrice.toLocaleString('en-IN')}` : (detailPkgPrice?.textContent.trim() || '₹7,999'));
       const durationText = detailPkgDuration?.textContent.trim() || currentSelectedPackage?.duration || '3 Months';
       const docInitials = document.getElementById('doctorAvatarText')?.textContent.trim() || currentSelectedPackage?.doctor?.initials || 'DR';
+
+      const feeFormatted = (rawPrice !== undefined && rawPrice !== null && !isNaN(rawPrice) && rawPrice > 0)
+        ? `₹${rawPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : (priceFormatted.includes('.00') ? priceFormatted : `${priceFormatted}.00`);
 
       const bookingData = {
         isPackageCheckout: true,
@@ -889,6 +900,8 @@ document.addEventListener('DOMContentLoaded', () => {
         doctorRole: docRole,
         doctorInitials: docInitials,
         startingPrice: priceFormatted,
+        price: rawPrice,
+        amount: rawPrice,
         duration: durationText,
         patientName: pName,
         patientEmail: pEmail,
@@ -898,7 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
         time: '07:00 - 07:45 PM',
         slot: '7:00 PM - 10:00 PM',
         agenda: `Package Enrollment for ${pkgTitle}`,
-        fee: '₹500.00'
+        fee: feeFormatted
       };
 
       try {
