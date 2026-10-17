@@ -3,23 +3,47 @@
    Theme: Warm Terracotta (#723f1e), Deep Olive (#484831), Cream (#FAF6EE)
    ========================================================================== */
 
+/* Patient Portal - Prevent page-level scroll so chat container fits viewport */
+html:has(.patient-chat-container),
+body:has(.patient-chat-container) {
+  overflow: hidden !important;
+  height: 100% !important;
+}
+
+.dashboard-main-content:has(.patient-chat-container) {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 28px 16px !important;
+}
+
+.dashboard-top-header:has(+ .patient-chat-container) {
+  flex-shrink: 0;
+}
+
 .patient-chat-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 140px);
-  min-height: 560px;
+  flex: 1;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   background: #ffffff;
   border-radius: 16px;
   border: 1px solid #E8E1D5;
   box-shadow: 0 8px 24px -6px rgba(72, 72, 49, 0.08);
   overflow: hidden;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 .patient-chat-layout {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 320px minmax(0, 1fr);
   height: 100%;
+  min-height: 0;
+  max-height: 100%;
   overflow: hidden;
 }
 
@@ -30,6 +54,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  max-height: 100%;
   overflow: hidden;
 }
 
@@ -91,11 +117,14 @@
 }
 
 .chat-doctors-list {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden;
   list-style: none;
   margin: 0;
   padding: 8px;
+  scroll-behavior: smooth;
 }
 
 .doctor-conv-item {
@@ -189,11 +218,16 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  max-height: 100%;
   background: #FFFFFF;
+  overflow: hidden;
+  position: relative;
 }
 
 /* Chat Header */
 .patient-chat-header {
+  flex-shrink: 0;
   padding: 14px 24px;
   border-bottom: 1px solid #E8E1D5;
   background: #FFFFFF;
@@ -287,13 +321,17 @@
 
 /* Chat Messages Container */
 .patient-chat-messages {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden;
   padding: 24px;
   background: #FAF6EE;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .chat-date-divider {
@@ -388,9 +426,11 @@
 
 /* Input Bar */
 .patient-chat-input-bar {
-  padding: 16px 24px;
+  flex-shrink: 0;
+  padding: 14px 24px 16px;
   background: #FFFFFF;
   border-top: 1px solid #E8E1D5;
+  z-index: 5;
 }
 
 .patient-chat-form {

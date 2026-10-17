@@ -147,10 +147,10 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="dashboard-main-content">
+    <main class="dashboard-main-content" style="height: 100vh; max-height: 100vh; overflow: hidden; display: flex; flex-direction: column; padding: 14px 28px 16px;">
       
       <!-- Top Header -->
-      <header class="dashboard-top-header">
+      <header class="dashboard-top-header" style="flex-shrink: 0; padding-bottom: 12px; margin-bottom: 0;">
         <div class="header-titles">
           <h1 class="dashboard-heading">Doctor Consultation Messages</h1>
           <p class="greeting-subtitle">Chat directly with your assigned Ayurvedic doctors.</p>
@@ -166,8 +166,8 @@
       </header>
 
       <!-- Chat Container -->
-      <div class="patient-chat-container">
-        <div class="patient-chat-layout">
+      <div class="patient-chat-container" style="flex: 1; min-height: 0; height: 100%; margin-top: 8px;">
+        <div class="patient-chat-layout" style="height: 100%; min-height: 0;">
           
           <!-- Left Column: Doctors List -->
           <aside class="chat-doctors-sidebar">
