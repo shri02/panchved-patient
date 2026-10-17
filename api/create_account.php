@@ -309,48 +309,102 @@ $bloodGroup = isset($data['bloodGroup']) ? trim($data['bloodGroup']) : (isset($d
 $emergencyContact = isset($data['emergencyContact']) ? trim($data['emergencyContact']) : (isset($data['emergency_contact']) ? trim($data['emergency_contact']) : '');
 $address = isset($data['address']) ? trim($data['address']) : '';
 $packageName = isset($data['packageName']) ? trim($data['packageName']) : (isset($data['package_name']) ? trim($data['package_name']) : 'Ayurveda Holistic Care');
+$referralCode = isset($data['referralCode']) ? strtoupper(trim((string)$data['referralCode'])) : (isset($data['referral_code']) ? strtoupper(trim((string)$data['referral_code'])) : null);
+if ($referralCode === '') {
+    $referralCode = null;
+}
 $status = 'Ongoing';
+
+// Check if referral_code column exists in patients table
+$hasPatRefCol = false;
+$chkPatRef = @mysqli_query($connection1, "SHOW COLUMNS FROM patients LIKE 'referral_code'");
+if ($chkPatRef && mysqli_num_rows($chkPatRef) > 0) {
+    $hasPatRefCol = true;
+}
 
 // 2. Insert into `patients` table based on schema.sql
 $patientRecordId = null;
 $finalPatientId = $newPatientId;
-$insertPat = "INSERT INTO patients (
-    patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at, updated_at
-) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW()
-)";
-$pInStmt = mysqli_prepare($connection1, $insertPat);
-if ($pInStmt) {
-    mysqli_stmt_bind_param($pInStmt, "ssssissssssssss", 
-        $newPatientId, 
-        $profileType, 
-        $fullName, 
-        $formattedDob, 
-        $age, 
-        $height, 
-        $weight, 
-        $phoneDigits, 
-        $gender, 
-        $email,
-        $bloodGroup,
-        $emergencyContact,
-        $address,
-        $packageName,
-        $status
-    );
-    mysqli_stmt_execute($pInStmt);
-    $patientRecordId = mysqli_insert_id($connection1);
-    mysqli_stmt_close($pInStmt);
+
+if ($hasPatRefCol) {
+    $insertPat = "INSERT INTO patients (
+        patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email, blood_group, emergency_contact, address, package_name, referral_code, total_appointments, status, created_at, updated_at
+    ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW()
+    )";
+    $pInStmt = mysqli_prepare($connection1, $insertPat);
+    if ($pInStmt) {
+        mysqli_stmt_bind_param($pInStmt, "ssssisssssssssss", 
+            $newPatientId, 
+            $profileType, 
+            $fullName, 
+            $formattedDob, 
+            $age, 
+            $height, 
+            $weight, 
+            $phoneDigits, 
+            $gender, 
+            $email,
+            $bloodGroup,
+            $emergencyContact,
+            $address,
+            $packageName,
+            $referralCode,
+            $status
+        );
+        mysqli_stmt_execute($pInStmt);
+        $patientRecordId = mysqli_insert_id($connection1);
+        mysqli_stmt_close($pInStmt);
+    }
+} else {
+    $insertPat = "INSERT INTO patients (
+        patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at, updated_at
+    ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW()
+    )";
+    $pInStmt = mysqli_prepare($connection1, $insertPat);
+    if ($pInStmt) {
+        mysqli_stmt_bind_param($pInStmt, "ssssissssssssss", 
+            $newPatientId, 
+            $profileType, 
+            $fullName, 
+            $formattedDob, 
+            $age, 
+            $height, 
+            $weight, 
+            $phoneDigits, 
+            $gender, 
+            $email,
+            $bloodGroup,
+            $emergencyContact,
+            $address,
+            $packageName,
+            $status
+        );
+        mysqli_stmt_execute($pInStmt);
+        $patientRecordId = mysqli_insert_id($connection1);
+        mysqli_stmt_close($pInStmt);
+    }
 }
 
 // Fallback in case of schema discrepancy
 if (!$patientRecordId) {
-    $fallbackInsert = "INSERT INTO patients (patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())";
-    if ($fbStmt = mysqli_prepare($connection1, $fallbackInsert)) {
-        mysqli_stmt_bind_param($fbStmt, "sssisssss", $newPatientId, $fullName, $formattedDob, $age, $phoneDigits, $gender, $email, $packageName, $status);
-        mysqli_stmt_execute($fbStmt);
-        $patientRecordId = mysqli_insert_id($connection1);
-        mysqli_stmt_close($fbStmt);
+    if ($hasPatRefCol) {
+        $fallbackInsert = "INSERT INTO patients (patient_id, full_name, dob, age, phone_number, gender, email, package_name, referral_code, total_appointments, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())";
+        if ($fbStmt = mysqli_prepare($connection1, $fallbackInsert)) {
+            mysqli_stmt_bind_param($fbStmt, "sssissssss", $newPatientId, $fullName, $formattedDob, $age, $phoneDigits, $gender, $email, $packageName, $referralCode, $status);
+            mysqli_stmt_execute($fbStmt);
+            $patientRecordId = mysqli_insert_id($connection1);
+            mysqli_stmt_close($fbStmt);
+        }
+    } else {
+        $fallbackInsert = "INSERT INTO patients (patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())";
+        if ($fbStmt = mysqli_prepare($connection1, $fallbackInsert)) {
+            mysqli_stmt_bind_param($fbStmt, "sssisssss", $newPatientId, $fullName, $formattedDob, $age, $phoneDigits, $gender, $email, $packageName, $status);
+            mysqli_stmt_execute($fbStmt);
+            $patientRecordId = mysqli_insert_id($connection1);
+            mysqli_stmt_close($fbStmt);
+        }
     }
 }
 

@@ -1060,6 +1060,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Phone verification check error:', err);
       }
 
+      const referralCodeInput = document.getElementById('referralCodeInput');
+      const referralCode = referralCodeInput ? referralCodeInput.value.trim().toUpperCase() : '';
+
       // Save into registration state
       registrationState.fullName = name;
       registrationState.dob = dob;
@@ -1070,10 +1073,12 @@ document.addEventListener('DOMContentLoaded', () => {
       registrationState.phone = phone;
       registrationState.email = email;
       registrationState.countryCode = countryCode;
+      registrationState.referralCode = referralCode;
 
       try {
         localStorage.setItem('ocayur_registration_phone', phone);
         localStorage.setItem('ocayur_registration_email', email);
+        localStorage.setItem('ocayur_registration_referral_code', referralCode);
         localStorage.setItem('ocayur_registration_data', JSON.stringify(registrationState));
       } catch (e) {}
 
