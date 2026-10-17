@@ -433,8 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
           </div>
-          <h3 class="courses-empty-title">No Workshops Found</h3>
-          <p class="courses-empty-desc">There are currently no active patient workshops available. Please check back soon or explore our personalized wellness packages.</p>
+          <h3 class="courses-empty-title">No Workshops Available</h3>
+          <p class="courses-empty-desc">There are currently no workshops available. Please check back soon or explore our personalized wellness packages.</p>
           <a href="../packages/package.html" class="courses-empty-action-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>

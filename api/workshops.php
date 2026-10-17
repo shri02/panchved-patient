@@ -150,95 +150,7 @@ function formatWorkshopRecord($row) {
     ];
 }
 
-// Fallback patient workshops in case DB is completely unavailable or empty
-function getFallbackPatientWorkshops() {
-    return [
-        [
-            'id' => 2,
-            'workshop_id' => 'WS-002',
-            'title' => 'Skill Development Guide For Ayurveda Doctors',
-            'subtitle' => 'Holistic Health & Ayurveda Insights',
-            'instructor' => 'Dr. Rajesh Varma',
-            'speaker' => 'Dr. Rajesh Varma',
-            'assign_speaker' => 'Dr. Rajesh Varma',
-            'speaker_role' => 'Ayurveda Physician',
-            'speaker_bio' => 'Dr. Rajesh Varma is a seasoned Ayurvedic specialist focusing on preventive routines, herbal formulations, and personalized patient care.',
-            'speaker_initials' => 'RV',
-            'attendee_type' => 'Patient',
-            'date' => '2026-09-03',
-            'formatted_date' => '3 September, Wednesday',
-            'time' => '8:00 AM',
-            'duration_text' => '90 mins',
-            'location' => 'Rehab Studio 2',
-            'meet_link' => 'https://meet.google.com/bmq-ypeq-eur',
-            'capacity' => 40,
-            'enrolled' => 0,
-            'registrations' => 18,
-            'price' => 799.00,
-            'fee' => 799.00,
-            'fee_formatted' => '₹799/-',
-            'about' => 'Understand root triggers, daily nutrition routines, and restorative herbal protocols designed for comprehensive patient health.',
-            'image_url' => 'assets/courses/course_ayurveda_herbs.jpg',
-            'status' => 'Upcoming'
-        ],
-        [
-            'id' => 3,
-            'workshop_id' => 'WS-003',
-            'title' => 'Telemedicine Necessities Laws & AI',
-            'subtitle' => 'Holistic Health & Ayurveda Insights',
-            'instructor' => 'Dr. Sneha Patil',
-            'speaker' => 'Dr. Sneha Patil',
-            'assign_speaker' => 'Dr. Sneha Patil',
-            'speaker_role' => 'Ayurveda Physician',
-            'speaker_bio' => 'Dr. Sneha Patil brings extensive clinical experience in integrating traditional wellness science with modern digital consultation platforms.',
-            'speaker_initials' => 'SP',
-            'attendee_type' => 'Patient',
-            'date' => '2026-09-03',
-            'formatted_date' => '3 September, Wednesday',
-            'time' => '8:00 AM',
-            'duration_text' => '90 mins',
-            'location' => 'Auditorium & Live Stream',
-            'meet_link' => 'https://meet.google.com/bmq-ypeq-eur',
-            'capacity' => 100,
-            'enrolled' => 0,
-            'registrations' => 42,
-            'price' => 799.00,
-            'fee' => 799.00,
-            'fee_formatted' => '₹799/-',
-            'about' => 'Explore how patient tele-health protocols and AI wellness aids provide accessible, safe, and round-the-clock Ayurvedic guidance.',
-            'image_url' => 'assets/courses/course_telemedicine.jpg',
-            'status' => 'Upcoming'
-        ],
-        [
-            'id' => 8,
-            'workshop_id' => 'WS-006',
-            'title' => 'Pre-Pregnancy Ready – Ayurveda Workshop',
-            'subtitle' => 'Prepare Your Body, Mind & Lifestyle for Healthy Conception',
-            'instructor' => 'Dr. Nidhi Jha',
-            'speaker' => 'Dr. Nidhi Jha',
-            'assign_speaker' => 'Dr. Nidhi Jha',
-            'speaker_role' => 'Ayurveda Physician',
-            'speaker_bio' => 'Dr. Nidhi Jha is a senior Ayurveda practitioner dedicated to mother-child wellness, prenatal care, and reproductive health.',
-            'speaker_initials' => 'NJ',
-            'attendee_type' => 'Patient',
-            'date' => '2026-09-23',
-            'formatted_date' => '23 September, Wednesday',
-            'time' => '5:00 PM',
-            'duration_text' => '90 mins',
-            'location' => 'Ocayur Center Hall A',
-            'meet_link' => 'https://meet.google.com/bey-byer-rty',
-            'capacity' => 50,
-            'enrolled' => 0,
-            'registrations' => 1,
-            'price' => 999.00,
-            'fee' => 999.00,
-            'fee_formatted' => '₹999/-',
-            'about' => 'Prepare your body, mind, and daily lifestyle for healthy conception through tailored Ayurvedic nutrition and restorative practices.',
-            'image_url' => 'assets/courses/course_pre_pregnancy.jpg',
-            'status' => 'Upcoming'
-        ]
-    ];
-}
+
 
 $input = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -435,20 +347,10 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
         }
     }
 
-    if (!$workshop && !$connection1) {
-        $fallbacks = getFallbackPatientWorkshops();
-        foreach ($fallbacks as $fb) {
-            if (($id > 0 && $fb['id'] === $id) || (!empty($wsId) && $fb['workshop_id'] === $wsId) || (!empty($title) && strcasecmp($fb['title'], $title) === 0)) {
-                $workshop = $fb;
-                break;
-            }
-        }
-    }
-
     if ($workshop) {
         sendJsonResponse(true, 'Workshop details retrieved successfully.', ['workshop' => $workshop]);
     } else {
-        sendJsonResponse(false, 'Workshop not found or attendee type is not Patient or Both.', [], 404);
+        sendJsonResponse(false, 'Workshop not found.', [], 404);
     }
 }
 
@@ -473,10 +375,7 @@ if ($connection1) {
     }
 }
 
-// If database connection is completely down, provide fallback
-if (empty($workshops) && !$connection1) {
-    $workshops = getFallbackPatientWorkshops();
-}
+
 
 sendJsonResponse(true, 'Patient workshops fetched successfully.', [
     'count' => count($workshops),
