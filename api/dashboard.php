@@ -615,6 +615,19 @@ if ($requestMethod === 'POST' && in_array($action, ['add_reading', 'save_metrics
         $date = date('Y-m-d');
     }
 
+    $hasLetters = static function ($value) {
+        return $value !== null && $value !== '' && preg_match('/[a-zA-Z]/', (string)$value);
+    };
+
+    if (
+        $hasLetters($data['weight'] ?? null) ||
+        $hasLetters($data['abdomen'] ?? null) ||
+        $hasLetters($data['bp'] ?? null) ||
+        $hasLetters($data['sugar'] ?? null)
+    ) {
+        sendJsonResponse(false, 'Letters are not allowed in health readings. Please enter numbers only.', [], 400);
+    }
+
     $cleanNumber = static function ($value) {
         if ($value === null || $value === '') {
             return null;
@@ -632,10 +645,13 @@ if ($requestMethod === 'POST' && in_array($action, ['add_reading', 'save_metrics
     $bp = null;
 
     if ($rawBp !== '') {
-        if (preg_match('/(\d{2,3})\s*\/\s*(\d{2,3})/', $rawBp, $match)) {
+        $cleanBp = preg_replace('/[^\d\/]/', '', $rawBp);
+        if (preg_match('/^(\d{2,3})\s*\/\s*(\d{2,3})$/', $cleanBp, $match)) {
             $bp = $match[1] . '/' . $match[2];
+        } elseif (preg_match('/^\d{2,3}$/', $cleanBp)) {
+            $bp = $cleanBp;
         } else {
-            $bp = $rawBp;
+            sendJsonResponse(false, 'Invalid Blood Pressure format. Use format like 120/80.', [], 400);
         }
     }
 

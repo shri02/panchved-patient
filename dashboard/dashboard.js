@@ -462,6 +462,131 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
     });
   }
 
+  // Restrict Health Reading Inputs: Disallow letters and non-numeric characters
+  const restrictDecimalInput = (inputEl) => {
+    if (!inputEl) return;
+
+    // Disallow letter keys and non-numeric characters on keydown
+    inputEl.addEventListener('keydown', (e) => {
+      const allowedKeys = ['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Home', 'End'];
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
+        return;
+      }
+      // Block letters completely
+      if (/[a-zA-Z]/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      // Allow single decimal point only
+      if (e.key === '.') {
+        if (inputEl.value.includes('.')) {
+          e.preventDefault();
+        }
+        return;
+      }
+      // Disallow anything other than digits (0-9)
+      if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+
+    // Clean any letters or invalid characters on input (paste, autofill, virtual keyboard)
+    inputEl.addEventListener('input', () => {
+      let val = inputEl.value;
+      val = val.replace(/[a-zA-Z]/g, '').replace(/[^0-9.]/g, '');
+      const parts = val.split('.');
+      if (parts.length > 2) {
+        val = parts[0] + '.' + parts.slice(1).join('');
+      }
+      if (inputEl.value !== val) {
+        inputEl.value = val;
+      }
+    });
+
+    // Sanitize on paste
+    inputEl.addEventListener('paste', (e) => {
+      const pasteText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+      if (/[a-zA-Z]/.test(pasteText) || /[^0-9.]/.test(pasteText)) {
+        e.preventDefault();
+        let cleaned = pasteText.replace(/[a-zA-Z]/g, '').replace(/[^0-9.]/g, '');
+        const start = inputEl.selectionStart || 0;
+        const end = inputEl.selectionEnd || 0;
+        let nextVal = inputEl.value.slice(0, start) + cleaned + inputEl.value.slice(end);
+        const parts = nextVal.split('.');
+        if (parts.length > 2) {
+          nextVal = parts[0] + '.' + parts.slice(1).join('');
+        }
+        inputEl.value = nextVal;
+        inputEl.dispatchEvent(new Event('input'));
+      }
+    });
+  };
+
+  const restrictBpInput = (inputEl) => {
+    if (!inputEl) return;
+
+    // Disallow letter keys and non-numeric/slash characters on keydown
+    inputEl.addEventListener('keydown', (e) => {
+      const allowedKeys = ['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Escape', 'Home', 'End'];
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
+        return;
+      }
+      // Block letters completely
+      if (/[a-zA-Z]/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      // Allow single slash only
+      if (e.key === '/') {
+        if (inputEl.value.includes('/')) {
+          e.preventDefault();
+        }
+        return;
+      }
+      // Disallow anything other than digits (0-9)
+      if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+
+    // Clean any letters or invalid characters on input
+    inputEl.addEventListener('input', () => {
+      let val = inputEl.value;
+      val = val.replace(/[a-zA-Z]/g, '').replace(/[^0-9/]/g, '');
+      const parts = val.split('/');
+      if (parts.length > 2) {
+        val = parts[0] + '/' + parts.slice(1).join('');
+      }
+      if (inputEl.value !== val) {
+        inputEl.value = val;
+      }
+    });
+
+    // Sanitize on paste
+    inputEl.addEventListener('paste', (e) => {
+      const pasteText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+      if (/[a-zA-Z]/.test(pasteText) || /[^0-9/]/.test(pasteText)) {
+        e.preventDefault();
+        let cleaned = pasteText.replace(/[a-zA-Z]/g, '').replace(/[^0-9/]/g, '');
+        const start = inputEl.selectionStart || 0;
+        const end = inputEl.selectionEnd || 0;
+        let nextVal = inputEl.value.slice(0, start) + cleaned + inputEl.value.slice(end);
+        const parts = nextVal.split('/');
+        if (parts.length > 2) {
+          nextVal = parts[0] + '/' + parts.slice(1).join('');
+        }
+        inputEl.value = nextVal;
+        inputEl.dispatchEvent(new Event('input'));
+      }
+    });
+  };
+
+  // Attach restriction handlers to health reading inputs
+  restrictDecimalInput(document.getElementById('readingWeight'));
+  restrictDecimalInput(document.getElementById('readingAbdomen'));
+  restrictDecimalInput(document.getElementById('readingSugar'));
+  restrictBpInput(document.getElementById('readingBP'));
+
   // Handle Reading Form Submission & Save to MySQL Database
   if (readingForm) {
     readingForm.addEventListener('submit', async (e) => {
@@ -472,6 +597,13 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
       const abdomenInput = document.getElementById('readingAbdomen')?.value.trim();
       const bpInput = document.getElementById('readingBP')?.value.trim();
       const sugarInput = document.getElementById('readingSugar')?.value.trim();
+
+      // Ensure no letters are present in any health parameter
+      const hasLetters = (val) => typeof val === 'string' && /[a-zA-Z]/.test(val);
+      if (hasLetters(weightInput) || hasLetters(abdomenInput) || hasLetters(bpInput) || hasLetters(sugarInput)) {
+        showToast('Letters are not allowed in health readings. Please enter numbers only.', true);
+        return;
+      }
 
       if (!weightInput && !abdomenInput && !bpInput && !sugarInput) {
         showToast('Please enter at least one health parameter.', true);
