@@ -288,7 +288,9 @@ function resolvePatient($connection, $phone, $email, $patientId)
         $phoneDigits = substr($phoneDigits, 2);
     }
 
-    if ($phone === '' && $phoneDigits === '' && $email === '' && $patientId === '') {
+    $numericId = is_numeric($patientId) ? (int)$patientId : 0;
+
+    if ($phone === '' && $phoneDigits === '' && $email === '' && $patientId === '' && $numericId <= 0) {
         return null;
     }
 
@@ -299,6 +301,7 @@ function resolvePatient($connection, $phone, $email, $patientId)
             WHERE (phone_number <> '' AND (phone_number = ? OR phone_number = ?))
                OR (email <> '' AND email = ?)
                OR (patient_id <> '' AND patient_id = ?)
+               OR (? > 0 AND id = ?)
             LIMIT 1";
 
     $stmt = mysqli_prepare($connection, $sql);
@@ -306,7 +309,7 @@ function resolvePatient($connection, $phone, $email, $patientId)
         return null;
     }
 
-    mysqli_stmt_bind_param($stmt, 'ssss', $phone, $phoneDigits, $email, $patientId);
+    mysqli_stmt_bind_param($stmt, 'ssssii', $phone, $phoneDigits, $email, $patientId, $numericId, $numericId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $patient = mysqli_fetch_assoc($result) ?: null;
@@ -471,48 +474,10 @@ function getPatientDietPlan($connection, $patient, $packageProgress)
         $doctorName = trim((string)($jsonRecord['doctor_name'] ?? 'Dr. Nidhi Jha'));
     }
 
-    // Verify if PDF file actually exists on server
-    $pdfExists = false;
-    $actualFile = null;
-    if (!empty($pdfRelPath)) {
-        $checkList = [
-            __DIR__ . '/../' . ltrim($pdfRelPath, '/\\'),
-            __DIR__ . '/../../panchved/' . ltrim($pdfRelPath, '/\\'),
-            __DIR__ . '/../uploads/diets/' . basename($pdfRelPath),
-            __DIR__ . '/../../panchved/uploads/diets/' . basename($pdfRelPath)
-        ];
-        foreach ($checkList as $chk) {
-            if (file_exists($chk) && is_file($chk)) {
-                $pdfExists = true;
-                $actualFile = $chk;
-                if ($fileSize <= 0) {
-                    $fileSize = (int)filesize($chk);
-                }
-                break;
-            }
-        }
-    }
-
-    // Also scan for any diet PDF for this patient if not found yet
-    if (!$pdfExists && $patientDbId > 0) {
-        $dirsToScan = [
-            __DIR__ . '/../uploads/diets',
-            __DIR__ . '/../../panchved/uploads/diets'
-        ];
-        foreach ($dirsToScan as $dir) {
-            if (is_dir($dir)) {
-                $matched = glob($dir . '/diet_' . $patientDbId . '_*.pdf');
-                if (!empty($matched)) {
-                    usort($matched, fn($a, $b) => filemtime($b) - filemtime($a));
-                    $pdfExists = true;
-                    $actualFile = $matched[0];
-                    $fileName = $fileName ?: basename($actualFile);
-                    $fileSize = (int)filesize($actualFile);
-                    break;
-                }
-            }
-        }
-    }
+    // Check if a PDF file was recorded for this patient
+    $hasPdf = !empty($pdfRelPath) || !empty($fileName);
+    $viewPdfUrl = $hasPdf ? ('../api/dashboard.php?action=view_diet_pdf&patient_id=' . $patientDbId) : null;
+    $downloadPdfUrl = $hasPdf ? ('../api/dashboard.php?action=download_diet_pdf&patient_id=' . $patientDbId) : null;
 
     $packageDiet = $packageProgress['diet_plan'] ?? [];
     $p1 = $notes !== '' ? $notes : ($packageDiet['paragraph_1'] ?? $packageDiet['diet_hydration'] ?? '');
@@ -527,9 +492,6 @@ function getPatientDietPlan($connection, $patient, $packageProgress)
         }
     }
 
-    $viewPdfUrl = $pdfExists ? ('../api/dashboard.php?action=view_diet_pdf&patient_id=' . $patientDbId) : null;
-    $downloadPdfUrl = $pdfExists ? ('../api/dashboard.php?action=download_diet_pdf&patient_id=' . $patientDbId) : null;
-
     return [
         'patient_id' => $patientDbId,
         'doctor_name' => $doctorName,
@@ -537,13 +499,78 @@ function getPatientDietPlan($connection, $patient, $packageProgress)
         'paragraph_1' => $p1,
         'paragraph_2' => $p2,
         'paragraphs' => array_values(array_filter([$p1, $p2])),
-        'has_pdf' => $pdfExists,
-        'pdf_name' => $fileName ?: ($pdfExists ? 'Diet_Chart.pdf' : ''),
+        'has_pdf' => $hasPdf,
+        'pdf_path' => $pdfRelPath,
+        'pdf_name' => $fileName ?: ($hasPdf ? 'Diet_Chart.pdf' : ''),
         'pdf_url' => $viewPdfUrl,
         'download_url' => $downloadPdfUrl,
         'file_size' => $formattedSize,
         'updated_at' => $updatedAt ? date('d M Y', strtotime($updatedAt)) : date('d M Y')
     ];
+}
+
+function findDietPdfFile($pdfRelPath, $pdfName, $patientDbId)
+{
+    $baseName = basename((string)$pdfRelPath);
+    if (empty($baseName) || $baseName === '.' || $baseName === '/') {
+        $baseName = basename((string)$pdfName);
+    }
+
+    $dirs = [
+        __DIR__ . '/../uploads/diets',
+        __DIR__ . '/../../panchved/uploads/diets',
+        __DIR__ . '/../../panchved/dashboard/uploads/diets',
+        __DIR__ . '/../../uploads/diets',
+        __DIR__ . '/../../../panchved/uploads/diets',
+        __DIR__ . '/../../../panchved/dashboard/uploads/diets',
+        dirname(__DIR__, 2) . '/panchved/uploads/diets',
+        dirname(__DIR__, 2) . '/panchved/dashboard/uploads/diets',
+        dirname(__DIR__, 3) . '/panchved/uploads/diets',
+        dirname(__DIR__, 3) . '/panchved/dashboard/uploads/diets'
+    ];
+
+    if (!empty($_SERVER['DOCUMENT_ROOT'])) {
+        $doc = rtrim($_SERVER['DOCUMENT_ROOT'], '/\\');
+        $dirs[] = $doc . '/panchved/uploads/diets';
+        $dirs[] = $doc . '/panchved/dashboard/uploads/diets';
+        $dirs[] = $doc . '/uploads/diets';
+        $dirs[] = $doc . '/../panchved/uploads/diets';
+        $dirs[] = $doc . '/../panchved/dashboard/uploads/diets';
+    }
+
+    // Dynamic sibling folder scan
+    $parent = dirname(__DIR__, 2);
+    if (is_dir($parent)) {
+        $foundDirs = @glob($parent . '/*/uploads/diets', GLOB_ONLYDIR) ?: [];
+        $dirs = array_merge($dirs, $foundDirs);
+        $nestedDirs = @glob($parent . '/*/*/uploads/diets', GLOB_ONLYDIR) ?: [];
+        $dirs = array_merge($dirs, $nestedDirs);
+    }
+
+    // 1. Direct filename check
+    if (!empty($baseName)) {
+        foreach ($dirs as $dir) {
+            $candidate = $dir . '/' . $baseName;
+            if (@file_exists($candidate) && @is_file($candidate)) {
+                return $candidate;
+            }
+        }
+    }
+
+    // 2. Pattern match by patient ID
+    if ($patientDbId > 0) {
+        foreach ($dirs as $dir) {
+            if (@is_dir($dir)) {
+                $matched = @glob($dir . '/diet_' . $patientDbId . '_*.pdf');
+                if (!empty($matched)) {
+                    usort($matched, fn($a, $b) => filemtime($b) - filemtime($a));
+                    return $matched[0];
+                }
+            }
+        }
+    }
+
+    return null;
 }
 
 function getNotifications($connection, $patient)
@@ -680,6 +707,7 @@ if ($requestMethod === 'POST') {
 
 $sessionPhone = trim((string)($_SESSION['phone_number'] ?? $_SESSION['phone'] ?? ''));
 $sessionPatientId = trim((string)($_SESSION['patient_id'] ?? ''));
+$sessionEmail = trim((string)($_SESSION['email'] ?? ''));
 $sessionRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
 if (!empty($sessionRole) && $sessionRole !== 'patient') {
     sendJsonResponse(false, 'Access denied. Only Patient credentials can access the Patient dashboard.', [], 403);
@@ -906,35 +934,57 @@ $dietPlan = getPatientDietPlan($connection1, $patient, $packageProgress);
  * Stream Diet Plan PDF for patient viewing or download
  * -------------------------------------------------------------------------- */
 if (in_array($action, ['view_diet_pdf', 'download_diet_pdf'], true)) {
-    $candidateFiles = [];
     $pdfName = !empty($dietPlan['pdf_name']) ? $dietPlan['pdf_name'] : ('diet_chart_' . $patientDbId . '.pdf');
+    $pdfPath = (string)($dietPlan['pdf_path'] ?? '');
 
-    $dirsToScan = [
-        __DIR__ . '/../uploads/diets',
-        __DIR__ . '/../../panchved/uploads/diets'
-    ];
+    // 1. Try resolving locally on server disk
+    $targetFile = findDietPdfFile($pdfPath, $pdfName, $patientDbId);
 
-    if (!empty($dietPlan['pdf_name'])) {
-        foreach ($dirsToScan as $dir) {
-            $candidateFiles[] = $dir . '/' . basename($dietPlan['pdf_name']);
+    // 2. If not found locally, try fetching over HTTP from candidate endpoints
+    if (!$targetFile) {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? 'https://' : 'http://';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $baseName = basename($pdfPath) ?: basename($pdfName);
+
+        $candidateUrls = [];
+        if (preg_match('#^https?://#i', $pdfPath)) {
+            $candidateUrls[] = $pdfPath;
         }
-    }
+        if (!empty($baseName)) {
+            $candidateUrls[] = $protocol . $host . '/panchved/uploads/diets/' . $baseName;
+            $candidateUrls[] = $protocol . $host . '/panchved/dashboard/uploads/diets/' . $baseName;
+            $candidateUrls[] = $protocol . $host . '/uploads/diets/' . $baseName;
 
-    foreach ($dirsToScan as $dir) {
-        if (is_dir($dir)) {
-            $matched = glob($dir . '/diet_' . $patientDbId . '_*.pdf');
-            if (!empty($matched)) {
-                usort($matched, fn($a, $b) => filemtime($b) - filemtime($a));
-                $candidateFiles[] = $matched[0];
+            // Subdomain adjustments (e.g. patient. -> doctor. / admin.)
+            if (strpos($host, 'patient.') === 0) {
+                $docHost = 'doctor.' . substr($host, 8);
+                $adminHost = 'admin.' . substr($host, 8);
+                $candidateUrls[] = $protocol . $docHost . '/uploads/diets/' . $baseName;
+                $candidateUrls[] = $protocol . $adminHost . '/uploads/diets/' . $baseName;
+                $candidateUrls[] = $protocol . $docHost . '/panchved/uploads/diets/' . $baseName;
             }
         }
-    }
 
-    $targetFile = null;
-    foreach ($candidateFiles as $candidate) {
-        if ($candidate && file_exists($candidate) && is_file($candidate)) {
-            $targetFile = $candidate;
-            break;
+        foreach ($candidateUrls as $cUrl) {
+            $ctx = stream_context_create([
+                'http' => ['timeout' => 5, 'follow_location' => 1],
+                'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false]
+            ]);
+            $content = @file_get_contents($cUrl, false, $ctx);
+            if ($content !== false && substr($content, 0, 4) === '%PDF') {
+                $localDir = __DIR__ . '/../uploads/diets';
+                if (!is_dir($localDir)) @mkdir($localDir, 0777, true);
+                @file_put_contents($localDir . '/' . $baseName, $content);
+
+                header('Content-Type: application/pdf');
+                $disposition = ($action === 'download_diet_pdf') ? 'attachment' : 'inline';
+                header('Content-Disposition: ' . $disposition . '; filename="' . rawurlencode($pdfName) . '"');
+                header('Content-Length: ' . strlen($content));
+                header('Cache-Control: private, max-age=3600, must-revalidate');
+                header('Pragma: public');
+                echo $content;
+                exit();
+            }
         }
     }
 
