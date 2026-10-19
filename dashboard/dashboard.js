@@ -730,9 +730,9 @@ setTimeout(() => {
     }
 
     // PDF attachment handling
-    const hasPdf = Boolean(dietData.has_pdf && dietData.pdf_url);
-    const pdfUrl = dietData.pdf_url || '';
-    const downloadUrl = dietData.download_url || pdfUrl;
+    const hasPdf = Boolean(dietData.has_pdf && (dietData.pdf_url || dietData.direct_url));
+    const pdfUrl = dietData.pdf_url || dietData.direct_url || '';
+    const downloadUrl = dietData.download_url || dietData.direct_url || pdfUrl;
     const pdfName = dietData.pdf_name || 'Diet_Chart.pdf';
     const fileSize = dietData.file_size ? ` • ${dietData.file_size}` : '';
     const updated = dietData.updated_at ? ` • Updated ${dietData.updated_at}` : '';
@@ -740,6 +740,8 @@ setTimeout(() => {
     if (quickDietPdfLink) {
       if (hasPdf) {
         quickDietPdfLink.href = pdfUrl;
+        quickDietPdfLink.target = '_blank';
+        quickDietPdfLink.rel = 'noopener noreferrer';
         quickDietPdfLink.style.display = 'inline-flex';
       } else {
         quickDietPdfLink.style.display = 'none';
@@ -751,7 +753,11 @@ setTimeout(() => {
         dietPdfCard.style.display = 'flex';
         if (dietPdfTitle) dietPdfTitle.textContent = pdfName;
         if (dietPdfMeta) dietPdfMeta.textContent = `PDF Document${fileSize}${updated}`;
-        if (dietPdfViewBtn) dietPdfViewBtn.href = pdfUrl;
+        if (dietPdfViewBtn) {
+          dietPdfViewBtn.href = pdfUrl;
+          dietPdfViewBtn.target = '_blank';
+          dietPdfViewBtn.rel = 'noopener noreferrer';
+        }
         if (dietPdfDownloadBtn) {
           dietPdfDownloadBtn.href = downloadUrl;
           dietPdfDownloadBtn.setAttribute('download', pdfName);

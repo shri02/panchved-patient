@@ -476,6 +476,9 @@ function getPatientDietPlan($connection, $patient, $packageProgress)
 
     // Check if a PDF file was recorded for this patient
     $hasPdf = !empty($pdfRelPath) || !empty($fileName);
+    $basePdfName = basename($pdfRelPath) ?: basename($fileName);
+    $directPdfUrl = ($hasPdf && !empty($basePdfName)) ? ('https://doctor.ocayur.com/dashboard/uploads/diets/' . rawurlencode($basePdfName)) : null;
+
     $viewPdfUrl = $hasPdf ? ('../api/dashboard.php?action=view_diet_pdf&patient_id=' . $patientDbId) : null;
     $downloadPdfUrl = $hasPdf ? ('../api/dashboard.php?action=download_diet_pdf&patient_id=' . $patientDbId) : null;
 
@@ -504,9 +507,54 @@ function getPatientDietPlan($connection, $patient, $packageProgress)
         'pdf_name' => $fileName ?: ($hasPdf ? 'Diet_Chart.pdf' : ''),
         'pdf_url' => $viewPdfUrl,
         'download_url' => $downloadPdfUrl,
+        'direct_url' => $directPdfUrl,
         'file_size' => $formattedSize,
         'updated_at' => $updatedAt ? date('d M Y', strtotime($updatedAt)) : date('d M Y')
     ];
+}
+
+function fetchRemotePdfContent($url)
+{
+    if (empty($url)) {
+        return null;
+    }
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Ocayur-Patient-Portal/1.0');
+        $data = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($data !== false && $httpCode === 200 && substr($data, 0, 4) === '%PDF') {
+            return $data;
+        }
+    }
+
+    $ctx = stream_context_create([
+        'http' => [
+            'timeout' => 8,
+            'follow_location' => 1,
+            'user_agent' => 'Ocayur-Patient-Portal/1.0'
+        ],
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false
+        ]
+    ]);
+
+    $data = @file_get_contents($url, false, $ctx);
+    if ($data !== false && substr($data, 0, 4) === '%PDF') {
+        return $data;
+    }
+
+    return null;
 }
 
 function findDietPdfFile($pdfRelPath, $pdfName, $patientDbId)
@@ -518,6 +566,7 @@ function findDietPdfFile($pdfRelPath, $pdfName, $patientDbId)
 
     $dirs = [
         __DIR__ . '/../uploads/diets',
+        __DIR__ . '/../dashboard/uploads/diets',
         __DIR__ . '/../../panchved/uploads/diets',
         __DIR__ . '/../../panchved/dashboard/uploads/diets',
         __DIR__ . '/../../uploads/diets',
@@ -525,17 +574,25 @@ function findDietPdfFile($pdfRelPath, $pdfName, $patientDbId)
         __DIR__ . '/../../../panchved/dashboard/uploads/diets',
         dirname(__DIR__, 2) . '/panchved/uploads/diets',
         dirname(__DIR__, 2) . '/panchved/dashboard/uploads/diets',
+        dirname(__DIR__, 2) . '/doctor.ocayur.com/uploads/diets',
+        dirname(__DIR__, 2) . '/doctor.ocayur.com/dashboard/uploads/diets',
         dirname(__DIR__, 3) . '/panchved/uploads/diets',
         dirname(__DIR__, 3) . '/panchved/dashboard/uploads/diets'
     ];
 
     if (!empty($_SERVER['DOCUMENT_ROOT'])) {
         $doc = rtrim($_SERVER['DOCUMENT_ROOT'], '/\\');
+        $dirs[] = $doc . '/uploads/diets';
+        $dirs[] = $doc . '/dashboard/uploads/diets';
         $dirs[] = $doc . '/panchved/uploads/diets';
         $dirs[] = $doc . '/panchved/dashboard/uploads/diets';
-        $dirs[] = $doc . '/uploads/diets';
+        $dirs[] = $doc . '/../doctor.ocayur.com/uploads/diets';
+        $dirs[] = $doc . '/../doctor.ocayur.com/dashboard/uploads/diets';
+        $dirs[] = $doc . '/../admin.ocayur.com/uploads/diets';
+        $dirs[] = $doc . '/../admin.ocayur.com/dashboard/uploads/diets';
         $dirs[] = $doc . '/../panchved/uploads/diets';
         $dirs[] = $doc . '/../panchved/dashboard/uploads/diets';
+        $dirs[] = $doc . '/../uploads/diets';
     }
 
     // Dynamic sibling folder scan
@@ -543,6 +600,8 @@ function findDietPdfFile($pdfRelPath, $pdfName, $patientDbId)
     if (is_dir($parent)) {
         $foundDirs = @glob($parent . '/*/uploads/diets', GLOB_ONLYDIR) ?: [];
         $dirs = array_merge($dirs, $foundDirs);
+        $dashDirs = @glob($parent . '/*/dashboard/uploads/diets', GLOB_ONLYDIR) ?: [];
+        $dirs = array_merge($dirs, $dashDirs);
         $nestedDirs = @glob($parent . '/*/*/uploads/diets', GLOB_ONLYDIR) ?: [];
         $dirs = array_merge($dirs, $nestedDirs);
     }
@@ -940,40 +999,41 @@ if (in_array($action, ['view_diet_pdf', 'download_diet_pdf'], true)) {
     // 1. Try resolving locally on server disk
     $targetFile = findDietPdfFile($pdfPath, $pdfName, $patientDbId);
 
+    $baseName = basename($pdfPath) ?: basename($pdfName);
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'] ?? 'portal.ocayur.com';
+
     // 2. If not found locally, try fetching over HTTP from candidate endpoints
     if (!$targetFile) {
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? 'https://' : 'http://';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $baseName = basename($pdfPath) ?: basename($pdfName);
-
         $candidateUrls = [];
         if (preg_match('#^https?://#i', $pdfPath)) {
             $candidateUrls[] = $pdfPath;
         }
         if (!empty($baseName)) {
+            // Priority 1: Verified production endpoint on doctor portal
+            $candidateUrls[] = 'https://doctor.ocayur.com/dashboard/uploads/diets/' . $baseName;
+            $candidateUrls[] = 'https://doctor.ocayur.com/uploads/diets/' . $baseName;
+            $candidateUrls[] = 'https://admin.ocayur.com/dashboard/uploads/diets/' . $baseName;
+            $candidateUrls[] = 'https://admin.ocayur.com/uploads/diets/' . $baseName;
+            $candidateUrls[] = 'https://portal.ocayur.com/uploads/diets/' . $baseName;
+            $candidateUrls[] = 'https://portal.ocayur.com/dashboard/uploads/diets/' . $baseName;
+            $candidateUrls[] = 'https://ocayur.com/dashboard/uploads/diets/' . $baseName;
+            $candidateUrls[] = 'https://ocayur.com/uploads/diets/' . $baseName;
+
+            // Priority 2: Current host variants
+            $candidateUrls[] = $protocol . $host . '/dashboard/uploads/diets/' . $baseName;
+            $candidateUrls[] = $protocol . $host . '/uploads/diets/' . $baseName;
             $candidateUrls[] = $protocol . $host . '/panchved/uploads/diets/' . $baseName;
             $candidateUrls[] = $protocol . $host . '/panchved/dashboard/uploads/diets/' . $baseName;
-            $candidateUrls[] = $protocol . $host . '/uploads/diets/' . $baseName;
-
-            // Subdomain adjustments (e.g. patient. -> doctor. / admin.)
-            if (strpos($host, 'patient.') === 0) {
-                $docHost = 'doctor.' . substr($host, 8);
-                $adminHost = 'admin.' . substr($host, 8);
-                $candidateUrls[] = $protocol . $docHost . '/uploads/diets/' . $baseName;
-                $candidateUrls[] = $protocol . $adminHost . '/uploads/diets/' . $baseName;
-                $candidateUrls[] = $protocol . $docHost . '/panchved/uploads/diets/' . $baseName;
-            }
         }
 
         foreach ($candidateUrls as $cUrl) {
-            $ctx = stream_context_create([
-                'http' => ['timeout' => 5, 'follow_location' => 1],
-                'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false]
-            ]);
-            $content = @file_get_contents($cUrl, false, $ctx);
-            if ($content !== false && substr($content, 0, 4) === '%PDF') {
+            $content = fetchRemotePdfContent($cUrl);
+            if ($content !== null) {
                 $localDir = __DIR__ . '/../uploads/diets';
-                if (!is_dir($localDir)) @mkdir($localDir, 0777, true);
+                if (!is_dir($localDir)) {
+                    @mkdir($localDir, 0777, true);
+                }
                 @file_put_contents($localDir . '/' . $baseName, $content);
 
                 header('Content-Type: application/pdf');
@@ -997,12 +1057,19 @@ if (in_array($action, ['view_diet_pdf', 'download_diet_pdf'], true)) {
         header('Pragma: public');
         readfile($targetFile);
         exit();
-    } else {
-        http_response_code(404);
-        header('Content-Type: text/plain; charset=utf-8');
-        echo 'Diet plan PDF file not found.';
+    }
+
+    // 3. Fallback: Direct redirect to verified live endpoint on doctor.ocayur.com
+    if (!empty($baseName)) {
+        $verifiedUrl = 'https://doctor.ocayur.com/dashboard/uploads/diets/' . rawurlencode($baseName);
+        header('Location: ' . $verifiedUrl);
         exit();
     }
+
+    http_response_code(404);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Diet plan PDF file not found.';
+    exit();
 }
 
 $patientResponse = [
