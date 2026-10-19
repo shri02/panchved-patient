@@ -99,9 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Synchronize authenticated user header details
+  let cachedUserObj = null;
+  let cachedPatientObj = null;
+
   const applyUserHeader = (user, patient) => {
-    const fullName = patient?.full_name || user?.full_name || 'Rahul Sharma';
-    const patientId = patient?.patient_id || ('P00' + (user?.id || 1));
+    cachedUserObj = user;
+    cachedPatientObj = patient;
+    const fullName = patient?.full_name || user?.full_name || '';
+    const patientId = patient?.patient_id || (user?.id ? ('P00' + user.id) : '');
 
     if (fullName) {
       const userName = document.getElementById('userName');
@@ -247,19 +252,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     billingTableBody.innerHTML = currentRows.map(row => {
       const bId = row.billing_id || ('ABC-' + String(row.id).padStart(3, '0'));
-      const rDate = row.date || '2 Sept 2026';
-      const rDur = row.duration || '3 months';
-      const rDoc = row.doctor_name || 'Dr. Rohit Mishra';
-      const rPkg = row.package_name || 'Stress & Sleep Balance';
+      const rDate = row.date || row.payment_date || '--';
+      const rDur = row.duration || '--';
+      const rDoc = row.doctor_name || '--';
+      const rPkg = row.package_name || row.title || 'Consultation / Package';
       const rNo = row.receipt_no || ('EK-' + String(row.id).padStart(3, '0'));
-      const rPat = row.patient_name || 'Rahul Sharma';
-      const rGen = row.patient_gender || 'Male';
-      const rAge = row.patient_age || '34 years';
-      const rTime = row.time || '4:00 PM';
-      const rSub = row.subtotal || '₹2,700';
-      const rDisc = row.discount || '₹500';
-      const rTot = row.total || '₹2,200';
-      const rWords = row.amount_words || 'Two Thousand Two Hundred Rupees Only';
+      const rPat = row.patient_name || cachedPatientObj?.full_name || cachedUserObj?.full_name || 'Patient';
+      const rGen = row.patient_gender || cachedPatientObj?.gender || '--';
+      const rAge = row.patient_age || (cachedPatientObj?.age ? `${cachedPatientObj.age} years` : '--');
+      const rTime = row.time || '--';
+      const rSub = row.subtotal || ('₹' + (row.amount || '0'));
+      const rDisc = row.discount || '₹0';
+      const rTot = row.total || ('₹' + (row.amount || '0'));
+      const rWords = row.amount_words || '';
 
       return `
         <tr>
@@ -514,12 +519,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (data.success) {
           // A. Update Active Package Detail
+          const pkgBanner = document.querySelector('.active-package-banner');
           if (data.active_package) {
             const pkg = data.active_package;
-            if (activePkgTitle && pkg.title) activePkgTitle.textContent = pkg.title;
-            if (activePkgDesc && pkg.description) activePkgDesc.textContent = pkg.description;
-            if (activePkgPrice && pkg.price_formatted) activePkgPrice.textContent = pkg.price_formatted;
-            if (activePkgDuration && pkg.duration) activePkgDuration.textContent = pkg.duration;
+            if (activePkgTitle) activePkgTitle.textContent = pkg.title || 'Subscribed Package';
+            if (activePkgDesc) activePkgDesc.textContent = pkg.description || 'Personalized care and routine.';
+            if (activePkgPrice) activePkgPrice.textContent = pkg.price_formatted || (pkg.price ? `₹${pkg.price}` : '--');
+            if (activePkgDuration) activePkgDuration.textContent = pkg.duration || '--';
+            if (pkgBanner) pkgBanner.style.display = 'flex';
+          } else {
+            if (activePkgTitle) activePkgTitle.textContent = 'No Active Package';
+            if (activePkgDesc) activePkgDesc.textContent = 'You currently have no active wellness package. Visit the Packages section to explore customized programs.';
+            if (pkgBanner) pkgBanner.style.display = 'none';
           }
 
           // B. Update Payment History List

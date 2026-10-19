@@ -308,7 +308,7 @@ if ($action === 'update_profile') {
         $phoneDigits = substr($phoneDigits, 2);
     }
     if (empty($phoneDigits)) {
-        $phoneDigits = $_SESSION['phone_number'] ?? '9876543210';
+        $phoneDigits = $_SESSION['phone_number'] ?? '';
     }
 
     // Normalize DOB & Auto Calculate Exact Age

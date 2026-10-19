@@ -939,9 +939,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const docName = currentSelectedWorkshop?.speaker || currentSelectedWorkshop?.instructor || currentSelectedWorkshop?.assign_speaker || workshopDoctorName?.textContent.trim() || 'Dr. Ananya Mehta';
       const docRole = currentSelectedWorkshop?.speaker_role || workshopDoctorRole?.textContent.trim() || 'Ayurveda Physician';
 
-      const patientName = cachedPatientObj?.full_name || cachedUserObj?.full_name || 'Rahul Sharma';
-      const patientEmail = cachedPatientObj?.email || cachedUserObj?.email || 'rahulsharma@gmail.com';
-      const patientPhone = cachedPatientObj?.phone_number || cachedUserObj?.phone_number || '9876543210';
+      const patientName = cachedPatientObj?.full_name || cachedUserObj?.full_name || 'Patient';
+      const patientEmail = cachedPatientObj?.email || cachedUserObj?.email || '';
+      const patientPhone = cachedPatientObj?.phone_number || cachedUserObj?.phone_number || '';
 
       // Save workshop checkout data into localStorage
       const workshopBooking = {

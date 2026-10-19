@@ -123,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Synchronize authenticated user header details & Your Details section
   const applyUserHeader = (user, patient) => {
-    const fullName = patient?.full_name || user?.full_name || 'Rahul Sharma';
-    const patientId = patient?.patient_id || ('P00' + (user?.id || 1));
+    const fullName = patient?.full_name || user?.full_name || 'Patient';
+    const patientId = patient?.patient_id || (user?.id ? 'P00' + user.id : '--');
 
     const userName = document.getElementById('userName');
     if (userName) userName.textContent = fullName;
@@ -286,9 +286,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentProfileEmail = storedPatientObj?.email || storedUserObj?.email;
     const currentProfilePhone = storedPatientObj?.phone_number || storedUserObj?.phone_number;
 
-    const patName = currentProfileName || data.patientName || 'Rahul Sharma';
-    const patEmail = currentProfileEmail || data.patientEmail || 'rahulsharma@gmail.com';
-    const patPhone = currentProfilePhone || data.patientPhone || '9876543210';
+    const patName = currentProfileName || data.patientName || 'Patient';
+    const patEmail = currentProfileEmail || data.patientEmail || '';
+    const patPhone = currentProfilePhone || data.patientPhone || '';
 
     if (displayPatientName) displayPatientName.textContent = patName;
     if (displayPatientEmail) displayPatientEmail.textContent = patEmail;
@@ -357,16 +357,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!loaded && !activeWorkshopData) {
       const storedUserObj = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
       const storedPatientObj = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
-      const pName = storedPatientObj?.full_name || storedUserObj?.full_name || 'Rahul Sharma';
-      const pEmail = storedPatientObj?.email || storedUserObj?.email || 'rahulsharma@gmail.com';
-      const pPhone = storedPatientObj?.phone_number || storedUserObj?.phone_number || '9876543210';
+      const pName = storedPatientObj?.full_name || storedUserObj?.full_name || 'Patient';
+      const pEmail = storedPatientObj?.email || storedUserObj?.email || '';
+      const pPhone = storedPatientObj?.phone_number || storedUserObj?.phone_number || '';
 
       renderWorkshopData({
-        workshopTitle: 'Ayurveda Lifestyle Workshop',
-        doctorName: 'Dr. Ananya Mehta',
-        date: '2 September 2026',
-        time: '08:00 AM',
-        price: 500.00,
+        workshopTitle: 'Ayurveda Workshop',
+        doctorName: 'Ayurveda Expert',
+        date: '--',
+        time: '--',
+        price: 0.00,
         patientName: pName,
         patientEmail: pEmail,
         patientPhone: pPhone
@@ -685,15 +685,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const wsTitle = checkoutWorkshopTitle?.textContent.trim() || activeWorkshopData?.workshopTitle || 'Ayurveda Lifestyle Workshop';
-      const dateText = checkoutDateVal?.textContent.trim() || activeWorkshopData?.date || '2 September 2026';
-      const timeText = checkoutTimeVal?.textContent.trim() || activeWorkshopData?.time || '08:00 AM';
-      const feeText = checkoutSummaryTotal?.textContent.trim() || '₹500.00';
-      const numericAmount = parseFloat(feeText.replace(/[^0-9.]/g, '')) || 500.00;
+      const wsTitle = checkoutWorkshopTitle?.textContent.trim() || activeWorkshopData?.workshopTitle || 'Ayurveda Workshop';
+      const dateText = checkoutDateVal?.textContent.trim() || activeWorkshopData?.date || '--';
+      const timeText = checkoutTimeVal?.textContent.trim() || activeWorkshopData?.time || '--';
+      const feeText = checkoutSummaryTotal?.textContent.trim() || '₹0.00';
+      const numericAmount = parseFloat(feeText.replace(/[^0-9.]/g, '')) || 0.00;
 
-      const patName = displayPatientName?.textContent.trim() || editPatientName?.value.trim() || 'Rahul Sharma';
-      const patEmail = displayPatientEmail?.textContent.trim() || editPatientEmail?.value.trim() || 'rahulsharma@gmail.com';
-      const patPhone = displayPatientPhone?.textContent.trim() || editPatientPhone?.value.trim() || '9876543210';
+      const patName = displayPatientName?.textContent.trim() || editPatientName?.value.trim() || 'Patient';
+      const patEmail = displayPatientEmail?.textContent.trim() || editPatientEmail?.value.trim() || '';
+      const patPhone = displayPatientPhone?.textContent.trim() || editPatientPhone?.value.trim() || '';
 
       // Keep user profile up to date
       await syncUpdatedProfileDetails(patName, patEmail, patPhone);

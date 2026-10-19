@@ -56,8 +56,8 @@ echo json_encode([
         'role' => $_SESSION['role'] ?? 'Patient'
     ],
     'patient' => $patient ? $patient : [
-        'patient_id' => $_SESSION['patient_id'] ?? 'P001',
-        'full_name' => $_SESSION['full_name'] ?? 'Rahul Sharma',
+        'patient_id' => $_SESSION['patient_id'] ?? ('P00' . $userId),
+        'full_name' => $_SESSION['full_name'] ?? 'Patient',
         'phone_number' => $phone,
         'status' => 'Ongoing'
     ]

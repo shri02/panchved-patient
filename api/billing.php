@@ -123,15 +123,15 @@ if (!$patient) {
 
 if (!$patient) {
     $patient = [
-        'id' => 1,
-        'patient_id' => 'P001',
-        'full_name' => 'Rahul Sharma',
-        'phone_number' => '9876543210',
-        'email' => 'rahulsharma@gmail.com',
-        'gender' => 'Male',
-        'age' => 34,
-        'package_name' => 'Gut Healing Package',
-        'total_appointments' => 4,
+        'id' => $_SESSION['patient_id'] ?? 1,
+        'patient_id' => !empty($_SESSION['patient_id']) ? ('P00' . $_SESSION['patient_id']) : 'P001',
+        'full_name' => $_SESSION['full_name'] ?? 'Patient',
+        'phone_number' => $_SESSION['phone_number'] ?? '',
+        'email' => $_SESSION['email'] ?? '',
+        'gender' => '--',
+        'age' => '--',
+        'package_name' => '',
+        'total_appointments' => 0,
         'status' => 'Ongoing'
     ];
 }

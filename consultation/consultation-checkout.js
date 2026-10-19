@@ -202,9 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 1. Initialize Consultation Booking Data from localStorage
+  // 1. Initialize Consultation Booking Data from localStorage or session
   try {
     const stored = (localStorage.getItem('ocayur_consultation_booking') || localStorage.getItem('panchved_consultation_booking'));
+    const storedUserObj = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || '{}');
+    const storedPatientObj = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || '{}');
+
     if (stored) {
       activeBookingData = JSON.parse(stored);
       const data = activeBookingData;
@@ -217,13 +220,29 @@ document.addEventListener('DOMContentLoaded', () => {
         checkoutTimeVal.textContent = data.time || `${data.startTime} - ${data.endTime || '07:45 PM'}`;
       }
 
-      if (data.patientName && displayPatientName) displayPatientName.textContent = data.patientName;
-      if (data.patientEmail && displayPatientEmail) displayPatientEmail.textContent = data.patientEmail;
-      if (data.patientPhone && displayPatientPhone) displayPatientPhone.textContent = data.patientPhone;
+      const pName = data.patientName || storedPatientObj?.full_name || storedUserObj?.full_name || '';
+      const pEmail = data.patientEmail || storedPatientObj?.email || storedUserObj?.email || '';
+      const pPhone = data.patientPhone || storedPatientObj?.phone_number || storedUserObj?.phone_number || '';
 
-      if (data.patientName && editPatientName) editPatientName.value = data.patientName;
-      if (data.patientEmail && editPatientEmail) editPatientEmail.value = data.patientEmail;
-      if (data.patientPhone && editPatientPhone) editPatientPhone.value = data.patientPhone;
+      if (displayPatientName) displayPatientName.textContent = pName || '--';
+      if (displayPatientEmail) displayPatientEmail.textContent = pEmail || '--';
+      if (displayPatientPhone) displayPatientPhone.textContent = pPhone || '--';
+
+      if (editPatientName) editPatientName.value = pName;
+      if (editPatientEmail) editPatientEmail.value = pEmail;
+      if (editPatientPhone) editPatientPhone.value = pPhone;
+    } else {
+      const pName = storedPatientObj?.full_name || storedUserObj?.full_name || '';
+      const pEmail = storedPatientObj?.email || storedUserObj?.email || '';
+      const pPhone = storedPatientObj?.phone_number || storedUserObj?.phone_number || '';
+
+      if (displayPatientName) displayPatientName.textContent = pName || '--';
+      if (displayPatientEmail) displayPatientEmail.textContent = pEmail || '--';
+      if (displayPatientPhone) displayPatientPhone.textContent = pPhone || '--';
+
+      if (editPatientName) editPatientName.value = pName;
+      if (editPatientEmail) editPatientEmail.value = pEmail;
+      if (editPatientPhone) editPatientPhone.value = pPhone;
     }
   } catch (e) {
     console.warn('Notice: Error loading consultation booking data:', e);
@@ -305,13 +324,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <span>Processing Payment...</span>
       `;
 
-      const pName = displayPatientName?.textContent.trim() || 'Rahul Sharma';
-      const pEmail = displayPatientEmail?.textContent.trim() || 'rahulsharma@gmail.com';
-      const pPhone = displayPatientPhone?.textContent.trim() || '9876543210';
-      const docName = checkoutDoctorName?.textContent.trim() || activeBookingData?.doctorName || 'Dr. Prerna Nikam';
+      const storedPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient') || localStorage.getItem('ocayur_user')) || '{}');
+      const pName = displayPatientName?.textContent.trim() !== '--' ? displayPatientName?.textContent.trim() : (storedPat.full_name || 'Patient');
+      const pEmail = displayPatientEmail?.textContent.trim() !== '--' ? displayPatientEmail?.textContent.trim() : (storedPat.email || '');
+      const pPhone = displayPatientPhone?.textContent.trim() !== '--' ? displayPatientPhone?.textContent.trim() : (storedPat.phone_number || '');
+      const docName = (checkoutDoctorName?.textContent.trim() && checkoutDoctorName?.textContent.trim() !== 'Consultation') ? checkoutDoctorName.textContent.trim() : (activeBookingData?.doctorName || 'Ayurveda Doctor');
       const docRole = checkoutDoctorRole?.textContent.trim() || activeBookingData?.doctorRole || 'Ayurveda Physician';
-      const dateText = checkoutDateVal?.textContent.trim() || activeBookingData?.date || '2 September 2026';
-      const timeText = checkoutTimeVal?.textContent.trim() || activeBookingData?.time || '07:00 - 07:45 PM';
+      const dateText = (checkoutDateVal?.textContent.trim() && checkoutDateVal?.textContent.trim() !== '--') ? checkoutDateVal.textContent.trim() : (activeBookingData?.date || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }));
+      const timeText = (checkoutTimeVal?.textContent.trim() && checkoutTimeVal?.textContent.trim() !== '--') ? checkoutTimeVal.textContent.trim() : (activeBookingData?.time || '10:00 - 10:45 AM');
       const payMethod = getSelectedPaymentMethod();
 
       let bookingId = '#' + Math.floor(100000 + Math.random() * 900000);

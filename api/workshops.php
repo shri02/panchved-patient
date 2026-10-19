@@ -175,9 +175,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action === 'register' || $action =
     $wsId = isset($input['workshop_id']) ? trim((string)$input['workshop_id']) : (isset($_POST['workshop_id']) ? trim((string)$_POST['workshop_id']) : '');
     $wsNumericId = isset($input['id']) ? intval($input['id']) : (isset($_POST['id']) ? intval($_POST['id']) : 0);
     $wsTitle = isset($input['workshop_title']) ? trim((string)$input['workshop_title']) : (isset($input['title']) ? trim((string)$input['title']) : '');
-    $patientName = isset($input['patient_name']) ? trim((string)$input['patient_name']) : 'Rahul Sharma';
-    $patientEmail = isset($input['patient_email']) ? trim((string)$input['patient_email']) : 'rahulsharma@gmail.com';
-    $patientPhone = isset($input['patient_phone']) ? trim((string)$input['patient_phone']) : '9876543210';
+    $patientName = !empty($input['patient_name']) ? trim((string)$input['patient_name']) : ($_SESSION['full_name'] ?? 'Patient');
+    $patientEmail = !empty($input['patient_email']) ? trim((string)$input['patient_email']) : ($_SESSION['email'] ?? '');
+    $patientPhone = !empty($input['patient_phone']) ? trim((string)$input['patient_phone']) : ($_SESSION['phone_number'] ?? '');
     $patientId = isset($input['patient_id']) ? intval($input['patient_id']) : (isset($_SESSION['patient_id']) ? intval($_SESSION['patient_id']) : 1);
     $paymentMethod = isset($input['payment_method']) ? trim((string)$input['payment_method']) : 'Card';
     $amount = isset($input['amount']) ? (float)$input['amount'] : 500.00;

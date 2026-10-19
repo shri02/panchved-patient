@@ -154,7 +154,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.patient) {
           if (patientNameHeader) patientNameHeader.textContent = data.patient.full_name;
           if (patientIdHeader) patientIdHeader.textContent = data.patient.patient_id;
-          if (patientAvatarEl) patientAvatarEl.textContent = data.patient.initials || 'RS';
+          if (patientAvatarEl) {
+            patientAvatarEl.textContent = data.patient.initials || (data.patient.full_name ? data.patient.full_name.charAt(0).toUpperCase() : 'PT');
+          }
         }
 
         // Doctor Header Update

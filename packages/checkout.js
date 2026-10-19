@@ -521,9 +521,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (checkoutDate) checkoutDate.textContent = data.date || '2 September 2026';
       if (checkoutTime) checkoutTime.textContent = data.time || '08:00 AM';
 
-      const pName = currentProfileName || data.patientName || 'Rahul Sharma';
-      const pEmail = currentProfileEmail || data.patientEmail || 'rahulsharma@gmail.com';
-      const pPhone = currentProfilePhone || data.patientPhone || '9876543210';
+      const fallbackPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient') || localStorage.getItem('ocayur_user')) || '{}');
+      const pName = currentProfileName || data.patientName || fallbackPat.full_name || 'Patient';
+      const pEmail = currentProfileEmail || data.patientEmail || fallbackPat.email || '';
+      const pPhone = currentProfilePhone || data.patientPhone || fallbackPat.phone_number || '';
 
       if (displayPatientName) displayPatientName.textContent = pName;
       if (displayPatientEmail) displayPatientEmail.textContent = pEmail;
@@ -559,9 +560,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (priceItemText && data.date) priceItemText.innerHTML = `Date: <strong>${data.date}</strong>`;
         if (durationItemText && data.time) durationItemText.innerHTML = `Time: <strong>${data.time}</strong>`;
 
-        const pName = currentProfileName || data.patientName || 'Rahul Sharma';
-        const pEmail = currentProfileEmail || data.patientEmail || 'rahulsharma@gmail.com';
-        const pPhone = currentProfilePhone || data.patientPhone || '9876543210';
+        const fallbackPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient') || localStorage.getItem('ocayur_user')) || '{}');
+        const pName = currentProfileName || data.patientName || fallbackPat.full_name || 'Patient';
+        const pEmail = currentProfileEmail || data.patientEmail || fallbackPat.email || '';
+        const pPhone = currentProfilePhone || data.patientPhone || fallbackPat.phone_number || '';
 
         if (displayPatientName) displayPatientName.textContent = pName;
         if (displayPatientEmail) displayPatientEmail.textContent = pEmail;
@@ -606,9 +608,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      const pName = currentProfileName || activeBookingData?.patientName || 'Rahul Sharma';
-      const pEmail = currentProfileEmail || activeBookingData?.patientEmail || 'rahulsharma@gmail.com';
-      const pPhone = currentProfilePhone || activeBookingData?.patientPhone || '9876543210';
+      const fallbackPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient') || localStorage.getItem('ocayur_user')) || '{}');
+      const pName = currentProfileName || activeBookingData?.patientName || fallbackPat.full_name || 'Patient';
+      const pEmail = currentProfileEmail || activeBookingData?.patientEmail || fallbackPat.email || '';
+      const pPhone = currentProfilePhone || activeBookingData?.patientPhone || fallbackPat.phone_number || '';
 
       if (displayPatientName) displayPatientName.textContent = pName;
       if (displayPatientEmail) displayPatientEmail.textContent = pEmail;
@@ -842,11 +845,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <span>Processing Payment...</span>
       `;
 
-      const pName = displayPatientName?.textContent.trim() || editPatientName?.value.trim() || 'Rahul Sharma';
-      const pEmail = displayPatientEmail?.textContent.trim() || editPatientEmail?.value.trim() || 'rahulsharma@gmail.com';
-      const pPhone = displayPatientPhone?.textContent.trim() || editPatientPhone?.value.trim() || '9876543210';
+      const fallbackPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient') || localStorage.getItem('ocayur_user')) || '{}');
+      const pName = displayPatientName?.textContent.trim() || editPatientName?.value.trim() || fallbackPat.full_name || 'Patient';
+      const pEmail = displayPatientEmail?.textContent.trim() || editPatientEmail?.value.trim() || fallbackPat.email || '';
+      const pPhone = displayPatientPhone?.textContent.trim() || editPatientPhone?.value.trim() || fallbackPat.phone_number || '';
       const payMethod = getSelectedPaymentMethod();
-      const currentPkgTitle = cleanPackageTitle(consultDetailsHeading?.textContent || activeBookingData?.packageTitle || 'Reset Your Hormones');
+      const currentPkgTitle = cleanPackageTitle(consultDetailsHeading?.textContent || activeBookingData?.packageTitle || 'Health Package');
 
       // Keep user profile up to date
       await syncUpdatedProfileDetails(pName, pEmail, pPhone);

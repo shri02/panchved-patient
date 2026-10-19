@@ -105,9 +105,9 @@ function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAp
         $parsedApptPresc = json_decode($rawApptPresc, true);
     }
 
-    $resolvedPatientName = !empty($patientName) ? $patientName : ($pRow['full_name'] ?? ($prescRow['patient_name'] ?? 'Rahul Sharma'));
-    $resolvedGender = $pRow['gender'] ?? ($parsedApptPresc['gender'] ?? 'Male');
-    $resolvedAge = !empty($pRow['age']) ? (int)$pRow['age'] : (!empty($parsedApptPresc['age']) ? (int)$parsedApptPresc['age'] : 34);
+    $resolvedPatientName = !empty($patientName) ? $patientName : ($pRow['full_name'] ?? ($prescRow['patient_name'] ?? ($_SESSION['full_name'] ?? 'Patient')));
+    $resolvedGender = $pRow['gender'] ?? ($parsedApptPresc['gender'] ?? '--');
+    $resolvedAge = !empty($pRow['age']) ? (int)$pRow['age'] : (!empty($parsedApptPresc['age']) ? (int)$parsedApptPresc['age'] : '--');
 
     $resolvedDate = !empty($appt['appointment_date']) ? $appt['appointment_date'] : ($prescRow['prescription_date'] ?? date('Y-m-d'));
     $resolvedTime = !empty($appt['appointment_time']) ? $appt['appointment_time'] : ($prescRow['prescription_time'] ?? '11:20 AM');
@@ -350,9 +350,9 @@ if (!$data || !is_array($data)) {
 
 $doctorName = isset($data['doctor_name']) ? trim($data['doctor_name']) : (isset($data['doctorName']) ? trim($data['doctorName']) : 'Dr. Nidhi Jha');
 $doctorRole = isset($data['doctor_role']) ? trim($data['doctor_role']) : (isset($data['doctorRole']) ? trim($data['doctorRole']) : 'Ayurveda Physician');
-$patientName = isset($data['patient_name']) ? trim($data['patient_name']) : (isset($data['patientName']) ? trim($data['patientName']) : 'Rahul Sharma');
-$patientEmail = isset($data['patient_email']) ? trim($data['patient_email']) : (isset($data['patientEmail']) ? trim($data['patientEmail']) : 'rahulsharma@gmail.com');
-$patientPhone = isset($data['patient_phone']) ? trim($data['patient_phone']) : (isset($data['patientPhone']) ? trim($data['patientPhone']) : '9876543210');
+$patientName = !empty($data['patient_name']) ? trim($data['patient_name']) : (!empty($data['patientName']) ? trim($data['patientName']) : ($_SESSION['full_name'] ?? 'Patient'));
+$patientEmail = !empty($data['patient_email']) ? trim($data['patient_email']) : (!empty($data['patientEmail']) ? trim($data['patientEmail']) : ($_SESSION['email'] ?? ''));
+$patientPhone = !empty($data['patient_phone']) ? trim($data['patient_phone']) : (!empty($data['patientPhone']) ? trim($data['patientPhone']) : ($_SESSION['phone_number'] ?? ''));
 $appointmentDateRaw = isset($data['appointment_date']) ? trim($data['appointment_date']) : (isset($data['date']) ? trim($data['date']) : date('Y-m-d'));
 $appointmentTime = isset($data['appointment_time']) ? trim($data['appointment_time']) : (isset($data['time']) ? trim($data['time']) : '07:00 - 07:45 PM');
 $duration = isset($data['duration']) ? trim($data['duration']) : '45 min';

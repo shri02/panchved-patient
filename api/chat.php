@@ -93,7 +93,7 @@ if (!empty($_GET['patient_id'])) {
     }
 }
 
-// Fallback to first patient in database (e.g. Rahul Sharma, ID 1)
+// Fallback to first patient in database (e.g. ID 1)
 if ($patientId <= 0) {
     $qPatFirst = mysqli_query($connection1, "SELECT id FROM patients ORDER BY id ASC LIMIT 1");
     if ($qPatFirst && $fRow = mysqli_fetch_assoc($qPatFirst)) {
@@ -114,10 +114,10 @@ mysqli_stmt_close($patStmt);
 if (!$patientInfo) {
     $patientInfo = [
         'id' => $patientId,
-        'patient_id' => 'P001',
-        'full_name' => 'Rahul Sharma',
-        'phone_number' => '9876543210',
-        'package_name' => 'Stresscare',
+        'patient_id' => $_SESSION['patient_id'] ?? ('P00' . $patientId),
+        'full_name' => $_SESSION['full_name'] ?? 'Patient',
+        'phone_number' => $_SESSION['phone_number'] ?? '',
+        'package_name' => 'General Consultation',
         'status' => 'Ongoing'
     ];
 }

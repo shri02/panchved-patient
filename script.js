@@ -1256,7 +1256,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (phoneInput && phoneInput.value.trim()) {
           registrationState.phone = phoneInput.value.trim();
         } else {
-          registrationState.phone = '9876543210';
+          showToast('Please enter your phone number to complete registration.', true);
+          return;
         }
       }
 

@@ -1028,20 +1028,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const docRole = document.getElementById('doctorRole')?.textContent.trim() || currentSelectedPackage?.doctor?.role || 'Ayurveda Physician';
 
       // Retrieve authenticated patient / user information
-      let pName = 'Rahul Sharma';
-      let pEmail = 'rahulsharma@gmail.com';
-      let pPhone = '9876543210';
-      let pId = 'P001';
+      let pName = '';
+      let pEmail = '';
+      let pPhone = '';
+      let pId = '';
       try {
         const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
         const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
         if (storedPatient || storedUser) {
-          pName = storedPatient?.full_name || storedUser?.full_name || pName;
-          pEmail = storedPatient?.email || storedUser?.email || pEmail;
-          pPhone = storedPatient?.phone_number || storedUser?.phone_number || pPhone;
-          pId = storedPatient?.patient_id || (storedUser?.id ? ('P00' + storedUser.id) : pId);
+          pName = storedPatient?.full_name || storedUser?.full_name || '';
+          pEmail = storedPatient?.email || storedUser?.email || '';
+          pPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
+          pId = storedPatient?.patient_id || (storedUser?.id ? ('P00' + storedUser.id) : '');
         }
-      } catch (err) { }
+      } catch (e) {}
 
       const rawPrice = (currentSelectedPackage?.price !== undefined && currentSelectedPackage?.price !== null && !isNaN(parseFloat(currentSelectedPackage.price)))
         ? parseFloat(currentSelectedPackage.price)

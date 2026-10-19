@@ -34,7 +34,7 @@
     <a href="../dashboard/dashboard.html" class="mobile-logo-link">
       <img src="../assets/logo.svg" alt="Ocayur Logo" class="mobile-logo-img" />
     </a>
-    <a href="../profile/profile.html" class="mobile-user-avatar" title="Rahul Sharma (P001)">
+    <a href="../profile/profile.html" class="mobile-user-avatar" title="Patient Profile">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
         <circle cx="12" cy="7" r="4"></circle>
@@ -164,7 +164,7 @@
         </div>
 
         <!-- User Profile Pill -->
-        <a href="../profile/profile.html" class="user-profile-card" id="userProfileCard" aria-label="User profile: Rahul Sharma, Patient ID P001">
+        <a href="../profile/profile.html" class="user-profile-card" id="userProfileCard" aria-label="User profile">
           <div class="user-avatar" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -172,8 +172,8 @@
             </svg>
           </div>
           <div class="user-meta">
-            <span class="user-name" id="userName">Rahul Sharma</span>
-            <span class="user-patient-id" id="patientId">P001</span>
+            <span class="user-name" id="userName">--</span>
+            <span class="user-patient-id" id="patientId">--</span>
           </div>
         </a>
       </header>
@@ -186,15 +186,15 @@
           
           <!-- Card 1: Package Details (Doctor, Profession, Starting Price, Duration) -->
           <section class="checkout-card" aria-labelledby="consultDetailsHeading">
-            <h2 class="checkout-card-title" id="consultDetailsHeading">Reset Your Hormones</h2>
+            <h2 class="checkout-card-title" id="consultDetailsHeading">Package Details</h2>
             
             <div class="doctor-badge-card checkout-doctor-row" id="checkoutDoctorBadgeRow">
               <div class="doctor-avatar" aria-hidden="true">
-                <span id="checkoutAvatarText">NJ</span>
+                <span id="checkoutAvatarText">DR</span>
               </div>
               <div class="doctor-info">
-                <h3 class="doctor-name" id="checkoutDoctorName">Dr. Nidhi Jha</h3>
-                <p class="doctor-role" id="checkoutDoctorRole">Ayurveda Physician (Pediatrics & Gynecology)</p>
+                <h3 class="doctor-name" id="checkoutDoctorName">--</h3>
+                <p class="doctor-role" id="checkoutDoctorRole">Ayurveda Physician</p>
               </div>
             </div>
 
@@ -206,7 +206,7 @@
                     <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                   </svg>
                 </span>
-                <span class="timing-text" id="checkoutPriceText">Starting at <strong id="checkoutPriceVal">₹7,999</strong> / month</span>
+                <span class="timing-text" id="checkoutPriceText">Starting at <strong id="checkoutPriceVal">--</strong> / month</span>
               </div>
 
               <div class="timing-item" id="checkoutDurationRow">
@@ -218,7 +218,7 @@
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                   </svg>
                 </span>
-                <span class="timing-text" id="checkoutDurationText"><strong id="checkoutDurationVal">3 Months</strong></span>
+                <span class="timing-text" id="checkoutDurationText"><strong id="checkoutDurationVal">--</strong></span>
               </div>
             </div>
           </section>
@@ -238,9 +238,9 @@
 
             <!-- Static Details View -->
             <div class="patient-details-view" id="patientDetailsView">
-              <p class="detail-name" id="displayPatientName">Rahul Sharma</p>
-              <p class="detail-email" id="displayPatientEmail">rahulsharma@gmail.com</p>
-              <p class="detail-phone" id="displayPatientPhone">9876543210</p>
+              <p class="detail-name" id="displayPatientName">--</p>
+              <p class="detail-email" id="displayPatientEmail">--</p>
+              <p class="detail-phone" id="displayPatientPhone">--</p>
             </div>
 
             <!-- In-place Edit Form (Initially Hidden) -->
@@ -248,15 +248,15 @@
               <div class="edit-fields-grid">
                 <div class="form-group">
                   <label class="form-field-label">Name<span class="required-star">*</span></label>
-                  <input type="text" id="editPatientName" class="modal-input" value="Rahul Sharma" placeholder="Full Name" required />
+                  <input type="text" id="editPatientName" class="modal-input" value="" placeholder="Full Name" required />
                 </div>
                 <div class="form-group">
                   <label class="form-field-label">Email<span class="required-star">*</span></label>
-                  <input type="email" id="editPatientEmail" class="modal-input" value="rahulsharma@gmail.com" placeholder="Email Address" required />
+                  <input type="email" id="editPatientEmail" class="modal-input" value="" placeholder="Email Address" required />
                 </div>
                 <div class="form-group">
                   <label class="form-field-label">Phone<span class="required-star">*</span></label>
-                  <input type="tel" id="editPatientPhone" class="modal-input" value="9876543210" placeholder="10-digit Phone Number" maxlength="10" required />
+                  <input type="tel" id="editPatientPhone" class="modal-input" value="" placeholder="10-digit Phone Number" maxlength="10" required />
                 </div>
               </div>
               <div class="edit-form-actions">
@@ -333,7 +333,7 @@
             <div class="summary-breakdown">
               <div class="summary-row">
                 <span class="summary-label" id="checkoutSummaryFeeLabel">Package fee</span>
-                <span class="summary-amount-teal" id="checkoutSummaryFee">₹7,999.00</span>
+                <span class="summary-amount-teal" id="checkoutSummaryFee">--</span>
               </div>
             </div>
 
@@ -341,7 +341,7 @@
 
             <div class="summary-total-row">
               <span class="total-label">Total</span>
-              <span class="total-amount" id="checkoutSummaryTotal">₹7,999.00</span>
+              <span class="total-amount" id="checkoutSummaryTotal">--</span>
             </div>
 
             <!-- Confirm Payment Button (Triggers Screen 5 Success Modal) -->

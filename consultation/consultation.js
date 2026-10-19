@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   data-doctor="${escapeHtml(doctorName)}" 
                   data-duration="${escapeHtml(durationVal)}" 
                   data-agenda="${escapeHtml(agendaText)}"
-                  data-patient="${escapeHtml(appt.patient_name || 'Rahul Sharma')}"
+                  data-patient="${escapeHtml(appt.patient_name || '')}"
                   data-prescription="${escapeHtml(prescriptionData)}"
                   data-notes="${escapeHtml(appt.notes || '')}"
                 >
@@ -757,7 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
               data-doctor="${escapeHtml(doctorName)}" 
               data-duration="${escapeHtml(durationVal)}" 
               data-agenda="${escapeHtml(agendaText)}"
-              data-patient="${escapeHtml(appt.patient_name || 'Rahul Sharma')}"
+              data-patient="${escapeHtml(appt.patient_name || '')}"
               data-prescription="${escapeHtml(prescriptionData)}"
               data-notes="${escapeHtml(appt.notes || '')}"
             >
@@ -885,19 +885,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const rxReferralSpecialty = document.getElementById('rxReferralSpecialty');
     const rxContactText = document.getElementById('rxContactText');
 
-    if (rxDate) rxDate.textContent = formatDate(rx.date || rx.prescription_date) || rx.date || '2 Sept 2026';
-    if (rxTime) rxTime.textContent = rx.time || rx.prescription_time || '07:00 - 07:45 PM';
-    if (rxPatientName) rxPatientName.textContent = rx.patient_name || 'Rahul Sharma';
-    if (rxGender) rxGender.textContent = rx.gender || 'Male';
-    if (rxAge) rxAge.textContent = rx.age || '34';
+    const currentHeaderName = document.getElementById('userName')?.textContent?.trim();
+    if (rxDate) rxDate.textContent = formatDate(rx.date || rx.prescription_date) || rx.date || '--';
+    if (rxTime) rxTime.textContent = rx.time || rx.prescription_time || '--';
+    if (rxPatientName) rxPatientName.textContent = rx.patient_name || currentHeaderName || '--';
+    if (rxGender) rxGender.textContent = rx.gender || '--';
+    if (rxAge) rxAge.textContent = rx.age ? `${rx.age}` : '--';
 
     if (rxMedHistory) rxMedHistory.textContent = rx.medical_history || 'No Known Significant Medical History';
-    if (rxSymptoms) rxSymptoms.textContent = rx.symptoms || 'Constipation (Severity : Moderate)';
-    if (rxDiagnosis) rxDiagnosis.textContent = rx.diagnosis || 'Migraine (Duration : 3 months)';
-    if (rxFindings) rxFindings.textContent = rx.examination_findings || 'Abdomen Feels Distended';
-    if (rxNotes) rxNotes.textContent = rx.notes || 'Gandhush ( Cow Ghee + Triphala Powder )';
+    if (rxSymptoms) rxSymptoms.textContent = rx.symptoms || '--';
+    if (rxDiagnosis) rxDiagnosis.textContent = rx.diagnosis || '--';
+    if (rxFindings) rxFindings.textContent = rx.examination_findings || '--';
+    if (rxNotes) rxNotes.textContent = rx.notes || '--';
 
-    if (rxReferralDoctor) rxReferralDoctor.textContent = rx.referred_doctor || rx.doctor_name || 'Dr. Ananya Prasad';
+    if (rxReferralDoctor) rxReferralDoctor.textContent = rx.referred_doctor || rx.doctor_name || '--';
     if (rxReferralSpecialty) rxReferralSpecialty.textContent = rx.referred_specialty || rx.doctor_specialty || 'Ayurvedic Medicine';
     if (rxContactText) {
       const phone = rx.support_phone || rx.doctor_phone || '+91 7896543210';
@@ -1596,8 +1597,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fallbacks if no user session data exists
-    if (!name) name = 'Rahul Sharma';
-    if (!phone) phone = '9876543210';
+    if (!name) name = '';
+    if (!phone) phone = '';
 
     // Format phone to 10 digits
     let cleanPhone = String(phone || '').replace(/\D/g, '');

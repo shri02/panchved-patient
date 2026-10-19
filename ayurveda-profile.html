@@ -54,17 +54,16 @@
         </div>
 
         <!-- Profile Type Name -->
-        <h2 class="profile-type-title" id="profileTypeName">Agni</h2>
+        <h2 class="profile-type-title" id="profileTypeName">--</h2>
 
         <!-- Profile Description -->
         <p class="profile-description" id="profileDescription">
-          Your assessment indicates Agni. Your responses suggest that digestion, sleep and stress management may be
-          important areas to focus on.
+          Loading your Ayurveda profile...
         </p>
 
         <!-- Action Button (Navigates to Dashboard) -->
         <a href="dashboard/dashboard.html" class="btn-primary btn-explore" id="explorePackagesBtn">
-          <span>Explore Packages</span>
+          <span>Go to Dashboard</span>
         </a>
       </div>
     </section>
@@ -116,15 +115,30 @@
         const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
         const assessment = JSON.parse((localStorage.getItem('ocayur_prakruti_result') || localStorage.getItem('panchved_prakruti_result')) || 'null');
 
-        if (assessment && profileTypeName && profileDescription) {
-          if (assessment.title || assessment.type) {
-            profileTypeName.textContent = assessment.title || assessment.type;
-          }
-          if (assessment.description) {
+        if (assessment && (assessment.title || assessment.type)) {
+          if (profileTypeName) profileTypeName.textContent = assessment.title || assessment.type;
+          if (profileDescription && assessment.description) {
             profileDescription.textContent = assessment.description;
           }
+        } else if (storedPatient?.prakruti || storedUser?.prakruti) {
+          const dosha = storedPatient?.prakruti || storedUser?.prakruti;
+          if (profileTypeName) profileTypeName.textContent = dosha;
+          if (profileDescription) {
+            profileDescription.textContent = `Your Ayurvedic constitutional profile reflects ${dosha}. Follow your customized dietary, herbal, and daily lifestyle routines recommended by your doctor.`;
+          }
+        } else {
+          // Informative fallback
+          if (profileTypeName) profileTypeName.textContent = 'Ayurvedic Wellness Profile';
+          if (profileDescription) {
+            profileDescription.textContent = 'Your personalized Prakruti & Dosha evaluation helps craft your holistic healing plan. Consult with your Ayurvedic doctor to receive your full constitution assessment.';
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        if (profileTypeName) profileTypeName.textContent = 'Ayurvedic Wellness Profile';
+        if (profileDescription) {
+          profileDescription.textContent = 'Consult with your Ayurvedic doctor to receive your personalized Prakruti assessment.';
+        }
+      }
 
       // Handle explore packages navigation
       if (explorePackagesBtn) {

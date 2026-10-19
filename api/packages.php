@@ -579,9 +579,9 @@ if ($requestMethod === 'POST') {
     $rawPackageName = isset($data['package_name']) ? trim($data['package_name']) : (isset($data['packageTitle']) ? trim($data['packageTitle']) : 'Gut Healing Package');
     $packageName = cleanPackageName($rawPackageName);
     if (empty($packageName)) $packageName = 'Gut Healing Package';
-    $patientName = isset($data['patient_name']) ? trim($data['patient_name']) : (isset($data['patientName']) ? trim($data['patientName']) : 'Rahul Sharma');
-    $patientEmail = isset($data['patient_email']) ? trim($data['patient_email']) : (isset($data['patientEmail']) ? trim($data['patientEmail']) : 'rahulsharma@gmail.com');
-    $patientPhone = isset($data['patient_phone']) ? trim($data['patient_phone']) : (isset($data['patientPhone']) ? trim($data['patientPhone']) : (isset($data['phone_number']) ? trim($data['phone_number']) : '9876543210'));
+    $patientName = !empty($data['patient_name']) ? trim($data['patient_name']) : (!empty($data['patientName']) ? trim($data['patientName']) : ($_SESSION['full_name'] ?? 'Patient'));
+    $patientEmail = !empty($data['patient_email']) ? trim($data['patient_email']) : (!empty($data['patientEmail']) ? trim($data['patientEmail']) : ($_SESSION['email'] ?? ''));
+    $patientPhone = !empty($data['patient_phone']) ? trim($data['patient_phone']) : (!empty($data['patientPhone']) ? trim($data['patientPhone']) : (!empty($data['phone_number']) ? trim($data['phone_number']) : ($_SESSION['phone_number'] ?? '')));
     $patientId = isset($data['patient_id']) ? trim($data['patient_id']) : ($_SESSION['patient_id'] ?? '');
 
     $doctorName = isset($data['doctor_name']) ? trim($data['doctor_name']) : (isset($data['doctorName']) ? trim($data['doctorName']) : 'Dr. Ananya Mehta');
