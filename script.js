@@ -9,6 +9,17 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Page Loader Overlay Logic
+  const pageLoader = document.getElementById('pageLoader');
+  const hidePageLoader = () => {
+    if (!pageLoader) return;
+    pageLoader.classList.add('hidden');
+    setTimeout(() => {
+      pageLoader.style.display = 'none';
+    }, 450);
+  };
+  setTimeout(hidePageLoader, 350);
+
   // Elements - Containers & Views
   const loginPageContainer = document.querySelector('.login-page-container');
   const loginCard = document.getElementById('loginCard');

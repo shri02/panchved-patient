@@ -4,6 +4,17 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Page Loader Overlay Logic
+  const pageLoader = document.getElementById('pageLoader');
+  const hidePageLoader = () => {
+    if (!pageLoader) return;
+    pageLoader.classList.add('hidden');
+    setTimeout(() => {
+      pageLoader.style.display = 'none';
+    }, 450);
+  };
+  setTimeout(hidePageLoader, 2500);
+
   // State
   let activeDoctorId = 1;
   let allDoctors = [];
@@ -186,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error('Error loading chat:', err);
     } finally {
+      hidePageLoader();
       if (btnManualRefresh) {
         setTimeout(() => {
           btnManualRefresh.classList.remove('refreshing');
