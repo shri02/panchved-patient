@@ -244,6 +244,68 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Helper: Normalize package name for robust comparison
+  const normalizePackageName = (name) => {
+    if (!name || typeof name !== 'string') return '';
+    return name
+      .toLowerCase()
+      .replace(/\s*-\s*consultation\s*$/i, '')
+      .replace(/\s*consultation\s*$/i, '')
+      .replace(/\s*-\s*consultation\b/i, '')
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+  };
+
+  // Helper: Check if package is already booked / enrolled by current patient
+  const isPackageAlreadyEnrolled = (pkg) => {
+    if (!pkg) return false;
+    const targetId = pkg.id || null;
+    const targetPkgCode = pkg.package_id || null;
+    const targetName = normalizePackageName(pkg.package_name || pkg.packageTitle || pkg.title);
+
+    // 1. Check categoriesData.my
+    if (Array.isArray(categoriesData.my) && categoriesData.my.length > 0) {
+      const foundInMy = categoriesData.my.some(bp => {
+        if (!bp) return false;
+        const bpId = bp.id || null;
+        const bpPkgCode = bp.package_id || null;
+        const bpName = normalizePackageName(bp.package_name || bp.packageTitle || bp.title);
+        if (targetId && bpId && String(targetId) === String(bpId)) return true;
+        if (targetPkgCode && bpPkgCode && String(targetPkgCode).toUpperCase() === String(bpPkgCode).toUpperCase()) return true;
+        if (targetId && bpPkgCode && String(targetId).toUpperCase() === String(bpPkgCode).toUpperCase()) return true;
+        if (targetPkgCode && bpId && String(targetPkgCode).toUpperCase() === String(bpId).toUpperCase()) return true;
+        if (targetName && bpName) {
+          if (targetName === bpName) return true;
+          if ((targetName.length >= 6 && bpName.includes(targetName)) || (bpName.length >= 6 && targetName.includes(bpName))) return true;
+        }
+        return false;
+      });
+      if (foundInMy) return true;
+    }
+
+    // 2. Check localStorage 'ocayur_booked_packages'
+    try {
+      const localBooked = JSON.parse(localStorage.getItem('ocayur_booked_packages') || '[]');
+      if (Array.isArray(localBooked) && localBooked.length > 0) {
+        const foundInLocal = localBooked.some(lb => {
+          if (!lb) return false;
+          const lbName = normalizePackageName(lb.package_name || lb.packageTitle);
+          const lbId = lb.package_id || lb.packageDbId || lb.id || null;
+          if (targetId && lbId && String(targetId) === String(lbId)) return true;
+          if (targetPkgCode && lbId && String(targetPkgCode).toUpperCase() === String(lbId).toUpperCase()) return true;
+          if (targetName && lbName) {
+            if (targetName === lbName) return true;
+            if ((targetName.length >= 6 && lbName.includes(targetName)) || (lbName.length >= 6 && targetName.includes(lbName))) return true;
+          }
+          return false;
+        });
+        if (foundInLocal) return true;
+      }
+    } catch (e) {}
+
+    return false;
+  };
+
   // 1. Switcher: Packages List (Screen 1) vs Package Details (Screen 2)
   const populatePackageDetailsView = (pkg) => {
     if (!pkg) return;
@@ -284,21 +346,75 @@ document.addEventListener('DOMContentLoaded', () => {
       doctorAvatarText.textContent = doc.initials || 'DR';
     }
 
-    // Check if the current package is already booked
+    // Check if the current package is already booked / enrolled
+    const isAlreadyBooked = isPackageAlreadyEnrolled(pkg);
+
+    // Remove any previous details enrolled box
+    const oldDetailsEnrolledBox = document.getElementById('packageAlreadyEnrolledBox');
+    if (oldDetailsEnrolledBox) oldDetailsEnrolledBox.remove();
+
     if (bookConsultationBtn) {
-      const isAlreadyBooked = categoriesData.my && categoriesData.my.some(bp => bp.package_name && bp.package_name.toLowerCase() === (pkg.package_name || '').toLowerCase());
       if (isAlreadyBooked) {
+        bookConsultationBtn.disabled = true;
+        bookConsultationBtn.classList.add('is-enrolled-btn');
+        bookConsultationBtn.style.cursor = 'default';
+        bookConsultationBtn.style.backgroundColor = '#15803d';
+        bookConsultationBtn.style.opacity = '0.95';
         bookConsultationBtn.innerHTML = `
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
           <span>Enrolled (Active Package)</span>
         `;
-        bookConsultationBtn.style.backgroundColor = '#15803d';
+
+        // Direct action box below CTA
+        const enrolledBox = document.createElement('div');
+        enrolledBox.id = 'packageAlreadyEnrolledBox';
+        enrolledBox.className = 'package-already-enrolled-box';
+        enrolledBox.style.cssText = 'background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 16px 20px; margin-top: 18px; display: flex; flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box;';
+        enrolledBox.innerHTML = `
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" style="flex-shrink: 0; margin-top: 2px;">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <div>
+              <strong style="color: #065f46; font-size: 14.5px; display: block; margin-bottom: 3px;">You are already enrolled in this health package!</strong>
+              <p style="color: #047857; font-size: 13px; line-height: 1.45; margin: 0;">Your personalized Ayurvedic treatment protocol is active. Re-registering or paying again is not permitted.</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap;">
+            <button type="button" id="btnGoToMyPackagesFromDetails" class="btn-package-action" style="padding: 7px 14px; font-size: 12.5px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+              <span>View in My Packages</span>
+            </button>
+            <a href="../consultation/consultation.html" class="btn-package-secondary" style="padding: 7px 14px; font-size: 12.5px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+              <span>Consult Assigned Doctor</span>
+            </a>
+          </div>
+        `;
+
+        if (bookConsultationBtn.parentNode) {
+          bookConsultationBtn.parentNode.insertBefore(enrolledBox, bookConsultationBtn.nextSibling);
+        }
+
+        const myPkgBtn = document.getElementById('btnGoToMyPackagesFromDetails');
+        if (myPkgBtn) {
+          myPkgBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPackagesList();
+            switchCategory('my');
+          });
+        }
       } else {
+        bookConsultationBtn.disabled = false;
+        bookConsultationBtn.classList.remove('is-enrolled-btn');
+        bookConsultationBtn.style.cursor = '';
+        bookConsultationBtn.style.backgroundColor = '';
+        bookConsultationBtn.style.opacity = '';
         const priceLabel = pkg.price_formatted || (pkg.price ? `₹${parseFloat(pkg.price).toLocaleString('en-IN')}` : '');
         bookConsultationBtn.innerHTML = `<span>Book Package${priceLabel ? ` (${priceLabel})` : ''}</span>`;
-        bookConsultationBtn.style.backgroundColor = '';
       }
     }
   };
@@ -439,10 +555,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const pkgId = btn.getAttribute('data-id') || card?.getAttribute('data-id') || btn.getAttribute('data-package-id');
         const pkgName = btn.getAttribute('data-package') || card?.getAttribute('data-package') || card?.querySelector('.package-title')?.textContent.trim();
         const matched = loadedPackages.find(p => (pkgId && (p.id == pkgId || p.package_id === pkgId)) || (pkgName && p.package_name && p.package_name.toLowerCase() === pkgName.toLowerCase()));
+        
+        if (matched && isPackageAlreadyEnrolled(matched)) {
+          showToast('You are already enrolled in this health package.', true);
+          showPackageDetail(matched);
+          return;
+        }
+
         if (matched) {
           currentSelectedPackage = matched;
           populatePackageDetailsView(matched);
-          if (bookConsultationBtn) {
+          if (bookConsultationBtn && !bookConsultationBtn.disabled) {
             bookConsultationBtn.click();
           }
         } else {
@@ -564,8 +687,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (currentActiveCategory === 'recommended') {
       // Category 2: Recommended Packages Section
-      packagesListSection.innerHTML = pkgs.map(pkg => `
-        <article class="package-card recommended-card" id="pkg_${pkg.package_id || pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-id="${pkg.id}" data-package="${pkg.package_name}">
+      packagesListSection.innerHTML = pkgs.map(pkg => {
+        const isEnrolled = isPackageAlreadyEnrolled(pkg);
+        return `
+        <article class="package-card recommended-card ${isEnrolled ? 'is-package-enrolled-card' : ''}" id="pkg_${pkg.package_id || pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-id="${pkg.id}" data-package="${pkg.package_name}">
          
          <div class="package-card-image-wrapper">
   <img
@@ -578,11 +703,19 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
         
         <div class="package-header">
-            <div class="package-recommend-pill">
-              <svg width="13" height="13" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-              </svg>
-              <span>Recommended by ${pkg.recommended_by_doctor || pkg.doctor?.name || 'Dr. Nidhi Jha'}</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <div class="package-recommend-pill">
+                <svg width="13" height="13" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+                <span>Recommended by ${pkg.recommended_by_doctor || pkg.doctor?.name || 'Dr. Nidhi Jha'}</span>
+              </div>
+              ${isEnrolled ? `
+                <span class="package-enrolled-pill">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Enrolled</span>
+                </span>
+              ` : ''}
             </div>
             <h2 class="package-title">${pkg.package_name}</h2>
             <p class="package-subtitle">${pkg.short_description || pkg.overview || 'Specially recommended for holistic healing.'}</p>
@@ -629,13 +762,21 @@ document.addEventListener('DOMContentLoaded', () => {
               <button type="button" class="btn-package-secondary btn-package-action" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
                 <span>View Details</span>
               </button>
-              <button type="button" class="btn-package-action btn-direct-book-package" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
-                <span>Book Package</span>
-              </button>
+              ${isEnrolled ? `
+                <button type="button" class="btn-package-action btn-package-enrolled" disabled>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Enrolled</span>
+                </button>
+              ` : `
+                <button type="button" class="btn-package-action btn-direct-book-package" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
+                  <span>Book Package</span>
+                </button>
+              `}
             </div>
           </div>
         </article>
-      `).join('');
+      `;
+      }).join('');
     } else if (currentActiveCategory === 'my') {
       // Category 3: My Packages Section (Booked packages)
       packagesListSection.innerHTML = pkgs.map(pkg => `
@@ -707,8 +848,10 @@ document.addEventListener('DOMContentLoaded', () => {
       `).join('');
     } else {
       // Category 1: All Packages Section (All health packages added to the portal system)
-      packagesListSection.innerHTML = pkgs.map(pkg => `
-        <article class="package-card" id="pkg_${pkg.package_id || pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-id="${pkg.id}" data-package="${pkg.package_name}">
+      packagesListSection.innerHTML = pkgs.map(pkg => {
+        const isEnrolled = isPackageAlreadyEnrolled(pkg);
+        return `
+        <article class="package-card ${isEnrolled ? 'is-package-enrolled-card' : ''}" id="pkg_${pkg.package_id || pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-id="${pkg.id}" data-package="${pkg.package_name}">
           <div class="package-card-image-wrapper">
   <img
     class="package-card-image"
@@ -720,6 +863,14 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
         
         <div class="package-header">
+            ${isEnrolled ? `
+              <div style="margin-bottom: 6px;">
+                <span class="package-enrolled-pill">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Enrolled (Active Package)</span>
+                </span>
+              </div>
+            ` : ''}
             <h2 class="package-title">${pkg.package_name}</h2>
             <p class="package-subtitle">${pkg.short_description || pkg.overview || 'Suitable for holistic health restoration.'}</p>
           </div>
@@ -760,13 +911,21 @@ document.addEventListener('DOMContentLoaded', () => {
               <button type="button" class="btn-package-secondary btn-package-action" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
                 <span>View Details</span>
               </button>
-              <button type="button" class="btn-package-action btn-direct-book-package" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
-                <span>Book Package</span>
-              </button>
+              ${isEnrolled ? `
+                <button type="button" class="btn-package-action btn-package-enrolled" disabled>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Enrolled</span>
+                </button>
+              ` : `
+                <button type="button" class="btn-package-action btn-direct-book-package" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
+                  <span>Book Package</span>
+                </button>
+              `}
             </div>
           </div>
         </article>
-      `).join('');
+      `;
+      }).join('');
     }
 
     bindPackageCardEvents();
@@ -857,6 +1016,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (bookConsultationBtn) {
     bookConsultationBtn.addEventListener('click', (e) => {
       e.preventDefault();
+
+      if (currentSelectedPackage && isPackageAlreadyEnrolled(currentSelectedPackage)) {
+        showToast('You are already enrolled in this health package.', true);
+        return;
+      }
 
       const rawPkgTitle = detailPkgTitle?.textContent.trim() || currentSelectedPackage?.package_name || 'Gut Healing Package';
       const pkgTitle = rawPkgTitle.replace(/\s*-\s*consultation\s*$/i, '').replace(/\s*consultation\s*$/i, '').replace(/\s*-\s*consultation\b/i, '').trim();

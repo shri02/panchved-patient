@@ -2428,6 +2428,57 @@ body {
   color: #004d40;
 }
 
+/* Package Already Enrolled Actions & Badges */
+.btn-package-action.btn-package-enrolled,
+.btn-package-action.is-enrolled-btn {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+  cursor: default !important;
+  opacity: 0.95;
+  box-shadow: none !important;
+}
+
+.btn-package-action.btn-package-enrolled:hover,
+.btn-package-action.is-enrolled-btn:hover {
+  background-color: #15803d !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.package-enrolled-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background-color: #ecfdf5;
+  color: #047857;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid #a7f3d0;
+}
+
+.btn-book-consultation.is-enrolled-btn {
+  background-color: #15803d !important;
+  cursor: default !important;
+  box-shadow: none !important;
+  opacity: 0.95;
+}
+
+.btn-book-consultation.is-enrolled-btn:hover {
+  background-color: #15803d !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.package-already-enrolled-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  width: 100%;
+}
+
 /* ========================================================
    Package Details View (Screen 2)
    ======================================================== */

@@ -282,10 +282,129 @@ document.addEventListener('DOMContentLoaded', () => {
     if (receiptAmount) receiptAmount.textContent = formatted;
   };
 
+  // Helper: Normalize package name for robust comparison
+  const normalizePackageName = (name) => {
+    if (!name || typeof name !== 'string') return '';
+    return name
+      .toLowerCase()
+      .replace(/\s*-\s*consultation\s*$/i, '')
+      .replace(/\s*consultation\s*$/i, '')
+      .replace(/\s*-\s*consultation\b/i, '')
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+  };
+
+  // Helper: Check if current patient is already enrolled in target package
+  const checkPackageAlreadyEnrolled = async (pkgName, pkgId) => {
+    const targetName = normalizePackageName(pkgName);
+    const targetId = pkgId ? String(pkgId) : null;
+
+    // 1. Check local storage
+    try {
+      const localBooked = JSON.parse(localStorage.getItem('ocayur_booked_packages') || '[]');
+      if (Array.isArray(localBooked) && localBooked.length > 0) {
+        const found = localBooked.some(lb => {
+          if (!lb) return false;
+          const lbName = normalizePackageName(lb.package_name || lb.packageTitle);
+          const lbId = lb.package_id || lb.packageDbId || lb.id ? String(lb.package_id || lb.packageDbId || lb.id) : null;
+          if (targetId && lbId && (targetId === lbId || targetId.toUpperCase() === lbId.toUpperCase())) return true;
+          if (targetName && lbName) {
+            if (targetName === lbName) return true;
+            if ((targetName.length >= 6 && lbName.includes(targetName)) || (lbName.length >= 6 && targetName.includes(lbName))) return true;
+          }
+          return false;
+        });
+        if (found) return true;
+      }
+    } catch (e) {}
+
+    // 2. Check backend API
+    try {
+      const params = new URLSearchParams();
+      params.append('action', 'my_packages');
+      if (cachedPhone) params.append('phone', cachedPhone);
+      if (cachedPatientId) params.append('patient_id', cachedPatientId);
+      const res = await fetch(`../api/packages.php?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.packages)) {
+          const found = data.packages.some(bp => {
+            if (!bp) return false;
+            const bpName = normalizePackageName(bp.package_name || bp.packageTitle);
+            const bpId = bp.package_id || bp.id ? String(bp.package_id || bp.id) : null;
+            if (targetId && bpId && (targetId === bpId || targetId.toUpperCase() === bpId.toUpperCase())) return true;
+            if (targetName && bpName) {
+              if (targetName === bpName) return true;
+              if ((targetName.length >= 6 && bpName.includes(targetName)) || (bpName.length >= 6 && targetName.includes(bpName))) return true;
+            }
+            return false;
+          });
+          if (found) return true;
+        }
+      }
+    } catch (e) {}
+
+    return false;
+  };
+
+  // Helper: Show Already Enrolled UI on Checkout
+  const showAlreadyEnrolledCheckoutUI = (pkgTitle) => {
+    const existingBanner = document.getElementById('checkoutAlreadyEnrolledBanner');
+    if (!existingBanner) {
+      const banner = document.createElement('div');
+      banner.id = 'checkoutAlreadyEnrolledBanner';
+      banner.className = 'checkout-already-registered-alert';
+      banner.style.cssText = 'background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; gap: 14px; align-items: flex-start;';
+      banner.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" style="flex-shrink: 0; margin-top: 2px;">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <div>
+          <strong style="color: #065f46; font-size: 15px; display: block; margin-bottom: 4px;">You are already enrolled in this health package!</strong>
+          <p style="color: #047857; font-size: 13.5px; margin: 0 0 12px 0;">Your active treatment protocol for <strong>${pkgTitle || 'this package'}</strong> is already confirmed. Re-enrolling or paying again is not permitted.</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="package.html#my-packages" class="btn-package-action" style="padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>View in My Packages</span>
+            </a>
+            <a href="package.html" class="btn-package-secondary" style="padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>Back to Packages</span>
+            </a>
+          </div>
+        </div>
+      `;
+      const container = document.querySelector('.checkout-container') || document.querySelector('.checkout-layout-grid') || document.querySelector('.checkout-grid') || document.querySelector('main');
+      if (container) {
+        container.insertBefore(banner, container.firstChild);
+      }
+    }
+
+    if (confirmPaymentBtn) {
+      confirmPaymentBtn.disabled = true;
+      confirmPaymentBtn.style.backgroundColor = '#15803d';
+      confirmPaymentBtn.style.opacity = '0.92';
+      confirmPaymentBtn.style.cursor = 'not-allowed';
+      confirmPaymentBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span style="margin-left: 8px;">Already Enrolled</span>
+      `;
+    }
+  };
+
   // 1. Synchronize Package & Doctor Details Dynamically from Database
   const applyPackageData = (pkg) => {
     if (!pkg) return;
     const cleanTitle = cleanPackageTitle(pkg.package_name) || 'Health Package';
+
+    if (isPackageCheckout) {
+      checkPackageAlreadyEnrolled(cleanTitle, pkg.id || pkg.package_id).then(isEnrolled => {
+        if (isEnrolled) {
+          showAlreadyEnrolledCheckoutUI(cleanTitle);
+        }
+      });
+    }
     activeBookingData = activeBookingData || {};
     activeBookingData.packageDbId = pkg.id;
     activeBookingData.packageId = pkg.package_id;
@@ -492,6 +611,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetId = qId || activeBookingData?.packageDbId || null;
       const targetPkgCode = qPkgId || activeBookingData?.packageId || null;
       const targetName = qName || cleanPackageTitle(activeBookingData?.packageTitle) || 'Reset Your Hormones';
+
+      checkPackageAlreadyEnrolled(targetName, targetId || targetPkgCode).then(isEnrolled => {
+        if (isEnrolled) {
+          showAlreadyEnrolledCheckoutUI(targetName);
+        }
+      });
 
       fetchPackageFromDB(targetId, targetPkgCode, targetName);
     }
@@ -732,6 +857,26 @@ document.addEventListener('DOMContentLoaded', () => {
         finalAmount = 7999.00;
       }
 
+      // If this is a package checkout, check again before submitting payment
+      if (isPackageCheckout) {
+        const isEnrolled = await checkPackageAlreadyEnrolled(currentPkgTitle, activeBookingData?.packageDbId || activeBookingData?.packageId);
+        if (isEnrolled) {
+          confirmPaymentBtn.disabled = true;
+          confirmPaymentBtn.style.opacity = '0.92';
+          confirmPaymentBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span style="margin-left: 8px;">Already Enrolled</span>
+          `;
+          showToast('You are already enrolled in this health package.', true);
+          showAlreadyEnrolledCheckoutUI(currentPkgTitle);
+          return;
+        }
+      }
+
+      let paymentSuccessful = false;
+
       try {
         // Handle Package enrollment via api/packages.php
         const bookingPayload = {
@@ -762,6 +907,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.ok) {
           const resData = await res.json();
           if (resData.success) {
+            paymentSuccessful = true;
             if (resData.booking_id) {
               bookingId = resData.booking_id;
             }
@@ -800,38 +946,62 @@ document.addEventListener('DOMContentLoaded', () => {
               }
               localStorage.setItem('ocayur_booked_packages', JSON.stringify(localBooked));
             } catch (e) {}
+          } else {
+            showToast(resData.message || 'Payment could not be completed.', true);
+            if (resData.already_enrolled) {
+              showAlreadyEnrolledCheckoutUI(currentPkgTitle);
+            }
           }
+        } else {
+          try {
+            const errData = await res.json();
+            showToast(errData.message || 'Booking could not be processed.', true);
+            if (errData.already_enrolled) {
+              showAlreadyEnrolledCheckoutUI(currentPkgTitle);
+            }
+          } catch(e) {}
         }
       } catch (backendErr) {
         console.warn('Backend sync notice:', backendErr);
       }
 
-      setTimeout(() => {
-        confirmPaymentBtn.disabled = false;
-        confirmPaymentBtn.style.opacity = '1';
-        confirmPaymentBtn.innerHTML = originalHtml;
+      if (paymentSuccessful) {
+        setTimeout(() => {
+          confirmPaymentBtn.disabled = false;
+          confirmPaymentBtn.style.opacity = '1';
+          confirmPaymentBtn.innerHTML = originalHtml;
 
-        if (receiptBookingId) {
-          receiptBookingId.textContent = bookingId;
-        }
+          if (receiptBookingId) {
+            receiptBookingId.textContent = bookingId;
+          }
 
-        const formattedFinalAmount = formatAmount(finalAmount);
-        if (receiptAmount) {
-          receiptAmount.textContent = formattedFinalAmount;
-        }
-        if (successPaymentAmount) {
-          successPaymentAmount.textContent = formattedFinalAmount;
-        }
+          const formattedFinalAmount = formatAmount(finalAmount);
+          if (receiptAmount) {
+            receiptAmount.textContent = formattedFinalAmount;
+          }
+          if (successPaymentAmount) {
+            successPaymentAmount.textContent = formattedFinalAmount;
+          }
 
-        // Open Screen 5: Booking Success Modal
-        if (bookingSuccessModal) {
-          bookingSuccessModal.classList.add('active');
-          bookingSuccessModal.setAttribute('aria-hidden', 'false');
-          document.body.style.overflow = 'hidden';
-        }
+          // Open Screen 5: Booking Success Modal
+          if (bookingSuccessModal) {
+            bookingSuccessModal.classList.add('active');
+            bookingSuccessModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+          }
 
-        showToast('Payment successful! Booking confirmed.');
-      }, 600);
+          showToast('Payment successful! Booking confirmed.');
+        }, 600);
+      } else {
+        const isStillEnrolled = await checkPackageAlreadyEnrolled(currentPkgTitle, activeBookingData?.packageDbId || activeBookingData?.packageId);
+        if (isStillEnrolled) {
+          showAlreadyEnrolledCheckoutUI(currentPkgTitle);
+        } else {
+          confirmPaymentBtn.disabled = false;
+          confirmPaymentBtn.style.opacity = '1';
+          confirmPaymentBtn.innerHTML = originalHtml;
+        }
+      }
     });
   }
 
