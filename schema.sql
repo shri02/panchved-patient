@@ -300,6 +300,25 @@ INSERT INTO `patient_packages` (`id`, `booking_id`, `patient_id`, `patient_phone
 (2, '#731409', 1, '9876543210', 3, 'Stresscare & Sleep Optimization', 1, 'Dr. Nidhi Jha', 4500.00, DATE_SUB(CURDATE(), INTERVAL 14 DAY), 'Ongoing')
 ON DUPLICATE KEY UPDATE `package_name` = VALUES(`package_name`), `status` = VALUES(`status`);
 
+-- ----------------------------------------------------------------------------
+-- Table: patient_diets (Personalized Diet Plans & Uploaded PDF Charts)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `patient_diets` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `patient_id` INT(11) NOT NULL,
+  `doctor_id` INT(11) DEFAULT NULL,
+  `doctor_name` VARCHAR(150) DEFAULT NULL,
+  `notes` TEXT DEFAULT NULL,
+  `pdf_path` VARCHAR(255) DEFAULT NULL,
+  `file_name` VARCHAR(255) DEFAULT NULL,
+  `file_size` INT(11) DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_diet_patient_id` (`patient_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 COMMIT;
+
 
 

@@ -31,6 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeDietModalBtn = document.getElementById('closeDietModalBtn');
   const dietPlanPara1 = document.getElementById('dietPlanPara1');
   const dietPlanPara2 = document.getElementById('dietPlanPara2');
+  const quickDietPdfLink = document.getElementById('quickDietPdfLink');
+  const dietPdfCard = document.getElementById('dietPdfCard');
+  const dietPdfTitle = document.getElementById('dietPdfTitle');
+  const dietPdfMeta = document.getElementById('dietPdfMeta');
+  const dietPdfViewBtn = document.getElementById('dietPdfViewBtn');
+  const dietPdfDownloadBtn = document.getElementById('dietPdfDownloadBtn');
   const logoutBtn = document.getElementById('logoutBtn');
 
   // Memory Stores
@@ -721,6 +727,38 @@ setTimeout(() => {
     }
     if (dietPlanPara2) {
       dietPlanPara2.textContent = p2 || 'A customized daily wellness schedule comprising diet, hydration, physical activity, and Ayurvedic practices as per the doctor\'s protocol. Relieves bloating, improves digestion, boosts vitality and enhances nutrient absorption.';
+    }
+
+    // PDF attachment handling
+    const hasPdf = Boolean(dietData.has_pdf && dietData.pdf_url);
+    const pdfUrl = dietData.pdf_url || '';
+    const downloadUrl = dietData.download_url || pdfUrl;
+    const pdfName = dietData.pdf_name || 'Diet_Chart.pdf';
+    const fileSize = dietData.file_size ? ` • ${dietData.file_size}` : '';
+    const updated = dietData.updated_at ? ` • Updated ${dietData.updated_at}` : '';
+
+    if (quickDietPdfLink) {
+      if (hasPdf) {
+        quickDietPdfLink.href = pdfUrl;
+        quickDietPdfLink.style.display = 'inline-flex';
+      } else {
+        quickDietPdfLink.style.display = 'none';
+      }
+    }
+
+    if (dietPdfCard) {
+      if (hasPdf) {
+        dietPdfCard.style.display = 'flex';
+        if (dietPdfTitle) dietPdfTitle.textContent = pdfName;
+        if (dietPdfMeta) dietPdfMeta.textContent = `PDF Document${fileSize}${updated}`;
+        if (dietPdfViewBtn) dietPdfViewBtn.href = pdfUrl;
+        if (dietPdfDownloadBtn) {
+          dietPdfDownloadBtn.href = downloadUrl;
+          dietPdfDownloadBtn.setAttribute('download', pdfName);
+        }
+      } else {
+        dietPdfCard.style.display = 'none';
+      }
     }
   };
 

@@ -481,6 +481,12 @@ body {
   justify-content: space-between;
 }
 
+.my-package-action-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .link-view-diet {
   color: var(--primary-teal);
   font-size: 14px;
@@ -492,6 +498,28 @@ body {
 .link-view-diet:hover {
   color: var(--primary-teal-hover);
   text-decoration: underline;
+}
+
+.link-quick-diet-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.link-quick-diet-pdf:hover {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+  transform: translateY(-1px);
 }
 
 .my-package-body {
@@ -1416,6 +1444,106 @@ body {
 
 .diet-plan-para:last-child {
   margin-bottom: 0;
+}
+
+/* ==========================================================================
+   Attached Diet PDF Card in View Diet Modal
+   ========================================================================== */
+.diet-pdf-attachment-card {
+  margin-top: 18px;
+  background: #fdfbf7;
+  border: 1.5px solid #eee5d8;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.diet-pdf-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.diet-pdf-badge-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.diet-pdf-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.diet-pdf-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diet-pdf-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.diet-pdf-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-diet-pdf-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background-color: #723F1E;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-diet-pdf-view:hover {
+  background-color: #5D3318;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-diet-pdf-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background-color: #ffffff;
+  color: #475569;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-diet-pdf-download:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
 }
 
 @media (max-width: 540px) {

@@ -458,7 +458,16 @@
 
           <h2 id="myPackageHeading" class="section-card-title">My Package</h2>
 
-          <a href="../packages/package.html" class="link-view-diet" id="viewDietBtn">View Diet</a>
+          <div class="my-package-action-group">
+            <a href="../packages/package.html" class="link-view-diet" id="viewDietBtn">View Diet</a>
+            <a href="#" class="link-quick-diet-pdf" id="quickDietPdfLink" target="_blank" style="display: none;" title="Open Doctor Diet Chart (PDF)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span>Diet PDF</span>
+            </a>
+          </div>
 
         </div>
 
@@ -997,6 +1006,41 @@
           <p class="diet-plan-para" id="dietPlanPara1"></p>
 
           <p class="diet-plan-para" id="dietPlanPara2"></p>
+
+          <!-- Attached Diet Chart PDF Card -->
+          <div class="diet-pdf-attachment-card" id="dietPdfCard" style="display: none;">
+            <div class="diet-pdf-card-header">
+              <div class="diet-pdf-badge-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="9" y1="13" x2="15" y2="13"></line>
+                  <line x1="9" y1="17" x2="15" y2="17"></line>
+                </svg>
+              </div>
+              <div class="diet-pdf-info">
+                <span class="diet-pdf-title" id="dietPdfTitle">Diet Chart Document</span>
+                <span class="diet-pdf-meta" id="dietPdfMeta">PDF • Attached by Physician</span>
+              </div>
+            </div>
+            <div class="diet-pdf-actions">
+              <a href="#" target="_blank" class="btn-diet-pdf-view" id="dietPdfViewBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>View PDF</span>
+              </a>
+              <a href="#" class="btn-diet-pdf-download" id="dietPdfDownloadBtn" download>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download</span>
+              </a>
+            </div>
+          </div>
 
         </div>
 

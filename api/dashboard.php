@@ -405,6 +405,147 @@ function calculatePackageProgress($patient, $package)
     ];
 }
 
+function getPatientDietPlan($connection, $patient, $packageProgress)
+{
+    $patientDbId = (int)($patient['id'] ?? 0);
+    $patientCode = (string)($patient['patient_id'] ?? '');
+
+    $docDiet = null;
+
+    // 1. Check patient_diets table in MySQL
+    if ($patientDbId > 0 && tableExists($connection, 'patient_diets')) {
+        $stmt = mysqli_prepare($connection, "SELECT * FROM `patient_diets` WHERE `patient_id` = ? ORDER BY `id` DESC LIMIT 1");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "i", $patientDbId);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            if ($row = mysqli_fetch_assoc($res)) {
+                $docDiet = $row;
+            }
+            mysqli_stmt_close($stmt);
+        }
+    }
+
+    // 2. Check diets_data.json
+    $jsonPaths = [
+        __DIR__ . '/../uploads/diets/diets_data.json',
+        __DIR__ . '/../../panchved/uploads/diets/diets_data.json'
+    ];
+    $jsonRecord = null;
+    foreach ($jsonPaths as $jp) {
+        if (file_exists($jp)) {
+            $data = json_decode(file_get_contents($jp), true);
+            if (is_array($data)) {
+                if (isset($data[(string)$patientDbId])) {
+                    $jsonRecord = $data[(string)$patientDbId];
+                    break;
+                }
+                if ($patientCode !== '' && isset($data[$patientCode])) {
+                    $jsonRecord = $data[$patientCode];
+                    break;
+                }
+            }
+        }
+    }
+
+    $notes = '';
+    $pdfRelPath = '';
+    $fileName = '';
+    $fileSize = 0;
+    $updatedAt = '';
+    $doctorName = 'Dr. Nidhi Jha';
+
+    if ($docDiet) {
+        $notes = trim((string)($docDiet['notes'] ?? ''));
+        $pdfRelPath = trim((string)($docDiet['pdf_path'] ?? ''));
+        $fileName = trim((string)($docDiet['file_name'] ?? ''));
+        $fileSize = (int)($docDiet['file_size'] ?? 0);
+        $updatedAt = (string)($docDiet['updated_at'] ?? $docDiet['created_at'] ?? '');
+        $doctorName = trim((string)($docDiet['doctor_name'] ?? 'Dr. Nidhi Jha'));
+    } elseif ($jsonRecord) {
+        $notes = trim((string)($jsonRecord['notes'] ?? ''));
+        $pdfRelPath = trim((string)($jsonRecord['pdf_url'] ?? $jsonRecord['pdf_filename'] ?? ''));
+        $fileName = trim((string)($jsonRecord['original_filename'] ?? basename($pdfRelPath)));
+        $fileSize = (int)($jsonRecord['file_size'] ?? 0);
+        $updatedAt = (string)($jsonRecord['updated_at'] ?? '');
+        $doctorName = trim((string)($jsonRecord['doctor_name'] ?? 'Dr. Nidhi Jha'));
+    }
+
+    // Verify if PDF file actually exists on server
+    $pdfExists = false;
+    $actualFile = null;
+    if (!empty($pdfRelPath)) {
+        $checkList = [
+            __DIR__ . '/../' . ltrim($pdfRelPath, '/\\'),
+            __DIR__ . '/../../panchved/' . ltrim($pdfRelPath, '/\\'),
+            __DIR__ . '/../uploads/diets/' . basename($pdfRelPath),
+            __DIR__ . '/../../panchved/uploads/diets/' . basename($pdfRelPath)
+        ];
+        foreach ($checkList as $chk) {
+            if (file_exists($chk) && is_file($chk)) {
+                $pdfExists = true;
+                $actualFile = $chk;
+                if ($fileSize <= 0) {
+                    $fileSize = (int)filesize($chk);
+                }
+                break;
+            }
+        }
+    }
+
+    // Also scan for any diet PDF for this patient if not found yet
+    if (!$pdfExists && $patientDbId > 0) {
+        $dirsToScan = [
+            __DIR__ . '/../uploads/diets',
+            __DIR__ . '/../../panchved/uploads/diets'
+        ];
+        foreach ($dirsToScan as $dir) {
+            if (is_dir($dir)) {
+                $matched = glob($dir . '/diet_' . $patientDbId . '_*.pdf');
+                if (!empty($matched)) {
+                    usort($matched, fn($a, $b) => filemtime($b) - filemtime($a));
+                    $pdfExists = true;
+                    $actualFile = $matched[0];
+                    $fileName = $fileName ?: basename($actualFile);
+                    $fileSize = (int)filesize($actualFile);
+                    break;
+                }
+            }
+        }
+    }
+
+    $packageDiet = $packageProgress['diet_plan'] ?? [];
+    $p1 = $notes !== '' ? $notes : ($packageDiet['paragraph_1'] ?? $packageDiet['diet_hydration'] ?? '');
+    $p2 = $packageDiet['paragraph_2'] ?? $packageDiet['dinacharya'] ?? '';
+
+    $formattedSize = '';
+    if ($fileSize > 0) {
+        if ($fileSize >= 1048576) {
+            $formattedSize = round($fileSize / 1048576, 1) . ' MB';
+        } else {
+            $formattedSize = round($fileSize / 1024, 1) . ' KB';
+        }
+    }
+
+    $viewPdfUrl = $pdfExists ? ('../api/dashboard.php?action=view_diet_pdf&patient_id=' . $patientDbId) : null;
+    $downloadPdfUrl = $pdfExists ? ('../api/dashboard.php?action=download_diet_pdf&patient_id=' . $patientDbId) : null;
+
+    return [
+        'patient_id' => $patientDbId,
+        'doctor_name' => $doctorName,
+        'notes' => $notes,
+        'paragraph_1' => $p1,
+        'paragraph_2' => $p2,
+        'paragraphs' => array_values(array_filter([$p1, $p2])),
+        'has_pdf' => $pdfExists,
+        'pdf_name' => $fileName ?: ($pdfExists ? 'Diet_Chart.pdf' : ''),
+        'pdf_url' => $viewPdfUrl,
+        'download_url' => $downloadPdfUrl,
+        'file_size' => $formattedSize,
+        'updated_at' => $updatedAt ? date('d M Y', strtotime($updatedAt)) : date('d M Y')
+    ];
+}
+
 function getNotifications($connection, $patient)
 {
     if (!$connection || !$patient || !tableExists($connection, 'appointments')) {
@@ -759,7 +900,60 @@ $metricsAndGraphs = getLatestMetricsAndGraphs(
 
 $notifications = getNotifications($connection1, $patient);
 
-$dietPlan = $packageProgress['diet_plan'] ?? null;
+$dietPlan = getPatientDietPlan($connection1, $patient, $packageProgress);
+
+/* --------------------------------------------------------------------------
+ * Stream Diet Plan PDF for patient viewing or download
+ * -------------------------------------------------------------------------- */
+if (in_array($action, ['view_diet_pdf', 'download_diet_pdf'], true)) {
+    $candidateFiles = [];
+    $pdfName = !empty($dietPlan['pdf_name']) ? $dietPlan['pdf_name'] : ('diet_chart_' . $patientDbId . '.pdf');
+
+    $dirsToScan = [
+        __DIR__ . '/../uploads/diets',
+        __DIR__ . '/../../panchved/uploads/diets'
+    ];
+
+    if (!empty($dietPlan['pdf_name'])) {
+        foreach ($dirsToScan as $dir) {
+            $candidateFiles[] = $dir . '/' . basename($dietPlan['pdf_name']);
+        }
+    }
+
+    foreach ($dirsToScan as $dir) {
+        if (is_dir($dir)) {
+            $matched = glob($dir . '/diet_' . $patientDbId . '_*.pdf');
+            if (!empty($matched)) {
+                usort($matched, fn($a, $b) => filemtime($b) - filemtime($a));
+                $candidateFiles[] = $matched[0];
+            }
+        }
+    }
+
+    $targetFile = null;
+    foreach ($candidateFiles as $candidate) {
+        if ($candidate && file_exists($candidate) && is_file($candidate)) {
+            $targetFile = $candidate;
+            break;
+        }
+    }
+
+    if ($targetFile) {
+        header('Content-Type: application/pdf');
+        $disposition = ($action === 'download_diet_pdf') ? 'attachment' : 'inline';
+        header('Content-Disposition: ' . $disposition . '; filename="' . rawurlencode($pdfName) . '"');
+        header('Content-Length: ' . filesize($targetFile));
+        header('Cache-Control: private, max-age=3600, must-revalidate');
+        header('Pragma: public');
+        readfile($targetFile);
+        exit();
+    } else {
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Diet plan PDF file not found.';
+        exit();
+    }
+}
 
 $patientResponse = [
     'id' => $patientDbId,
