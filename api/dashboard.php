@@ -138,10 +138,10 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
     ];
 
     if (!$connection || !$patientId && !$phone || !tableExists($connection, 'health_metrics')) {
-        return ['latest' => $metrics, 'graphs' => $graphs];
+        return ['latest' => $metrics, 'graphs' => $graphs, 'has_recorded_today' => false, 'recorded_dates' => [], 'today_date' => date('Y-m-d')];
     }
 
-    $sql = "SELECT id, weight, abdomen, bp, sugar, recorded_date
+    $sql = "SELECT id, weight, abdomen, bp, sugar, recorded_date, created_at
             FROM health_metrics
             WHERE ((patient_id = ? AND ? > 0) OR (patient_phone = ? AND ? <> ''))
               AND recorded_date IS NOT NULL
@@ -150,7 +150,7 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
 
     $stmt = mysqli_prepare($connection, $sql);
     if (!$stmt) {
-        return ['latest' => $metrics, 'graphs' => $graphs];
+        return ['latest' => $metrics, 'graphs' => $graphs, 'has_recorded_today' => false, 'recorded_dates' => [], 'today_date' => date('Y-m-d')];
     }
 
     mysqli_stmt_bind_param($stmt, 'iiss', $patientId, $patientId, $phone, $phone);
@@ -274,7 +274,30 @@ function getLatestMetricsAndGraphs($connection, $patientId, $phone)
     $graphs['bp']['latest'] = $metrics['bp'];
     $graphs['sugar']['latest'] = $metrics['sugar'];
 
-    return ['latest' => $metrics, 'graphs' => $graphs];
+    $recordedDates = [];
+    $hasRecordedToday = false;
+    $todayDate = date('Y-m-d');
+
+    foreach ($readings as $row) {
+        if (!empty($row['recorded_date'])) {
+            $recD = (string)$row['recorded_date'];
+            $recordedDates[] = $recD;
+            if ($recD === $todayDate) {
+                $hasRecordedToday = true;
+            }
+        }
+        if (!empty($row['created_at']) && date('Y-m-d', strtotime($row['created_at'])) === $todayDate) {
+            $hasRecordedToday = true;
+        }
+    }
+
+    return [
+        'latest' => $metrics,
+        'graphs' => $graphs,
+        'has_recorded_today' => $hasRecordedToday,
+        'recorded_dates' => array_values(array_unique($recordedDates)),
+        'today_date' => $todayDate
+    ];
 }
 
 function resolvePatient($connection, $phone, $email, $patientId)
@@ -887,6 +910,53 @@ if ($requestMethod === 'POST' && in_array($action, ['add_reading', 'save_metrics
         sendJsonResponse(false, 'Please enter at least one health metric parameter.', [], 400);
     }
 
+    $dbPatientId = (int)$patient['id'];
+    $patientPhone = (string)($patient['phone_number'] ?? '');
+    $todayDate = date('Y-m-d');
+
+    // Enforce adding health metrics only once per day:
+    // Check if reading already exists for this patient for the specified date
+    // OR if patient has already added a reading today
+    $checkSql = "SELECT id, recorded_date, created_at 
+                 FROM health_metrics 
+                 WHERE ((patient_id = ? AND ? > 0) OR (patient_phone = ? AND ? <> ''))
+                   AND (recorded_date = ? OR DATE(created_at) = CURDATE() OR recorded_date = CURDATE())
+                 LIMIT 1";
+
+    $checkStmt = mysqli_prepare($connection1, $checkSql);
+    if ($checkStmt) {
+        mysqli_stmt_bind_param(
+            $checkStmt,
+            'iisss',
+            $dbPatientId,
+            $dbPatientId,
+            $patientPhone,
+            $patientPhone,
+            $date
+        );
+        mysqli_stmt_execute($checkStmt);
+        $checkRes = mysqli_stmt_get_result($checkStmt);
+        if ($checkRes && ($existingRow = mysqli_fetch_assoc($checkRes))) {
+            mysqli_stmt_close($checkStmt);
+
+            $existingRecDate = $existingRow['recorded_date'] ?? '';
+            $createdToday = (!empty($existingRow['created_at']) && date('Y-m-d', strtotime($existingRow['created_at'])) === $todayDate);
+
+            if ($date === $todayDate || $existingRecDate === $todayDate || $createdToday) {
+                $errorMsg = 'You have already recorded your health metrics for today. Only one reading per day is allowed.';
+            } else {
+                $formattedDate = date('d M Y', strtotime($date));
+                $errorMsg = "Health metrics have already been recorded for {$formattedDate}. Only one reading per day is allowed.";
+            }
+
+            sendJsonResponse(false, $errorMsg, [
+                'already_recorded' => true,
+                'recorded_date' => $existingRecDate ?: $date
+            ], 400);
+        }
+        mysqli_stmt_close($checkStmt);
+    }
+
     $sql = "INSERT INTO health_metrics
             (patient_id, patient_phone, weight, abdomen, bp, sugar, recorded_date, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
@@ -897,20 +967,17 @@ if ($requestMethod === 'POST' && in_array($action, ['add_reading', 'save_metrics
         sendJsonResponse(false, 'Unable to prepare health reading.', [], 500);
     }
 
-    $dbPatientId = (int)$patient['id'];
-    $patientPhone = (string)($patient['phone_number'] ?? '');
-
     mysqli_stmt_bind_param(
-    $stmt,
-    'isddsds',
-    $dbPatientId,
-    $patientPhone,
-    $weight,
-    $abdomen,
-    $bp,
-    $sugar,
-    $date
-);
+        $stmt,
+        'isddsds',
+        $dbPatientId,
+        $patientPhone,
+        $weight,
+        $abdomen,
+        $bp,
+        $sugar,
+        $date
+    );
 
     if (!mysqli_stmt_execute($stmt)) {
         mysqli_stmt_close($stmt);
@@ -928,7 +995,9 @@ if ($requestMethod === 'POST' && in_array($action, ['add_reading', 'save_metrics
     sendJsonResponse(true, 'Health reading saved successfully.', [
         'date' => $date,
         'metrics' => $metricsAndGraphs['latest'],
-        'graphs' => $metricsAndGraphs['graphs']
+        'graphs' => $metricsAndGraphs['graphs'],
+        'has_recorded_today' => true,
+        'recorded_dates' => $metricsAndGraphs['recorded_dates'] ?? [$date]
     ]);
 }
 
@@ -1101,5 +1170,8 @@ sendJsonResponse(true, 'Dashboard data loaded successfully from database.', [
     'diet_plan' => $dietPlan,
     'metrics' => $metricsAndGraphs['latest'],
     'graphs' => $metricsAndGraphs['graphs'],
+    'has_recorded_today' => $metricsAndGraphs['has_recorded_today'] ?? false,
+    'recorded_dates' => $metricsAndGraphs['recorded_dates'] ?? [],
+    'today_date' => $metricsAndGraphs['today_date'] ?? date('Y-m-d'),
     'notifications' => $notifications
 ]);

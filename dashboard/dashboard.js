@@ -353,6 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
             animateDashboardMetrics();
           }
 
+          // 2b. Daily Health Metric State
+          if (data.has_recorded_today !== undefined) {
+            updateAddReadingButtonState(Boolean(data.has_recorded_today));
+          }
+
           // 3. My Package Section
           renderMyPackage(data.my_package);
           if (data.diet_plan || data.my_package?.diet_plan) {
@@ -410,15 +415,80 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
     });
   });
 
+  // Dynamic Daily Metric Availability & Button State Handler
+  const updateAddReadingButtonState = (hasRecordedToday) => {
+    if (!addReadingBtn) return;
+    if (hasRecordedToday) {
+      addReadingBtn.classList.add('already-added');
+      addReadingBtn.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>Reading Added Today</span>
+      `;
+      addReadingBtn.title = 'You have already recorded your health metrics for today. Only one reading per day is allowed.';
+    } else {
+      addReadingBtn.classList.remove('already-added');
+      addReadingBtn.innerHTML = '<span>Add New Reading</span>';
+      addReadingBtn.title = 'Add your daily health reading';
+    }
+  };
+
+  const readingModalNotice = document.getElementById('readingModalNotice');
+  const readingModalNoticeText = document.getElementById('readingModalNoticeText');
+  const btnUpdateReading = document.getElementById('btnUpdateReading');
+
+  const checkDateAvailability = (selectedDate) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const targetDate = selectedDate || todayStr;
+    const isToday = (targetDate === todayStr);
+
+    const alreadyRecordedToday = Boolean(cachedDashboardData?.has_recorded_today);
+    const dateAlreadyRecorded = Boolean(cachedDashboardData?.recorded_dates && cachedDashboardData.recorded_dates.includes(targetDate));
+
+    if ((isToday && alreadyRecordedToday) || dateAlreadyRecorded) {
+      if (readingModalNotice && readingModalNoticeText) {
+        readingModalNoticeText.textContent = isToday
+          ? 'You have already recorded your health metrics for today. Only one reading per day is allowed.'
+          : `Health metrics have already been recorded for this date (${targetDate}). Only one reading per day is allowed.`;
+        readingModalNotice.style.display = 'flex';
+      }
+      if (btnUpdateReading) {
+        btnUpdateReading.disabled = true;
+        btnUpdateReading.title = 'Reading already recorded for this day.';
+      }
+      return false;
+    } else {
+      if (readingModalNotice) {
+        readingModalNotice.style.display = 'none';
+      }
+      if (btnUpdateReading) {
+        btnUpdateReading.disabled = false;
+        btnUpdateReading.removeAttribute('title');
+      }
+      return true;
+    }
+  };
+
   // Modal Dialog Handlers for Add New Reading
   const openReadingModal = () => {
+    if (cachedDashboardData?.has_recorded_today) {
+      showToast('You have already recorded your health metrics for today. Only one reading per day is allowed.', true);
+      return;
+    }
+
     if (readingModalOverlay) {
       readingModalOverlay.style.display = 'flex';
       document.body.style.overflow = 'hidden';
-      // Default to today's date if empty
+      // Default to today's date if empty and restrict future dates
       const readingDateInput = document.getElementById('readingDate');
-      if (readingDateInput && !readingDateInput.value) {
-        readingDateInput.value = new Date().toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (readingDateInput) {
+        readingDateInput.max = todayStr;
+        if (!readingDateInput.value) {
+          readingDateInput.value = todayStr;
+        }
+        checkDateAvailability(readingDateInput.value);
       }
       document.getElementById('readingWeight')?.focus();
     }
@@ -428,6 +498,13 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
     if (readingModalOverlay) {
       readingModalOverlay.style.display = 'none';
       document.body.style.overflow = '';
+      if (readingModalNotice) {
+        readingModalNotice.style.display = 'none';
+      }
+      if (btnUpdateReading) {
+        btnUpdateReading.disabled = false;
+        btnUpdateReading.removeAttribute('title');
+      }
       if (readingForm) readingForm.reset();
     }
   };
@@ -452,13 +529,22 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
     });
   }
 
-  // Clickable Calendar Icon triggers Date Picker
+  // Clickable Calendar Icon triggers Date Picker & Validate On Change
   const btnOpenDatePicker = document.getElementById('btnOpenDatePicker');
   const readingDateInput = document.getElementById('readingDate');
+  if (readingDateInput) {
+    const handleDateValidation = () => {
+      checkDateAvailability(readingDateInput.value.trim());
+    };
+    readingDateInput.addEventListener('change', handleDateValidation);
+    readingDateInput.addEventListener('input', handleDateValidation);
+  }
   if (btnOpenDatePicker && readingDateInput) {
     btnOpenDatePicker.addEventListener('click', (e) => {
       e.preventDefault();
       readingDateInput.type = 'date';
+      const todayStr = new Date().toISOString().split('T')[0];
+      readingDateInput.max = todayStr;
       readingDateInput.focus();
       try {
         if (typeof readingDateInput.showPicker === 'function') {
@@ -604,6 +690,26 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
       const bpInput = document.getElementById('readingBP')?.value.trim();
       const sugarInput = document.getElementById('readingSugar')?.value.trim();
 
+      const todayStr = new Date().toISOString().split('T')[0];
+      const targetDate = dateInput || todayStr;
+
+      // Restrict future date input
+      if (targetDate > todayStr) {
+        showToast('Cannot record health metrics for future dates.', true);
+        return;
+      }
+
+      // Check once-per-day restriction before submitting
+      const alreadyRecordedToday = Boolean(cachedDashboardData?.has_recorded_today);
+      const isToday = (targetDate === todayStr);
+      const dateAlreadyRecorded = Boolean(cachedDashboardData?.recorded_dates && cachedDashboardData.recorded_dates.includes(targetDate));
+
+      if ((isToday && alreadyRecordedToday) || dateAlreadyRecorded) {
+        showToast(isToday ? 'You have already recorded your health metrics for today. Only one reading per day is allowed.' : `Health metrics have already been recorded for this date. Only one reading per day is allowed.`, true);
+        checkDateAvailability(targetDate);
+        return;
+      }
+
       // Ensure no letters are present in any health parameter
       const hasLetters = (val) => typeof val === 'string' && /[a-zA-Z]/.test(val);
       if (hasLetters(weightInput) || hasLetters(abdomenInput) || hasLetters(bpInput) || hasLetters(sugarInput)) {
@@ -694,13 +800,33 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
               fetchDashboardData();
             }
 
+            if (cachedDashboardData) {
+              cachedDashboardData.has_recorded_today = true;
+              if (Array.isArray(resData.recorded_dates)) {
+                cachedDashboardData.recorded_dates = resData.recorded_dates;
+              } else if (cachedDashboardData.recorded_dates && !cachedDashboardData.recorded_dates.includes(targetDate)) {
+                cachedDashboardData.recorded_dates.push(targetDate);
+              }
+            }
+            updateAddReadingButtonState(true);
+
             showToast('Health reading recorded successfully!');
 
-// Redirect to the dashboard after saving.
-setTimeout(() => {
-  window.location.href = 'dashboard.html';
-}, 500);
+            // Redirect to the dashboard after saving.
+            setTimeout(() => {
+              window.location.href = 'dashboard.html';
+            }, 500);
           } else {
+            if (resData.already_recorded) {
+              if (cachedDashboardData) {
+                cachedDashboardData.has_recorded_today = true;
+                if (resData.recorded_date && cachedDashboardData.recorded_dates && !cachedDashboardData.recorded_dates.includes(resData.recorded_date)) {
+                  cachedDashboardData.recorded_dates.push(resData.recorded_date);
+                }
+              }
+              updateAddReadingButtonState(true);
+              closeReadingModal();
+            }
             showToast(resData.message || 'Failed to record health reading.', true);
           }
         }
