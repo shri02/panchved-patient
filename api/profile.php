@@ -228,8 +228,12 @@ if ($action === 'change_password') {
     if (empty($newPassword)) {
         sendJsonResponse(false, 'Please enter a new password.', [], 400);
     }
-    if (strlen($newPassword) < 6) {
-        sendJsonResponse(false, 'New password must be at least 6 characters long.', [], 400);
+    $hasLetter = preg_match('/[a-zA-Z]/', $newPassword);
+    $hasNumber = preg_match('/[0-9]/', $newPassword);
+    $hasSpecial = preg_match('/[^a-zA-Z0-9]/', $newPassword);
+
+    if (strlen($newPassword) < 8 || !$hasLetter || !$hasNumber || !$hasSpecial) {
+        sendJsonResponse(false, 'The password should contain special characters, numbers, and alphabets, and it must be at least 8 digits long.', [], 400);
     }
     if ($newPassword !== $confirmPassword) {
         sendJsonResponse(false, 'New password and confirm password do not match.', [], 400);

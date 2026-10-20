@@ -538,15 +538,96 @@ if (savedPatientId) {
   setupPasswordToggle('newPasswordToggleBtn', 'newPassword');
   setupPasswordToggle('confirmPasswordToggleBtn', 'confirmPassword');
 
+  const patientNewPasswordInput = document.getElementById('newPassword');
+  const patientConfirmPasswordInput = document.getElementById('confirmPassword');
+  const patientStrengthBarFill = document.getElementById('strengthBarFill');
+  const patientStrengthLabel = document.getElementById('strengthLabel');
+  const patientNewPasswordError = document.getElementById('newPasswordError');
+  const patientConfirmPasswordError = document.getElementById('confirmPasswordError');
+
+  // Live Password Strength Meter
+  if (patientNewPasswordInput && patientStrengthBarFill && patientStrengthLabel) {
+    patientNewPasswordInput.addEventListener('input', () => {
+      const val = patientNewPasswordInput.value;
+      if (patientNewPasswordError) {
+        patientNewPasswordError.textContent = '';
+        patientNewPasswordError.classList.remove('visible');
+      }
+      patientNewPasswordInput.classList.remove('input-error');
+
+      if (!val) {
+        patientStrengthBarFill.style.width = '0%';
+        patientStrengthBarFill.style.backgroundColor = '#e2e8f0';
+        patientStrengthLabel.textContent = 'Enter password';
+        patientStrengthLabel.style.color = '#94a3b8';
+        return;
+      }
+
+      const hasLetter = /[a-zA-Z]/.test(val);
+      const hasNumber = /[0-9]/.test(val);
+      const hasSpecial = /[^A-Za-z0-9]/.test(val);
+
+      let score = 0;
+      if (val.length >= 8) score += 1;
+      if (val.length >= 12) score += 1;
+      if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score += 1;
+      if (hasNumber) score += 1;
+      if (hasSpecial) score += 1;
+
+      if (val.length < 8) {
+        patientStrengthBarFill.style.width = '25%';
+        patientStrengthBarFill.style.backgroundColor = '#ef4444';
+        patientStrengthLabel.textContent = 'Too short';
+        patientStrengthLabel.style.color = '#ef4444';
+      } else if (!hasLetter || !hasNumber || !hasSpecial) {
+        patientStrengthBarFill.style.width = '50%';
+        patientStrengthBarFill.style.backgroundColor = '#f59e0b';
+        patientStrengthLabel.textContent = 'Weak';
+        patientStrengthLabel.style.color = '#f59e0b';
+      } else if (score <= 4) {
+        patientStrengthBarFill.style.width = '75%';
+        patientStrengthBarFill.style.backgroundColor = '#3b82f6';
+        patientStrengthLabel.textContent = 'Good';
+        patientStrengthLabel.style.color = '#3b82f6';
+      } else {
+        patientStrengthBarFill.style.width = '100%';
+        patientStrengthBarFill.style.backgroundColor = '#10b981';
+        patientStrengthLabel.textContent = 'Strong';
+        patientStrengthLabel.style.color = '#10b981';
+      }
+    });
+  }
+
+  if (patientConfirmPasswordInput) {
+    patientConfirmPasswordInput.addEventListener('input', () => {
+      if (patientConfirmPasswordError) {
+        patientConfirmPasswordError.textContent = '';
+        patientConfirmPasswordError.classList.remove('visible');
+      }
+      patientConfirmPasswordInput.classList.remove('input-error');
+    });
+  }
+
   // Change Password Form Submission
   if (changePasswordForm && changePasswordBtn) {
     changePasswordForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const oldPassword = document.getElementById('oldPassword')?.value;
-      const newPassword = document.getElementById('newPassword')?.value;
-      const confirmPassword = document.getElementById('confirmPassword')?.value;
+      const newPassword = patientNewPasswordInput?.value || document.getElementById('newPassword')?.value;
+      const confirmPassword = patientConfirmPasswordInput?.value || document.getElementById('confirmPassword')?.value;
       const currentPhone = phInput?.value.trim() || cachedPhone || '';
+
+      if (patientNewPasswordError) {
+        patientNewPasswordError.textContent = '';
+        patientNewPasswordError.classList.remove('visible');
+      }
+      if (patientConfirmPasswordError) {
+        patientConfirmPasswordError.textContent = '';
+        patientConfirmPasswordError.classList.remove('visible');
+      }
+      patientNewPasswordInput?.classList.remove('input-error');
+      patientConfirmPasswordInput?.classList.remove('input-error');
 
       if (!oldPassword) {
         showToast('Please enter your current password.', true);
@@ -556,19 +637,39 @@ if (savedPatientId) {
 
       if (!newPassword) {
         showToast('Please enter a new password.', true);
-        document.getElementById('newPassword')?.focus();
+        if (patientNewPasswordError) {
+          patientNewPasswordError.textContent = 'Please enter a new password.';
+          patientNewPasswordError.classList.add('visible');
+        }
+        patientNewPasswordInput?.classList.add('input-error');
+        patientNewPasswordInput?.focus();
         return;
       }
 
-      if (newPassword.length < 6) {
-        showToast('New password must be at least 6 characters long.', true);
-        document.getElementById('newPassword')?.focus();
+      const hasLetter = /[a-zA-Z]/.test(newPassword);
+      const hasNumber = /[0-9]/.test(newPassword);
+      const hasSpecial = /[^a-zA-Z0-9]/.test(newPassword);
+
+      if (newPassword.length < 8 || !hasLetter || !hasNumber || !hasSpecial) {
+        const errorMsg = 'The password should contain special characters, numbers, and alphabets, and it must be at least 8 digits long.';
+        showToast(errorMsg, true);
+        if (patientNewPasswordError) {
+          patientNewPasswordError.textContent = errorMsg;
+          patientNewPasswordError.classList.add('visible');
+        }
+        patientNewPasswordInput?.classList.add('input-error');
+        patientNewPasswordInput?.focus();
         return;
       }
 
       if (newPassword !== confirmPassword) {
         showToast('New password and confirm password do not match.', true);
-        document.getElementById('confirmPassword')?.focus();
+        if (patientConfirmPasswordError) {
+          patientConfirmPasswordError.textContent = 'New password and confirm password do not match.';
+          patientConfirmPasswordError.classList.add('visible');
+        }
+        patientConfirmPasswordInput?.classList.add('input-error');
+        patientConfirmPasswordInput?.focus();
         return;
       }
 
@@ -607,6 +708,14 @@ if (savedPatientId) {
 
         if (response.ok && result.success) {
           changePasswordForm.reset();
+          if (patientStrengthBarFill) {
+            patientStrengthBarFill.style.width = '0%';
+            patientStrengthBarFill.style.backgroundColor = '#e2e8f0';
+          }
+          if (patientStrengthLabel) {
+            patientStrengthLabel.textContent = 'Enter password';
+            patientStrengthLabel.style.color = '#94a3b8';
+          }
           showToast(result.message || 'Password changed successfully!');
         } else {
           showToast(result.message || 'Failed to change password.', true);
