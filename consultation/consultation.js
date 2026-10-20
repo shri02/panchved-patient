@@ -892,8 +892,61 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rxGender) rxGender.textContent = rx.gender || '--';
     if (rxAge) rxAge.textContent = rx.age ? `${rx.age}` : '--';
 
+    const formatClinicalSymptoms = (symptomsData) => {
+      if (!symptomsData) return '--';
+      let list = symptomsData;
+      if (typeof list === 'string') {
+        const trimmed = list.trim();
+        if (!trimmed) return '--';
+        if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+          try {
+            list = JSON.parse(trimmed);
+          } catch (_) {
+            return trimmed;
+          }
+        } else {
+          return trimmed;
+        }
+      }
+      if (Array.isArray(list)) {
+        if (list.length === 0) return '--';
+        const formatted = list.map(item => {
+          if (typeof item === 'string') return item.trim();
+          if (!item || typeof item !== 'object') return '';
+          const rawName = item.symptom || item.name || '';
+          const name = rawName ? (rawName.charAt(0).toUpperCase() + rawName.slice(1)) : '';
+          const rawSev = item.severity ? String(item.severity).trim() : '';
+          const sev = rawSev ? (rawSev.charAt(0).toUpperCase() + rawSev.slice(1)) : '';
+          const notes = item.notes ? String(item.notes).trim() : '';
+          const meta = [];
+          if (sev) meta.push(`Severity: ${sev}`);
+          if (notes) meta.push(`Notes: ${notes}`);
+          if (meta.length > 0) {
+            return name ? `${name} (${meta.join(', ')})` : meta.join(', ');
+          }
+          return name || '';
+        }).filter(Boolean);
+        return formatted.length > 0 ? formatted.join(', ') : '--';
+      }
+      if (typeof list === 'object' && list !== null) {
+        const rawName = list.symptom || list.name || '';
+        const name = rawName ? (rawName.charAt(0).toUpperCase() + rawName.slice(1)) : '';
+        const rawSev = list.severity ? String(list.severity).trim() : '';
+        const sev = rawSev ? (rawSev.charAt(0).toUpperCase() + rawSev.slice(1)) : '';
+        const notes = list.notes ? String(list.notes).trim() : '';
+        const meta = [];
+        if (sev) meta.push(`Severity: ${sev}`);
+        if (notes) meta.push(`Notes: ${notes}`);
+        if (meta.length > 0) {
+          return name ? `${name} (${meta.join(', ')})` : meta.join(', ');
+        }
+        return name || '--';
+      }
+      return String(symptomsData);
+    };
+
     if (rxMedHistory) rxMedHistory.textContent = rx.medical_history || 'No Known Significant Medical History';
-    if (rxSymptoms) rxSymptoms.textContent = rx.symptoms || '--';
+    if (rxSymptoms) rxSymptoms.textContent = formatClinicalSymptoms(rx.symptoms);
     if (rxDiagnosis) rxDiagnosis.textContent = rx.diagnosis || '--';
     if (rxFindings) rxFindings.textContent = rx.examination_findings || '--';
     if (rxNotes) rxNotes.textContent = rx.notes || '--';
