@@ -336,8 +336,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Dynamic Doctor details from database schema
-    const doc = pkg.doctor || {};
-    if (doctorName) doctorName.textContent = doc.name || pkg.assigned_doctor || 'Dr. Nidhi Jha';
+    const doctors = (Array.isArray(pkg.doctors) && pkg.doctors.length > 0)
+      ? pkg.doctors
+      : (pkg.doctor ? [pkg.doctor] : []);
+
+    const doctorSectionHeading = document.getElementById('doctorSectionHeading');
+    const doctorsContainer = document.getElementById('doctorsContainer');
+
+    if (doctorSectionHeading) {
+      doctorSectionHeading.textContent = doctors.length > 1 ? 'ABOUT THE DOCTORS' : 'ABOUT THE DOCTOR';
+    }
+
+    if (doctorsContainer && doctors.length > 0) {
+      doctorsContainer.innerHTML = doctors.map(d => `
+        <div class="doctor-profile-card" style="padding: 16px 18px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div class="doctor-badge-card" style="margin-top: 0; display: flex; align-items: center; gap: 14px;">
+            <div class="doctor-avatar" aria-hidden="true">
+              <span>${d.initials || 'DR'}</span>
+            </div>
+            <div class="doctor-info">
+              <h4 class="doctor-name" style="font-size: 15px; font-weight: 700; color: #1e293b; margin: 0;">${d.name || 'Ayurveda Physician'}</h4>
+              <p class="doctor-role" style="font-size: 13px; font-weight: 500; color: #64748b; margin: 3px 0 0 0;">${d.role || d.expertise || 'Ayurveda Physician'}</p>
+            </div>
+          </div>
+          <p class="package-section-desc doctor-desc" style="margin-top: 12px; margin-bottom: 0; font-size: 13.5px; line-height: 1.55; color: #475569;">
+            ${d.description || (d.name ? `${d.name} is a dedicated practitioner committed to patient-centric holistic healing and preventive lifestyle care.` : '')}
+          </p>
+        </div>
+      `).join('');
+    }
+
+    const doc = pkg.doctor || (doctors.length > 0 ? doctors[0] : {});
+    if (doctorName) doctorName.textContent = doc.name || pkg.combined_doctor || pkg.assigned_doctor || 'Dr. Nidhi Jha';
     if (doctorRole) doctorRole.textContent = doc.role || doc.expertise || 'Ayurveda Physician';
     if (doctorDescription) {
       doctorDescription.textContent = doc.description || (doc.name ? `${doc.name} is a dedicated practitioner committed to patient-centric holistic healing and preventive lifestyle care.` : 'Dedicated senior Ayurvedic physician committed to patient-centric holistic healing and preventive lifestyle care.');
@@ -1024,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const rawPkgTitle = detailPkgTitle?.textContent.trim() || currentSelectedPackage?.package_name || 'Gut Healing Package';
       const pkgTitle = rawPkgTitle.replace(/\s*-\s*consultation\s*$/i, '').replace(/\s*consultation\s*$/i, '').replace(/\s*-\s*consultation\b/i, '').trim();
-      const docName = document.getElementById('doctorName')?.textContent.trim() || currentSelectedPackage?.doctor?.name || 'Dr. Nidhi Jha';
+      const docName = currentSelectedPackage?.combined_doctor || currentSelectedPackage?.assigned_doctor || document.getElementById('doctorName')?.textContent.trim() || currentSelectedPackage?.doctor?.name || 'Dr. Nidhi Jha';
       const docRole = document.getElementById('doctorRole')?.textContent.trim() || currentSelectedPackage?.doctor?.role || 'Ayurveda Physician';
 
       // Retrieve authenticated patient / user information
@@ -1063,6 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
         doctorName: docName,
         doctorRole: docRole,
         doctorInitials: docInitials,
+        doctors: currentSelectedPackage?.doctors || (currentSelectedPackage?.doctor ? [currentSelectedPackage.doctor] : []),
         startingPrice: priceFormatted,
         price: rawPrice,
         amount: rawPrice,

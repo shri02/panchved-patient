@@ -417,12 +417,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     activeBookingData = activeBookingData || {};
+    const doctors = (Array.isArray(pkg.doctors) && pkg.doctors.length > 0)
+      ? pkg.doctors
+      : (pkg.doctor ? [pkg.doctor] : []);
+
+    const primaryDoc = pkg.doctor || (doctors.length > 0 ? doctors[0] : {});
+    const combinedDoctorNames = pkg.combined_doctor || doctors.map(d => d.name).filter(Boolean).join(', ') || primaryDoc.name || pkg.assigned_doctor || 'Dr. Nidhi Jha';
+
     activeBookingData.packageDbId = pkg.id;
     activeBookingData.packageId = pkg.package_id;
     activeBookingData.packageTitle = cleanTitle;
-    activeBookingData.doctorName = pkg.doctor?.name || pkg.assigned_doctor || 'Dr. Nidhi Jha';
-    activeBookingData.doctorRole = pkg.doctor?.role || pkg.doctor?.expertise || 'Ayurveda Physician';
-    activeBookingData.doctorInitials = pkg.doctor?.initials || 'DR';
+    activeBookingData.doctorName = combinedDoctorNames;
+    activeBookingData.doctorRole = primaryDoc.role || primaryDoc.expertise || 'Ayurveda Physician';
+    activeBookingData.doctorInitials = primaryDoc.initials || 'DR';
+    activeBookingData.doctors = doctors;
     activeBookingData.startingPrice = pkg.price_formatted || ('₹' + pkg.price);
     activeBookingData.duration = pkg.duration || '3 Months';
     activeBookingData.price = pkg.price;
@@ -433,15 +441,30 @@ document.addEventListener('DOMContentLoaded', () => {
       consultDetailsHeading.textContent = cleanTitle;
     }
 
-    // Doctor Details
-    if (checkoutDoctorName) {
-      checkoutDoctorName.textContent = activeBookingData.doctorName;
-    }
-    if (checkoutDoctorRole) {
-      checkoutDoctorRole.textContent = activeBookingData.doctorRole;
-    }
-    if (checkoutAvatarText) {
-      checkoutAvatarText.textContent = activeBookingData.doctorInitials;
+    // Render Doctor Details
+    const checkoutDoctorsContainer = document.getElementById('checkoutDoctorsContainer');
+    if (checkoutDoctorsContainer && doctors.length > 0) {
+      checkoutDoctorsContainer.innerHTML = doctors.map(d => `
+        <div class="doctor-badge-card checkout-doctor-row" style="margin-top: 0; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; align-items: center; gap: 14px;">
+          <div class="doctor-avatar" aria-hidden="true">
+            <span>${d.initials || 'DR'}</span>
+          </div>
+          <div class="doctor-info">
+            <h3 class="doctor-name" style="font-size: 14.5px; font-weight: 700; color: #1e293b; margin: 0;">${d.name}</h3>
+            <p class="doctor-role" style="font-size: 12.5px; color: #64748b; margin: 2px 0 0 0;">${d.role || d.expertise || 'Ayurveda Physician'}</p>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      if (checkoutDoctorName) {
+        checkoutDoctorName.textContent = activeBookingData.doctorName;
+      }
+      if (checkoutDoctorRole) {
+        checkoutDoctorRole.textContent = activeBookingData.doctorRole;
+      }
+      if (checkoutAvatarText) {
+        checkoutAvatarText.textContent = activeBookingData.doctorInitials;
+      }
     }
 
     // Starting Price & Duration
@@ -596,9 +619,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (consultDetailsHeading) {
           consultDetailsHeading.textContent = cleanPackageTitle(data.packageTitle) || 'Reset Your Hormones';
         }
-        if (checkoutDoctorName && data.doctorName) checkoutDoctorName.textContent = data.doctorName;
-        if (checkoutDoctorRole && data.doctorRole) checkoutDoctorRole.textContent = data.doctorRole;
-        if (checkoutAvatarText && data.doctorInitials) checkoutAvatarText.textContent = data.doctorInitials;
+        const checkoutDoctorsContainer = document.getElementById('checkoutDoctorsContainer');
+        if (checkoutDoctorsContainer && Array.isArray(data.doctors) && data.doctors.length > 0) {
+          checkoutDoctorsContainer.innerHTML = data.doctors.map(d => `
+            <div class="doctor-badge-card checkout-doctor-row" style="margin-top: 0; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; align-items: center; gap: 14px;">
+              <div class="doctor-avatar" aria-hidden="true">
+                <span>${d.initials || 'DR'}</span>
+              </div>
+              <div class="doctor-info">
+                <h3 class="doctor-name" style="font-size: 14.5px; font-weight: 700; color: #1e293b; margin: 0;">${d.name}</h3>
+                <p class="doctor-role" style="font-size: 12.5px; color: #64748b; margin: 2px 0 0 0;">${d.role || d.expertise || 'Ayurveda Physician'}</p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          if (checkoutDoctorName && data.doctorName) checkoutDoctorName.textContent = data.doctorName;
+          if (checkoutDoctorRole && data.doctorRole) checkoutDoctorRole.textContent = data.doctorRole;
+          if (checkoutAvatarText && data.doctorInitials) checkoutAvatarText.textContent = data.doctorInitials;
+        }
         if (checkoutPriceVal && data.startingPrice) checkoutPriceVal.textContent = data.startingPrice;
         if (checkoutDurationVal && data.duration) checkoutDurationVal.textContent = data.duration;
 

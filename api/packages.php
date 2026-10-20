@@ -53,10 +53,14 @@ function resolveDoctorForPackage($connection1, $assignedDoctorName = '', $packag
     $docRow = null;
 
     if (!empty($assignedDoctorName)) {
-        // 1. Exact match by full_name
-        $stmt = mysqli_prepare($connection1, "SELECT * FROM doctors WHERE full_name = ? LIMIT 1");
+        // Strip common "Dr. " prefix for matching
+        $cleanDocName = preg_replace('/^(Dr\.|Dr)\s*/i', '', $assignedDoctorName);
+
+        // 1. Exact match by full_name (with original and cleaned name, or prefixed with Dr.)
+        $withDr = 'Dr. ' . $cleanDocName;
+        $stmt = mysqli_prepare($connection1, "SELECT * FROM doctors WHERE full_name = ? OR full_name = ? OR full_name = ? LIMIT 1");
         if ($stmt) {
-            mysqli_stmt_bind_param($stmt, "s", $assignedDoctorName);
+            mysqli_stmt_bind_param($stmt, "sss", $assignedDoctorName, $cleanDocName, $withDr);
             mysqli_stmt_execute($stmt);
             $res = mysqli_stmt_get_result($stmt);
             $docRow = mysqli_fetch_assoc($res);
@@ -65,11 +69,12 @@ function resolveDoctorForPackage($connection1, $assignedDoctorName = '', $packag
 
         // 2. Fuzzy match or ID match if not found
         if (!$docRow) {
-            $stmt = mysqli_prepare($connection1, "SELECT * FROM doctors WHERE full_name LIKE ? OR doctorid = ? OR id = ? LIMIT 1");
+            $stmt = mysqli_prepare($connection1, "SELECT * FROM doctors WHERE full_name LIKE ? OR full_name LIKE ? OR doctorid = ? OR id = ? LIMIT 1");
             if ($stmt) {
-                $like = '%' . $assignedDoctorName . '%';
+                $origLike = '%' . $assignedDoctorName . '%';
+                $cleanLike = '%' . $cleanDocName . '%';
                 $idVal = is_numeric($assignedDoctorName) ? (int)$assignedDoctorName : 0;
-                mysqli_stmt_bind_param($stmt, "ssi", $like, $assignedDoctorName, $idVal);
+                mysqli_stmt_bind_param($stmt, "sssi", $origLike, $cleanLike, $assignedDoctorName, $idVal);
                 mysqli_stmt_execute($stmt);
                 $res = mysqli_stmt_get_result($stmt);
                 $docRow = mysqli_fetch_assoc($res);
@@ -78,8 +83,9 @@ function resolveDoctorForPackage($connection1, $assignedDoctorName = '', $packag
         }
     }
 
-    // 3. Fallback: match by active doctor or first active doctor in table
-    if (!$docRow) {
+    // 3. Fallback: ONLY if assignedDoctorName was completely empty
+    // (Never override an assigned doctor name with Satish Pawar if assignedDoctorName was set!)
+    if (!$docRow && empty($assignedDoctorName)) {
         $res = mysqli_query($connection1, "SELECT * FROM doctors WHERE status = 'Active' ORDER BY id ASC LIMIT 1");
         if ($res) {
             $docRow = mysqli_fetch_assoc($res);
@@ -107,8 +113,11 @@ function resolveDoctorForPackage($connection1, $assignedDoctorName = '', $packag
         }
         $initials = substr($initials, 0, 2) ?: 'DR';
 
-        // Professional schema-driven doctor description
-        if ($exp > 0 && !empty($area) && strlen($area) > 2) {
+        // Check for doctor's custom bio saved in `about` column first
+        $aboutText = trim((string)($docRow['about'] ?? ''));
+        if (!empty($aboutText)) {
+            $docDescription = $aboutText;
+        } elseif ($exp > 0 && !empty($area) && strlen($area) > 2) {
             $docDescription = "{$docName} is a senior {$expertise} with over {$exp} years of clinical expertise specializing in {$area}. Dedicated to holistic patient-centric healing, authentic Ayurvedic protocols, and preventive wellness care.";
         } elseif ($exp > 0) {
             $docDescription = "{$docName} is an experienced {$expertise} with over {$exp} years of clinical practice, committed to restorative care, personalized treatment protocols, and holistic wellness.";
@@ -134,11 +143,37 @@ function resolveDoctorForPackage($connection1, $assignedDoctorName = '', $packag
         ];
     }
 
+    // If doctor name was given but not found in doctors table, preserve doctor's name
+    if (!empty($assignedDoctorName)) {
+        $cleanedDocName = preg_replace('/^(Dr\.|Dr)\s*/i', '', $assignedDoctorName);
+        $words = preg_split('/\s+/', trim($cleanedDocName));
+        $initials = '';
+        foreach ($words as $w) {
+            if (!empty($w)) $initials .= strtoupper($w[0]);
+        }
+        $initials = substr($initials, 0, 2) ?: 'DR';
+
+        return [
+            'id' => 0,
+            'doctorid' => '',
+            'name' => $assignedDoctorName,
+            'role' => 'Ayurveda Physician',
+            'expertise' => 'Ayurveda Physician',
+            'area' => '',
+            'experience' => 0,
+            'initials' => $initials,
+            'description' => "{$assignedDoctorName} is a dedicated practitioner committed to patient-centric holistic healing and preventive lifestyle care.",
+            'email' => '',
+            'phone' => '',
+            'registration_number' => ''
+        ];
+    }
+
     // Default fallback if doctors table is empty
     return [
         'id' => 1,
         'doctorid' => 'DOC000001',
-        'name' => !empty($assignedDoctorName) ? $assignedDoctorName : 'Dr. Nidhi Jha',
+        'name' => 'Dr. Nidhi Jha',
         'role' => 'Ayurveda Physician',
         'expertise' => 'Ayurveda Physician',
         'area' => 'Pediatrics & Gynecology',
@@ -170,8 +205,48 @@ function formatPackageRecord($row, $connection1) {
         $shortDesc = 'Comprehensive multi-disciplinary care program tailored to balance doshas and restore vitality.';
     }
 
-    $assignedDoctor = $row['assigned_doctor'] ?? '';
-    $doctor = resolveDoctorForPackage($connection1, $assignedDoctor, $row['package_name'] ?? '', $row['category'] ?? '');
+    // Robustly read Doctor 1 and Doctor 2 from all possible SQL column aliases
+    $doc1Name = trim((string)($row['assigned_doctor_one'] ?? $row['assigned_doctor_1'] ?? $row['assigned_doctor'] ?? $row['assign_doctor'] ?? ''));
+    $doc2Name = trim((string)($row['assign_doctor_two'] ?? $row['assigned_doctor_two'] ?? $row['assigned_doctor_2'] ?? $row['assign_doctor_2'] ?? ''));
+
+    // Check if doc1Name contains comma separated doctors (e.g. "Madhuri Salvi, Sachin Rane")
+    if ($doc2Name === '' && strpos($doc1Name, ',') !== false) {
+        $parts = array_map('trim', explode(',', $doc1Name, 2));
+        $doc1Name = $parts[0] ?? '';
+        $doc2Name = $parts[1] ?? '';
+    }
+
+    // Resolve Doctor 1
+    $doctor1 = null;
+    if (!empty($doc1Name)) {
+        $doctor1 = resolveDoctorForPackage($connection1, $doc1Name, $row['package_name'] ?? '', $row['category'] ?? '');
+    }
+
+    // Resolve Doctor 2
+    $doctor2 = null;
+    if (!empty($doc2Name)) {
+        $doctor2 = resolveDoctorForPackage($connection1, $doc2Name, $row['package_name'] ?? '', $row['category'] ?? '');
+    }
+
+    // If neither was explicitly resolved, check fallback
+    if (!$doctor1 && !$doctor2) {
+        $doctor1 = resolveDoctorForPackage($connection1, '', $row['package_name'] ?? '', $row['category'] ?? '');
+    } elseif (!$doctor1 && $doctor2) {
+        $doctor1 = $doctor2;
+        $doctor2 = null;
+    }
+
+    // Compile active doctors list
+    $doctorsList = [];
+    if ($doctor1) $doctorsList[] = $doctor1;
+    if ($doctor2 && (!isset($doctor1['id']) || $doctor2['id'] !== $doctor1['id'] || $doctor2['name'] !== $doctor1['name'])) {
+        $doctorsList[] = $doctor2;
+    }
+
+    $combinedDoc = $doc1Name;
+    if (!empty($doc2Name)) {
+        $combinedDoc = !empty($doc1Name) ? ($doc1Name . ', ' . $doc2Name) : $doc2Name;
+    }
 
     $img = !empty($row['image_url']) && $row['image_url'] !== 'assets/package-thumb.jpg' ? $row['image_url'] : 'assets/gut-healing-pkg.jpg';
 
@@ -183,7 +258,12 @@ function formatPackageRecord($row, $connection1) {
         'package_id' => $row['package_id'] ?? ('PKG-' . str_pad($row['id'] ?? '1', 3, '0', STR_PAD_LEFT)),
         'package_name' => cleanPackageName($row['package_name'] ?? ''),
         'category' => $row['category'] ?? '',
-        'assigned_doctor' => $assignedDoctor,
+        'assigned_doctor' => $doc1Name ?: ($doctor1['name'] ?? ''),
+        'assigned_doctor_1' => $doc1Name ?: ($doctor1['name'] ?? ''),
+        'assigned_doctor_2' => $doc2Name ?: ($doctor2['name'] ?? ''),
+        'assigned_doctor_one' => $doc1Name ?: ($doctor1['name'] ?? ''),
+        'assign_doctor_two' => $doc2Name ?: ($doctor2['name'] ?? ''),
+        'combined_doctor' => $combinedDoc ?: ($doctor1['name'] ?? ''),
         'duration' => !empty($row['duration']) ? $row['duration'] : '3 Months',
         'price' => $priceVal,
         'price_formatted' => '₹' . number_format($priceVal, 0),
@@ -201,7 +281,9 @@ function formatPackageRecord($row, $connection1) {
         'followup_review' => $row['followup_review'] ?? '',
         'image_url' => $img,
         'status' => $row['status'] ?? 'Active',
-        'doctor' => $doctor
+        'doctor' => $doctor1,
+        'doctor_2' => $doctor2,
+        'doctors' => $doctorsList
     ];
 }
 
@@ -472,7 +554,9 @@ if ($requestMethod === 'GET') {
 
         sendJsonResponse(true, 'Package details fetched successfully from database.', [
             'package' => $formattedPackage,
-            'doctor' => $formattedPackage['doctor']
+            'doctor' => $formattedPackage['doctor'],
+            'doctor_2' => $formattedPackage['doctor_2'] ?? null,
+            'doctors' => $formattedPackage['doctors'] ?? [$formattedPackage['doctor']]
         ]);
     }
 
@@ -717,7 +801,7 @@ if ($requestMethod === 'POST') {
 
     // 2. Resolve Doctor in `doctors` table
     $doctorDbId = 1;
-    $docQuery = "SELECT id, full_name FROM doctors WHERE (full_name != '' AND (full_name = ? OR full_name LIKE ?)) OR status = 'Active' ORDER BY id ASC LIMIT 1";
+    $docQuery = "SELECT id, full_name FROM doctors WHERE full_name = ? OR full_name LIKE ? LIMIT 1";
     if ($dStmt = mysqli_prepare($connection1, $docQuery)) {
         $docLike = '%' . $doctorName . '%';
         mysqli_stmt_bind_param($dStmt, "ss", $doctorName, $docLike);
@@ -728,6 +812,12 @@ if ($requestMethod === 'POST') {
             $doctorDbId = (int)$docRow['id'];
         }
         mysqli_stmt_close($dStmt);
+    }
+    if (!$docRow) {
+        $fActive = mysqli_query($connection1, "SELECT id, full_name FROM doctors WHERE status = 'Active' ORDER BY id ASC LIMIT 1");
+        if ($fActive && $aRow = mysqli_fetch_assoc($fActive)) {
+            $doctorDbId = (int)$aRow['id'];
+        }
     }
 
     // 3. Increment `enrollments` in `packages` table
