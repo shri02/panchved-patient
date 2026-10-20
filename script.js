@@ -479,8 +479,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (selectedValueSpan) {
           selectedValueSpan.textContent = text;
+          selectedValueSpan.title = text;
           selectedValueSpan.classList.remove('placeholder');
         }
+        trigger.title = text;
 
         options.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');

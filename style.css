@@ -237,7 +237,7 @@ body {
 /* 2-Column Grid for DOB/Gender, Height/Weight, Skin/Hair */
 .form-row-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
   width: 100%;
   position: relative;
@@ -247,6 +247,7 @@ body {
 .form-row-grid > .form-group,
 .form-row-grid > .custom-select-group {
   align-self: start;
+  min-width: 0;
 }
 
 .form-row-grid:has(.custom-select-group.open),
@@ -378,6 +379,7 @@ body {
 .custom-select-group {
   position: relative;
   width: 100%;
+  min-width: 0;
 }
 
 .custom-select-trigger {
@@ -393,6 +395,8 @@ body {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, border-radius 0.2s ease;
   user-select: none;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .custom-select-trigger:hover {
@@ -406,6 +410,8 @@ body {
 }
 
 .custom-select-trigger .selected-value {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
   font-weight: 500;
   color: #111827;
