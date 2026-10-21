@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const workshopDoctorRole = document.getElementById('workshopDoctorRole');
   const workshopDoctorDesc = document.getElementById('workshopDoctorDesc');
   const workshopDoctorAvatar = document.getElementById('workshopDoctorAvatar');
+  const workshopSpeakerSection = document.getElementById('workshopSpeakerSection');
+  const workshopSpeakerHeading = document.getElementById('workshopSpeakerHeading');
   const btnRegisterWorkshop = document.getElementById('btnRegisterWorkshop');
   const pageLoader = document.getElementById('pageLoader');
 
@@ -323,10 +325,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const time = ws.time || '8:00 AM';
     const img = resolveCourseImg(ws.image_url);
     const about = ws.about || subtitle || 'A comprehensive interactive workshop covering authentic Ayurvedic health strategies, nutrition guides, and lifestyle routines.';
-    const speaker = ws.speaker || ws.instructor || ws.assign_speaker || 'Dr. Rajesh Varma';
-    const role = ws.speaker_role || 'Ayurveda Physician';
-    const bio = ws.speaker_bio || `${speaker} is a dedicated Ayurvedic practitioner committed to patient-centric holistic healing, dosha balancing, and preventive lifestyle routines.`;
-    const initials = ws.speaker_initials || 'DR';
+    const speaker = (ws.speaker || ws.assign_speaker || ws.instructor || '').trim();
+    const role = (ws.speaker_role || '').trim();
+    const bio = (ws.speaker_bio || '').trim();
+
+    // Determine if presenter is a Doctor or Speaker
+    const isDoctor = /^Dr\.?\s+/i.test(speaker) || /doctor|physician/i.test(role);
+
+    // Compute dynamic initials from presenter name
+    let initials = ws.speaker_initials || '';
+    if (!initials && speaker) {
+      const cleanName = speaker.replace(/^(Dr\.|Dr)\s*/i, '').trim();
+      const parts = cleanName.split(/\s+/);
+      initials = parts.slice(0, 2).map(p => p[0]?.toUpperCase() || '').join('');
+    }
+    if (!initials) initials = isDoctor ? 'DR' : 'SP';
+
+    // Update section heading dynamically: "ABOUT THE DOCTOR" or "ABOUT THE SPEAKER"
+    const headingText = isDoctor ? 'ABOUT THE DOCTOR' : 'ABOUT THE SPEAKER';
+    if (workshopSpeakerHeading) {
+      workshopSpeakerHeading.textContent = headingText;
+    } else {
+      const h = document.querySelector('#workshopSpeakerHeading') || document.querySelector('#workshopSpeakerSection .package-section-heading') || document.querySelector('.package-detail-section:nth-of-type(2) .package-section-heading');
+      if (h) h.textContent = headingText;
+    }
 
     if (detailWorkshopTitle) detailWorkshopTitle.textContent = title;
     if (detailWorkshopSubtitle) detailWorkshopSubtitle.textContent = subtitle;
@@ -337,24 +359,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (detailHeroImg) {
       detailHeroImg.src = img;
       detailHeroImg.alt = title;
+      detailHeroImg.onerror = () => {
+        detailHeroImg.onerror = null;
+        detailHeroImg.src = '../assets/courses/course_ayurveda_herbs.jpg';
+      };
     }
 
     if (detailWorkshopDesc) detailWorkshopDesc.textContent = about;
-    if (workshopDoctorName) workshopDoctorName.textContent = speaker;
-    if (workshopDoctorRole) workshopDoctorRole.textContent = role;
-    
-    if (workshopDoctorDesc) {
-      workshopDoctorDesc.textContent = bio;
-    } else {
-      const docDescEl = document.querySelector('.package-section-desc.doctor-desc');
-      if (docDescEl) docDescEl.textContent = bio;
-    }
 
-    if (workshopDoctorAvatar) {
-      workshopDoctorAvatar.textContent = initials;
+    // About the Speaker / Doctor presentation
+    if (!speaker && !role && !bio) {
+      if (workshopSpeakerSection) workshopSpeakerSection.style.display = 'none';
     } else {
-      const avatarEl = document.querySelector('.doctor-avatar span');
-      if (avatarEl) avatarEl.textContent = initials;
+      if (workshopSpeakerSection) workshopSpeakerSection.style.display = 'block';
+      if (workshopDoctorName) workshopDoctorName.textContent = speaker || (isDoctor ? 'Doctor' : 'Speaker');
+      if (workshopDoctorRole) {
+        workshopDoctorRole.textContent = role || (isDoctor ? 'Ayurveda Physician' : 'Guest Speaker');
+        workshopDoctorRole.style.display = 'block';
+      }
+      if (workshopDoctorAvatar) {
+        workshopDoctorAvatar.textContent = initials;
+      } else {
+        const avatarEl = document.querySelector('.doctor-avatar span');
+        if (avatarEl) avatarEl.textContent = initials;
+      }
+
+      // Display bio ONLY if provided - do NOT show fabricated text!
+      const docDescEl = workshopDoctorDesc || document.querySelector('.package-section-desc.doctor-desc');
+      if (docDescEl) {
+        if (bio) {
+          docDescEl.textContent = bio;
+          docDescEl.style.display = 'block';
+        } else {
+          docDescEl.textContent = '';
+          docDescEl.style.display = 'none';
+        }
+      }
     }
 
     // Check if current workshop is already registered by the patient
@@ -461,9 +501,9 @@ document.addEventListener('DOMContentLoaded', () => {
           time: wsOrCard.getAttribute('data-time') || '8:00 AM',
           image_url: wsOrCard.getAttribute('data-img') || '../assets/courses/course_ayurveda_herbs.jpg',
           about: wsOrCard.getAttribute('data-about') || '',
-          speaker: wsOrCard.getAttribute('data-doctor-name') || 'Dr. Rajesh Varma',
-          speaker_role: wsOrCard.getAttribute('data-doctor-role') || 'Ayurveda Physician',
-          speaker_bio: wsOrCard.getAttribute('data-doctor-bio') || '',
+          speaker: wsOrCard.getAttribute('data-doctor-name') || wsOrCard.getAttribute('data-speaker') || '',
+          speaker_role: wsOrCard.getAttribute('data-doctor-role') || wsOrCard.getAttribute('data-speaker-role') || '',
+          speaker_bio: wsOrCard.getAttribute('data-doctor-bio') || wsOrCard.getAttribute('data-speaker-bio') || '',
           attendee_type: wsOrCard.getAttribute('data-attendee') || 'Patient'
         };
       }
@@ -491,21 +531,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const bindWorkshopCardEvents = () => {
     const viewButtons = document.querySelectorAll('.btn-view-workshop-details');
     viewButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         const card = btn.closest('.workshop-card');
         showWorkshopDetails(card || btn);
-      });
+      };
     });
 
-    const cards = document.querySelectorAll('#allWorkshopsSection .workshop-card');
+    const cards = document.querySelectorAll('.courses-grid .workshop-card');
     cards.forEach(card => {
       card.style.cursor = 'pointer';
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-view-workshop-details') || e.target.closest('button')) return;
+      card.onclick = (e) => {
+        if (e.target.closest('.btn-join-meet') || e.target.closest('.btn-copy-meet-mini')) return;
         showWorkshopDetails(card);
-      });
+      };
     });
   };
 
@@ -554,9 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const duration = ws.duration_text || '90 mins';
       const dateText = ws.formatted_date || ws.date || '3 September, Wednesday';
       const timeText = ws.time || '8:00 AM';
-      const subtitleText = ws.subtitle || 'Holistic Health & Ayurveda Insights';
-      const speakerName = ws.speaker || ws.instructor || ws.assign_speaker || 'Dr. Rajesh Varma';
-      const speakerRole = ws.speaker_role || 'Ayurveda Physician';
+      const speakerName = ws.speaker || ws.assign_speaker || ws.instructor || '';
+      const speakerRole = ws.speaker_role || '';
       const speakerBio = ws.speaker_bio || '';
       const aboutText = ws.about || subtitleText;
       const isRegistered = ws.is_registered === true || isWorkshopRegistered(ws);
@@ -737,8 +776,8 @@ document.addEventListener('DOMContentLoaded', () => {
             price: singleBooking.fee || '₹499/-',
             date: singleBooking.date || '3 September, Wednesday',
             time: singleBooking.time || '8:00 AM',
-            meet_link: 'https://meet.google.com/abc-xyz-pqrs',
-            image_url: singleBooking.image_url || '../assets/courses/course_ayurveda_herbs.jpg'
+            meet_link: singleBooking.meet_link || 'https://meet.google.com/abc-xyz-pqrs',
+            image_url: singleBooking.image_url || ''
           });
         }
       }
@@ -789,22 +828,67 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     myWorkshopsSection.innerHTML = registered.map(ws => {
-      const rawImg = ws.image_url || 'assets/courses/course_ayurveda_herbs.jpg';
+      // Look up dynamic workshop data from loadedWorkshops catalog
+      const matchedWs = loadedWorkshops.find(lw => 
+        (lw.id && (lw.id == ws.id || lw.id == ws.workshop_id)) ||
+        (lw.workshop_id && (lw.workshop_id == ws.workshop_id || lw.workshop_id == ws.id)) ||
+        (lw.title && ws.title && lw.title.trim().toLowerCase() === ws.title.trim().toLowerCase())
+      );
+
+      let rawImg = ws.image_url;
+      // If image is missing or a legacy static fallback, resolve dynamically from matched catalog item
+      if (!rawImg || rawImg.includes('course_ayurveda_herbs.jpg') || rawImg.includes('course_pre_pregnancy.jpg') || rawImg.includes('package-thumb')) {
+        if (matchedWs?.image_url) {
+          rawImg = matchedWs.image_url;
+        }
+      }
+      if (!rawImg) rawImg = matchedWs?.image_url || 'assets/courses/course_ayurveda_herbs.jpg';
       const img = (rawImg.startsWith('http') || rawImg.startsWith('../')) ? rawImg : '../' + rawImg;
+
       const priceText = ws.price || ws.fee_formatted || (ws.fee ? `₹${ws.fee}/-` : '₹499/-');
       const dateText = ws.date || ws.formatted_date || '3 September, Wednesday';
       const timeText = ws.time || '8:00 AM';
       const meetLink = ws.meet_link || 'https://meet.google.com/abc-xyz-pqrs';
       const cleanMeet = meetLink.replace(/^https?:\/\//, '');
 
+      const wsTitle = ws.title || matchedWs?.title || 'Ayurveda Workshop';
+      const subtitleText = ws.subtitle || matchedWs?.subtitle || '';
+      const speakerName = ws.speaker || matchedWs?.speaker || '';
+      const speakerRole = ws.speaker_role || matchedWs?.speaker_role || '';
+      const speakerBio = ws.speaker_bio || matchedWs?.speaker_bio || '';
+      const aboutText = ws.about || matchedWs?.about || subtitleText;
+
       return `
-        <article class="workshop-card">
+        <article class="workshop-card" 
+          id="my_ws_${ws.workshop_id || ws.id}" 
+          data-id="${ws.id}" 
+          data-workshop-id="${ws.workshop_id || ws.id}" 
+          data-title="${wsTitle}"
+          data-subtitle="${subtitleText}"
+          data-price="${priceText}"
+          data-type="${ws.duration_text || matchedWs?.duration_text || '90 mins'}"
+          data-date="${dateText}"
+          data-time="${timeText}"
+          data-img="${img}"
+          data-about="${aboutText.replace(/"/g, '&quot;')}"
+          data-doctor-name="${speakerName.replace(/"/g, '&quot;')}"
+          data-doctor-role="${speakerRole.replace(/"/g, '&quot;')}"
+          data-doctor-bio="${speakerBio.replace(/"/g, '&quot;')}"
+          data-registered="true"
+        >
           <div class="workshop-card-img-wrap">
-            <img src="${img}" alt="${ws.title}" class="workshop-card-img" />
+            <img src="${img}" alt="${wsTitle}" class="workshop-card-img" onerror="this.onerror=null;this.src='../assets/courses/course_ayurveda_herbs.jpg';" />
+            <div class="workshop-enrolled-badge" title="You are registered for this workshop">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Enrolled</span>
+            </div>
           </div>
           <div class="workshop-card-content">
             <div class="workshop-card-header">
-              <h2 class="workshop-title">${ws.title}</h2>
+              <h2 class="workshop-title">${wsTitle}</h2>
+              ${subtitleText ? `<p class="workshop-subtitle">${subtitleText}</p>` : ''}
             </div>
 
             <div class="workshop-meta-list">
@@ -848,15 +932,27 @@ document.addEventListener('DOMContentLoaded', () => {
               </button>
             </div>
 
-            <button type="button" class="btn-join-meet" data-link="${meetLink}">
-              <span>Join with Google Meet</span>
-            </button>
+            <div class="workshop-actions-row" style="display: flex; flex-direction: column; gap: 8px;">
+              <button type="button" class="btn-join-meet" data-link="${meetLink}">
+                <span>Join with Google Meet</span>
+              </button>
+              <button type="button" class="btn-view-workshop-details" 
+                style="background: #f8fafc; color: #166534; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 9px 14px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"
+                data-id="${ws.id}"
+                data-workshop-id="${ws.workshop_id || ws.id}"
+                data-title="${wsTitle}"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Enrolled &bull; View Details</span>
+              </button>
+            </div>
           </div>
         </article>
       `;
     }).join('');
 
     bindMeetLinkEvents();
+    bindWorkshopCardEvents();
   };
 
   // ========================================================
@@ -864,10 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========================================================
   const fetchPatientWorkshopsFromDB = async () => {
     try {
-      // 1. Fetch registered workshops first so registeredWorkshopsMap is populated
-      await fetchMyWorkshopsFromDB();
-
-      // 2. Fetch list of workshops with patient identity parameters
+      // 1. Fetch catalog first so loadedWorkshops has all latest images and data ready
       const params = new URLSearchParams();
       params.append('action', 'list');
       params.append('attendee_type', 'Patient');
@@ -889,6 +982,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         renderAllWorkshopsList([]);
       }
+
+      // 2. Fetch registered workshops (now loadedWorkshops is populated so any image gaps are instantly resolved!)
+      await fetchMyWorkshopsFromDB();
     } catch (err) {
       console.warn('Notice: Error fetching workshops from DB:', err);
       renderAllWorkshopsList([]);
@@ -936,8 +1032,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const time = detailWorkshopTime?.textContent.trim() || '08:00 AM';
       const priceText = detailWorkshopPrice?.textContent.trim() || '₹500.00';
 
-      const docName = currentSelectedWorkshop?.speaker || currentSelectedWorkshop?.instructor || currentSelectedWorkshop?.assign_speaker || workshopDoctorName?.textContent.trim() || 'Dr. Ananya Mehta';
-      const docRole = currentSelectedWorkshop?.speaker_role || workshopDoctorRole?.textContent.trim() || 'Ayurveda Physician';
+      const docName = currentSelectedWorkshop?.speaker || currentSelectedWorkshop?.assign_speaker || currentSelectedWorkshop?.instructor || workshopDoctorName?.textContent.trim() || '';
+      const docRole = currentSelectedWorkshop?.speaker_role || workshopDoctorRole?.textContent.trim() || '';
 
       const patientName = cachedPatientObj?.full_name || cachedUserObj?.full_name || 'Patient';
       const patientEmail = cachedPatientObj?.email || cachedUserObj?.email || '';
@@ -950,6 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
         id: currentSelectedWorkshop?.id || 1,
         workshopTitle: title,
         title: title,
+        image_url: currentSelectedWorkshop?.image_url || '',
         doctorName: docName,
         speaker: docName,
         doctorRole: docRole,

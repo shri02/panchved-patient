@@ -246,10 +246,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!data) return;
     activeWorkshopData = data;
 
-    const title = data.workshopTitle || data.title || 'Ayurveda Lifestyle Workshop';
-    let speaker = data.doctorName || data.speaker || data.assign_speaker || data.instructor || 'Dr. Ananya Mehta';
-    if (!speaker.toLowerCase().startsWith('by ')) {
-      speaker = `By ${speaker}`;
+    let speaker = data.doctorName || data.speaker || data.assign_speaker || data.instructor || '';
+    if (speaker) {
+      if (!speaker.toLowerCase().startsWith('by ')) {
+        speaker = `By ${speaker}`;
+      }
     }
 
     const date = data.formatted_date || data.date || '2 September 2026';
@@ -337,8 +338,9 @@ document.addEventListener('DOMContentLoaded', () => {
               workshopId: ws.workshop_id,
               title: ws.title,
               workshopTitle: ws.title,
-              doctorName: ws.speaker || ws.instructor || ws.assign_speaker || 'Dr. Ananya Mehta',
-              speaker: ws.speaker || ws.instructor || 'Dr. Ananya Mehta',
+              image_url: ws.image_url || activeWorkshopData?.image_url || '',
+              doctorName: ws.speaker || ws.assign_speaker || ws.instructor || '',
+              speaker: ws.speaker || ws.assign_speaker || ws.instructor || '',
               date: ws.formatted_date || ws.date || '2 September 2026',
               time: ws.time || '08:00 AM',
               price: ws.fee || ws.price || 500,
@@ -779,12 +781,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const newWorkshopItem = {
           id: generatedBookingId,
           booking_id: generatedBookingId,
+          workshop_id: activeWorkshopData?.id || activeWorkshopData?.workshopId,
           title: wsTitle,
           price: feeText,
           date: dateText,
           time: timeText,
-          meet_link: 'https://meet.google.com/abc-xyz-pqrs',
-          image_url: activeWorkshopData?.image_url || '../assets/courses/course_pre_pregnancy.jpg'
+          meet_link: activeWorkshopData?.meet_link || 'https://meet.google.com/abc-xyz-pqrs',
+          image_url: activeWorkshopData?.image_url || ''
         };
         storedList.unshift(newWorkshopItem);
         localStorage.setItem('ocayur_registered_workshops', JSON.stringify(storedList));

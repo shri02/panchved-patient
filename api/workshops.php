@@ -78,7 +78,7 @@ function getInitialsFromName($name) {
     foreach ($words as $w) {
         if (!empty($w)) $initials .= strtoupper($w[0]);
     }
-    return substr($initials, 0, 2) ?: 'DR';
+    return substr($initials, 0, 2) ?: 'SP';
 }
 
 // Format Workshop Record
@@ -107,9 +107,9 @@ function formatWorkshopRecord($row) {
     }
 
     // Speaker / Doctor name
-    $speakerName = !empty($row['speaker']) ? trim((string)$row['speaker']) : (!empty($row['assign_speaker']) ? trim((string)$row['assign_speaker']) : (!empty($row['instructor']) ? trim((string)$row['instructor']) : 'Dr. Nidhi Jha'));
-    $speakerRole = !empty($row['speaker_role']) ? trim((string)$row['speaker_role']) : 'Ayurveda Physician';
-    $speakerBio = !empty($row['speaker_bio']) ? trim((string)$row['speaker_bio']) : "{$speakerName} is an expert Ayurvedic practitioner specializing in holistic lifestyle management, preventative health protocols, and patient-centric therapies.";
+    $speakerName = !empty($row['speaker']) ? trim((string)$row['speaker']) : (!empty($row['assign_speaker']) ? trim((string)$row['assign_speaker']) : (!empty($row['instructor']) ? trim((string)$row['instructor']) : ''));
+    $speakerRole = !empty($row['speaker_role']) ? trim((string)$row['speaker_role']) : '';
+    $speakerBio = !empty($row['speaker_bio']) ? trim((string)$row['speaker_bio']) : '';
 
     // About description
     $aboutText = !empty($row['about']) ? trim((string)$row['about']) : (!empty($row['subtitle']) ? trim((string)$row['subtitle']) : 'A comprehensive interactive workshop covering authentic Ayurvedic health strategies, nutrition guides, and lifestyle routines.');
@@ -301,9 +301,10 @@ if ($action === 'my_workshops') {
         $query = "SELECT wb.*, w.workshop_id as ws_code, w.title as ws_title, w.subtitle as ws_subtitle, 
                          w.time as ws_time, w.date as ws_date, w.meet_link as ws_meet_link, 
                          w.image_url as ws_image, w.fee as ws_fee, w.price as ws_price, 
-                         w.speaker, w.assign_speaker, w.instructor
+                         w.speaker, w.assign_speaker, w.instructor, w.speaker_role, w.speaker_bio,
+                         w.about as ws_about
                   FROM `workshop_bookings` wb
-                  LEFT JOIN `workshops` w ON wb.workshop_id = w.id
+                  LEFT JOIN `workshops` w ON (wb.workshop_id = w.id OR wb.workshop_id = w.workshop_id)
                   WHERE (
                     (wb.doctor_id = ? AND ? > 0) OR 
                     (wb.doctor_phone = ? AND ? != '') OR 
@@ -335,19 +336,30 @@ if ($action === 'my_workshops') {
                     }
 
                     $meetLink = !empty($row['ws_meet_link']) ? $row['ws_meet_link'] : 'https://meet.google.com/abc-xyz-pqrs';
-                    $rawImg = !empty($row['ws_image']) ? $row['ws_image'] : 'assets/courses/course_ayurveda_herbs.jpg';
+                    $rawImg = !empty($row['ws_image']) ? $row['ws_image'] : '';
+
+                    $speakerName = !empty($row['speaker']) ? trim((string)$row['speaker']) : (!empty($row['assign_speaker']) ? trim((string)$row['assign_speaker']) : (!empty($row['instructor']) ? trim((string)$row['instructor']) : ''));
+                    $speakerRole = !empty($row['speaker_role']) ? trim((string)$row['speaker_role']) : '';
+                    $speakerBio = !empty($row['speaker_bio']) ? trim((string)$row['speaker_bio']) : '';
 
                     $myWorkshops[] = [
                         'id' => (int)$row['id'],
                         'booking_id' => $row['booking_id'],
                         'workshop_id' => (int)($row['workshop_id'] ?? 0),
                         'title' => !empty($row['ws_title']) ? $row['ws_title'] : 'Ayurveda Workshop',
+                        'subtitle' => !empty($row['ws_subtitle']) ? $row['ws_subtitle'] : '',
                         'price' => '₹' . number_format($feeNum, 0) . '/-',
                         'fee' => $feeNum,
                         'date' => $formattedDate,
+                        'formatted_date' => $formattedDate,
                         'time' => !empty($row['ws_time']) ? $row['ws_time'] : '8:00 AM',
+                        'duration_text' => '90 mins',
                         'meet_link' => $meetLink,
-                        'image_url' => $rawImg
+                        'image_url' => $rawImg,
+                        'speaker' => $speakerName,
+                        'speaker_role' => $speakerRole,
+                        'speaker_bio' => $speakerBio,
+                        'about' => !empty($row['ws_about']) ? $row['ws_about'] : (!empty($row['ws_subtitle']) ? $row['ws_subtitle'] : '')
                     ];
                 }
             }
