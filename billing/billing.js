@@ -596,9 +596,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activePkgDesc) activePkgDesc.textContent = pkg.description || 'Personalized wellness and healthcare routine.';
             if (activePkgPrice) activePkgPrice.textContent = pkg.price_formatted || (pkg.price ? `₹${pkg.price}` : '--');
             if (activePkgDuration) activePkgDuration.textContent = pkg.duration || '--';
-            if (pkgDoctor && pkg.doctor_name) {
-              pkgDoctor.textContent = pkg.doctor_name;
+            if (activePkgDoctor && pkg.doctor_name) {
+              activePkgDoctor.textContent = pkg.doctor_name;
               if (activePkgDoctorItem) activePkgDoctorItem.style.display = 'inline-flex';
+            } else if (activePkgDoctorItem) {
+              activePkgDoctorItem.style.display = 'none';
             }
             if (pkgBanner) pkgBanner.style.display = 'flex';
             if (activePkgActionLink) {
