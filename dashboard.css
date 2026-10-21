@@ -5397,11 +5397,39 @@ body {
   gap: 16px;
 }
 
+.active-package-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .active-package-heading {
   font-family: 'Outfit', sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-main);
+}
+
+.active-pkg-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-teal);
+  text-decoration: none;
+  padding: 6px 14px;
+  border: 1px solid var(--primary-teal);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.active-pkg-link-btn:hover {
+  background: var(--primary-teal);
+  color: #ffffff;
 }
 
 .active-package-meta-header {
@@ -6005,13 +6033,17 @@ body {
   .dashboard-layout,
   .toast-msg,
   #toast,
+  .page-loader-overlay,
+  #pageLoader,
   .modal-close-btn,
   .prescription-actions-row,
   .btn-print-rx,
   .btn-download-receipt,
   .consultations-toolbar,
   .consultations-tabs-bar,
-  .consultations-table-section {
+  .consultations-table-section,
+  #logoutModal,
+  .logout-modal-box {
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;
@@ -6019,10 +6051,15 @@ body {
     padding: 0 !important;
   }
 
-  /* 3. Modal Backdrop Reset */
+  /* 3. Modal Backdrop Reset - Only show active receipt or prescription modal */
   .modal-backdrop,
-  .modal-backdrop#receiptModal,
-  .modal-backdrop#prescriptionModal {
+  #logoutModal {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .modal-backdrop.active#receiptModal,
+  .modal-backdrop.active#prescriptionModal {
     display: block !important;
     position: static !important;
     inset: auto !important;

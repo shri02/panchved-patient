@@ -28,6 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const activePkgDesc = document.getElementById('activePkgDesc');
   const activePkgPrice = document.getElementById('activePkgPrice');
   const activePkgDuration = document.getElementById('activePkgDuration');
+  const activePkgDoctor = document.getElementById('activePkgDoctor');
+  const activePkgDoctorItem = document.getElementById('activePkgDoctorItem');
+  const activePkgActionLink = document.getElementById('activePkgActionLink');
 
   // Search & Table Elements
   const billingSearchInput = document.getElementById('billingSearchInput');
@@ -126,6 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let cachedPhone = '';
   let cachedPatientId = '';
+  let cachedEmail = '';
+  let cachedUserId = '';
   try {
     const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
     const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
@@ -133,6 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
       applyUserHeader(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
       cachedPatientId = storedPatient?.patient_id || '';
+      cachedEmail = storedPatient?.email || storedUser?.email || '';
+      cachedUserId = storedPatient?.id || storedUser?.id || '';
     }
   } catch (err) {}
 
@@ -141,6 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
+      if (cachedEmail) params.append('email', cachedEmail);
+      if (cachedUserId) params.append('user_id', cachedUserId);
       const res = await fetch('../api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
         const data = await res.json();
@@ -361,22 +370,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const receiptNo = btn.getAttribute('data-receipt') || '';
 
     // 1. Initial immediate population from loaded row if available
-    const paymentRecord = loadedPayments.find(p => String(p.id) === String(rowId));
+    const paymentRecord = loadedPayments.find(p => 
+      (rowId && String(p.id) === String(rowId)) ||
+      (receiptNo && p.receipt_no === receiptNo) ||
+      (billingId && p.billing_id === billingId)
+    );
+
     if (paymentRecord) {
       populateReceiptUI({
         receipt_no: paymentRecord.receipt_no,
         invoice_date: paymentRecord.date,
-        visit_date: `${paymentRecord.date} ${paymentRecord.time}`,
+        visit_date: paymentRecord.time ? `${paymentRecord.date} ${paymentRecord.time}` : paymentRecord.date,
         billed_to: {
-          name: paymentRecord.patient_name,
-          gender: paymentRecord.patient_gender,
-          age: paymentRecord.patient_age
+          name: paymentRecord.patient_name || cachedPatientObj?.full_name || cachedUserObj?.full_name || 'Patient',
+          gender: paymentRecord.patient_gender || cachedPatientObj?.gender || '--',
+          age: paymentRecord.patient_age || (cachedPatientObj?.age ? `${cachedPatientObj.age} years` : '--')
         },
-        items: paymentRecord.items,
-        subtotal: paymentRecord.subtotal,
-        discount: paymentRecord.discount,
+        items: paymentRecord.items || [
+          {
+            s_no: '01',
+            service: paymentRecord.package_name || paymentRecord.service_type || 'Ayurveda Service',
+            qty: '01',
+            amount: paymentRecord.total,
+            discount: paymentRecord.discount || '₹0',
+            total: paymentRecord.total
+          }
+        ],
+        subtotal: paymentRecord.subtotal || paymentRecord.total,
+        discount: paymentRecord.discount || '₹0',
         grand_total: paymentRecord.total,
         amount_words: paymentRecord.amount_words
+      });
+    } else {
+      const btnPat = btn.getAttribute('data-patient') || cachedPatientObj?.full_name || cachedUserObj?.full_name || 'Patient';
+      const btnTot = btn.getAttribute('data-total') || '₹0';
+      const btnSub = btn.getAttribute('data-subtotal') || btnTot;
+      const btnDisc = btn.getAttribute('data-discount') || '₹0';
+      const btnDate = btn.getAttribute('data-date') || '--';
+      const btnTime = btn.getAttribute('data-time') || '';
+      const btnPkg = btn.getAttribute('data-package') || 'Ayurveda Service';
+      const btnWords = btn.getAttribute('data-words') || '';
+
+      populateReceiptUI({
+        receipt_no: receiptNo,
+        invoice_date: btnDate,
+        visit_date: btnTime ? `${btnDate} ${btnTime}` : btnDate,
+        billed_to: {
+          name: btnPat,
+          gender: btn.getAttribute('data-gender') || '--',
+          age: btn.getAttribute('data-age') || '--'
+        },
+        items: [
+          {
+            s_no: '01',
+            service: btnPkg,
+            qty: '01',
+            amount: btnSub,
+            discount: btnDisc === '₹0' ? '0' : btnDisc,
+            total: btnTot
+          }
+        ],
+        subtotal: btnSub,
+        discount: btnDisc,
+        grand_total: btnTot,
+        amount_words: btnWords
       });
     }
 
@@ -394,6 +451,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (receiptNo) params.append('receipt_no', receiptNo);
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
+      if (cachedEmail) params.append('email', cachedEmail);
+      if (cachedUserId) params.append('user_id', cachedUserId);
 
       const res = await fetch(`../api/billing.php?${params.toString()}`);
       if (res.ok) {
@@ -449,9 +508,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (receiptNoText && receiptNoText !== '--') {
         document.title = `Receipt_${receiptNoText}`;
       }
+      document.body.classList.add('printing-active-receipt');
       window.print();
       setTimeout(() => {
         document.title = origTitle;
+        document.body.classList.remove('printing-active-receipt');
       }, 1000);
     });
   }
@@ -513,6 +574,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
+      if (cachedEmail) params.append('email', cachedEmail);
+      if (cachedUserId) params.append('user_id', cachedUserId);
 
       const res = await fetch('../api/billing.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
@@ -523,23 +586,36 @@ document.addEventListener('DOMContentLoaded', () => {
           if (data.active_package) {
             const pkg = data.active_package;
             if (activePkgTitle) activePkgTitle.textContent = pkg.title || 'Subscribed Package';
-            if (activePkgDesc) activePkgDesc.textContent = pkg.description || 'Personalized care and routine.';
+            if (activePkgDesc) activePkgDesc.textContent = pkg.description || 'Personalized wellness and healthcare routine.';
             if (activePkgPrice) activePkgPrice.textContent = pkg.price_formatted || (pkg.price ? `₹${pkg.price}` : '--');
             if (activePkgDuration) activePkgDuration.textContent = pkg.duration || '--';
+            if (pkgDoctor && pkg.doctor_name) {
+              pkgDoctor.textContent = pkg.doctor_name;
+              if (activePkgDoctorItem) activePkgDoctorItem.style.display = 'inline-flex';
+            }
             if (pkgBanner) pkgBanner.style.display = 'flex';
+            if (activePkgActionLink) {
+              activePkgActionLink.textContent = 'View Package Details';
+              activePkgActionLink.href = '../packages/package.html';
+              activePkgActionLink.style.display = 'inline-flex';
+            }
           } else {
             if (activePkgTitle) activePkgTitle.textContent = 'No Active Package';
             if (activePkgDesc) activePkgDesc.textContent = 'You currently have no active wellness package. Visit the Packages section to explore customized programs.';
             if (pkgBanner) pkgBanner.style.display = 'none';
+            if (activePkgDoctorItem) activePkgDoctorItem.style.display = 'none';
+            if (activePkgActionLink) {
+              activePkgActionLink.textContent = 'Explore Packages';
+              activePkgActionLink.href = '../packages/package.html';
+              activePkgActionLink.style.display = 'inline-flex';
+            }
           }
 
           // B. Update Payment History List
-          if (Array.isArray(data.payments) && data.payments.length > 0) {
-            loadedPayments = data.payments;
-            filteredPayments = [...loadedPayments];
-            currentBillingPage = 1;
-            renderBillingTable();
-          }
+          loadedPayments = Array.isArray(data.payments) ? data.payments : [];
+          filteredPayments = [...loadedPayments];
+          currentBillingPage = 1;
+          renderBillingTable();
         }
       }
     } catch (err) {

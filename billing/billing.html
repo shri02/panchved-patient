@@ -183,7 +183,10 @@
         
         <!-- SCREEN 1 - Top Card: Active Package Detail -->
         <section class="active-package-card" aria-labelledby="activePkgHeading">
-          <h2 class="active-package-heading" id="activePkgHeading">Active Package Detail</h2>
+          <div class="active-package-card-top">
+            <h2 class="active-package-heading" id="activePkgHeading">Active Package Detail</h2>
+            <a href="../packages/package.html" class="active-pkg-link-btn" id="activePkgActionLink" style="display: none;">View Package</a>
+          </div>
           
           <div class="active-package-meta-header">
             <h3 class="active-package-title" id="activePkgTitle">Loading Active Package...</h3>
@@ -212,6 +215,16 @@
                 </svg>
               </span>
               <span id="activePkgDuration">--</span>
+            </div>
+
+            <div class="package-banner-item" id="activePkgDoctorItem" style="display: none;">
+              <span class="banner-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </span>
+              <span id="activePkgDoctor">--</span>
             </div>
           </div>
         </section>
@@ -298,13 +311,12 @@
 
       <!-- Receipt Top Header -->
       <header class="receipt-top-header">
-  <link rel="icon" type="image/png" href="../assets/favicon.png">
         <div class="receipt-logo-block">
           <img src="../assets/logo.svg" alt="Ocayur Logo" class="receipt-logo-img" />
           <div class="receipt-business-address">
-            <p>Business address</p>
-            <p>City, State, IN - 000 000</p>
-            <p>+91 7896543210</p>
+            <p><strong>Ocayur Ayurveda Lifestyle</strong></p>
+            <p>Ocayur Health Center, Sector 62</p>
+            <p>+91 7896543210 &nbsp;|&nbsp; care@ocayur.com</p>
           </div>
         </div>
 

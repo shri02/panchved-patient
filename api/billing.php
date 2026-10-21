@@ -2,7 +2,7 @@
 /**
  * Ocayur Patient Portal - Billing & Payment History API
  * Dynamically fetches successful payments, invoices, active package details,
- * and receipt breakdowns directly from the MySQL database schema.
+ * and receipt breakdowns directly from MySQL database schema.
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -93,6 +93,7 @@ $action = isset($_GET['action']) ? trim($_GET['action']) : 'list';
 $phone = isset($_GET['phone']) ? trim($_GET['phone']) : ($_SESSION['phone_number'] ?? '');
 $email = isset($_GET['email']) ? trim($_GET['email']) : ($_SESSION['email'] ?? '');
 $patientId = isset($_GET['patient_id']) ? trim($_GET['patient_id']) : ($_SESSION['patient_id'] ?? '');
+$userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : ($_SESSION['user_id'] ?? 0);
 
 $phoneDigits = preg_replace('/[^\d]/', '', $phone);
 if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
@@ -101,7 +102,12 @@ if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
 
 $patient = null;
 if ($connection1 && (!empty($phone) || !empty($phoneDigits) || !empty($email) || !empty($patientId))) {
-    $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, blood_group, package_name, total_appointments, status, created_at FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1";
+    $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, blood_group, package_name, total_appointments, status, created_at 
+               FROM patients 
+               WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) 
+                  OR (email != '' AND email = ?) 
+                  OR (patient_id != '' AND patient_id = ?) 
+               LIMIT 1";
     if ($stmt = mysqli_prepare($connection1, $pQuery)) {
         mysqli_stmt_bind_param($stmt, "ssss", $phone, $phoneDigits, $email, $patientId);
         mysqli_stmt_execute($stmt);
@@ -111,13 +117,41 @@ if ($connection1 && (!empty($phone) || !empty($phoneDigits) || !empty($email) ||
     }
 }
 
-// Default Fallback Patient if not yet registered in DB
-if (!$patient) {
-    if ($connection1) {
-        $res = mysqli_query($connection1, "SELECT * FROM patients ORDER BY id ASC LIMIT 1");
-        if ($res && ($row = mysqli_fetch_assoc($res))) {
-            $patient = $row;
+// If patient not found in patients table, check users table
+if (!$patient && $connection1 && (!empty($phone) || !empty($phoneDigits) || !empty($email) || $userId > 0)) {
+    $uQuery = "SELECT id, full_name, email, phone_number, role, created_at FROM users 
+               WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) 
+                  OR (email != '' AND email = ?) 
+                  OR (id = ? AND ? > 0) 
+               LIMIT 1";
+    if ($uStmt = mysqli_prepare($connection1, $uQuery)) {
+        mysqli_stmt_bind_param($uStmt, "sssii", $phone, $phoneDigits, $email, $userId, $userId);
+        mysqli_stmt_execute($uStmt);
+        $uRes = mysqli_stmt_get_result($uStmt);
+        if ($uRow = mysqli_fetch_assoc($uRes)) {
+            $patient = [
+                'id' => (int)$uRow['id'],
+                'patient_id' => 'P00' . $uRow['id'],
+                'full_name' => $uRow['full_name'],
+                'phone_number' => $uRow['phone_number'],
+                'email' => $uRow['email'],
+                'gender' => 'Male',
+                'age' => 28,
+                'package_name' => '',
+                'total_appointments' => 0,
+                'status' => 'Active',
+                'created_at' => $uRow['created_at']
+            ];
         }
+        mysqli_stmt_close($uStmt);
+    }
+}
+
+// Fallback if no specific user identity was passed at all
+if (!$patient && $connection1 && empty($phone) && empty($email) && empty($patientId) && $userId <= 0) {
+    $res = mysqli_query($connection1, "SELECT * FROM patients ORDER BY id ASC LIMIT 1");
+    if ($res && ($row = mysqli_fetch_assoc($res))) {
+        $patient = $row;
     }
 }
 
@@ -128,8 +162,8 @@ if (!$patient) {
         'full_name' => $_SESSION['full_name'] ?? 'Patient',
         'phone_number' => $_SESSION['phone_number'] ?? '',
         'email' => $_SESSION['email'] ?? '',
-        'gender' => '--',
-        'age' => '--',
+        'gender' => 'Male',
+        'age' => 28,
         'package_name' => '',
         'total_appointments' => 0,
         'status' => 'Ongoing'
@@ -137,9 +171,9 @@ if (!$patient) {
 }
 
 $patDbId = (int)$patient['id'];
-$patName = $patient['full_name'];
-$patPhone = $patient['phone_number'];
-$patAge = !empty($patient['age']) ? (int)$patient['age'] : 34;
+$patName = $patient['full_name'] ?: 'Patient';
+$patPhone = $patient['phone_number'] ?: '';
+$patAge = !empty($patient['age']) ? (int)$patient['age'] : 28;
 $patGender = !empty($patient['gender']) ? $patient['gender'] : 'Male';
 
 // --------------------------------------------------------------------------
@@ -153,109 +187,32 @@ if ($action === 'receipt_details' || $action === 'receipt' || $action === 'downl
     $receiptData = null;
 
     if ($connection1 && ($targetId > 0 || !empty($targetBillingId) || !empty($targetReceiptNo))) {
-        // A. Check appointments table first
-        $apptSql = "SELECT a.*, p.price as pkg_price, p.duration as pkg_duration, p.short_description as pkg_desc,
-                           pat.gender as pat_gender, pat.age as pat_age, pat.full_name as pat_full_name, pat.dob as pat_dob,
-                           d.expertise as doc_expertise, d.area as doc_area
-                    FROM appointments a
-                    LEFT JOIN packages p ON (a.package_name = p.package_name OR p.package_name LIKE CONCAT('%', a.package_name, '%'))
-                    LEFT JOIN patients pat ON (a.patient_id = pat.id OR a.patient_name = pat.full_name)
-                    LEFT JOIN doctors d ON (a.doctor_id = d.id OR a.doctor_name = d.full_name)
-                    WHERE a.id = ? OR a.appointment_id = ? OR a.appointment_id = ? LIMIT 1";
+        
+        // ------------------------------------------------------------------
+        // Case A: Workshop Booking (WS-RCP-xxx, WS-xxx, or id in 1000..1999)
+        // ------------------------------------------------------------------
+        $isWorkshop = stripos($targetReceiptNo, 'WS-') !== false || 
+                      stripos($targetBillingId, 'WS-') !== false || 
+                      ($targetId >= 1000 && $targetId < 2000);
 
-        if ($aStmt = mysqli_prepare($connection1, $apptSql)) {
-            $rNoClean = preg_replace('/^EK-/i', '', $targetReceiptNo);
-            $rNoInt = is_numeric($rNoClean) ? (int)$rNoClean : 0;
-            $searchId = $targetId > 0 ? $targetId : $rNoInt;
-
-            mysqli_stmt_bind_param($aStmt, "iss", $searchId, $targetBillingId, $targetReceiptNo);
-            mysqli_stmt_execute($aStmt);
-            $aRes = mysqli_stmt_get_result($aStmt);
-            $row = mysqli_fetch_assoc($aRes);
-            mysqli_stmt_close($aStmt);
-
-            if ($row) {
-                $rawDate = $row['appointment_date'];
-                $ts = strtotime($rawDate);
-                $formattedDate = $ts !== false ? date('j M Y', $ts) : '18 Sept 2026';
-                
-                $timeDisplay = !empty($row['appointment_time']) ? $row['appointment_time'] : '4:00 PM';
-                if (strpos($timeDisplay, '-') !== false) {
-                    $parts = explode('-', $timeDisplay);
-                    $timeDisplay = trim($parts[0]);
-                }
-
-                $recPatientName = !empty($row['pat_full_name']) ? $row['pat_full_name'] : (!empty($row['patient_name']) ? $row['patient_name'] : $patName);
-                $recGender = !empty($row['pat_gender']) ? $row['pat_gender'] : $patGender;
-                $recAge = !empty($row['pat_age']) ? (int)$row['pat_age'] : $patAge;
-
-                $basePrice = !empty($row['pkg_price']) && (float)$row['pkg_price'] > 0 ? (float)$row['pkg_price'] : 2700.00;
-                if ($basePrice <= 0) $basePrice = 2700.00;
-                $discount = $basePrice > 1000 ? 500.00 : 0.00;
-                $grandTotal = max(0, $basePrice - $discount);
-                if ($grandTotal <= 0) $grandTotal = $basePrice;
-
-                $item1Price = max(500, round($basePrice * 0.35));
-                $item2Price = $basePrice - $item1Price;
-
-                $packageName = !empty($row['package_name']) ? $row['package_name'] : 'Stress & Sleep Balance';
-                $serviceName = !empty($row['service_type']) && $row['service_type'] !== 'Consultation & Rehab' ? $row['service_type'] : ($packageName !== 'General Consultation' ? $packageName : 'Ayurvedic Consultation');
-
-                $items = [
-                    [
-                        's_no' => '01',
-                        'service' => 'Dinchraya - Parkruti Charting',
-                        'qty' => '01',
-                        'amount' => '₹' . number_format($item1Price, 0),
-                        'discount' => '0',
-                        'total' => '₹' . number_format($item1Price, 0)
-                    ],
-                    [
-                        's_no' => '02',
-                        'service' => $serviceName,
-                        'qty' => '01',
-                        'amount' => '₹' . number_format($item2Price, 0),
-                        'discount' => '0',
-                        'total' => '₹' . number_format($item2Price, 0)
-                    ]
-                ];
-
-                $receiptData = [
-                    'id' => (int)$row['id'],
-                    'receipt_no' => 'EK-' . str_pad($row['id'], 3, '0', STR_PAD_LEFT),
-                    'billing_id' => !empty($row['appointment_id']) ? $row['appointment_id'] : ('ABC-' . str_pad($row['id'], 3, '0', STR_PAD_LEFT)),
-                    'invoice_date' => $formattedDate,
-                    'visit_date' => "{$formattedDate} {$timeDisplay}",
-                    'billed_to' => [
-                        'name' => $recPatientName,
-                        'gender' => $recGender,
-                        'age' => "{$recAge} years"
-                    ],
-                    'doctor' => [
-                        'name' => $row['doctor_name'] ?: 'Dr. Rohit Mishra',
-                        'role' => $row['doc_expertise'] ?: 'Ayurveda Physician'
-                    ],
-                    'package_name' => $packageName,
-                    'items' => $items,
-                    'subtotal' => '₹' . number_format($basePrice, 0),
-                    'discount' => '₹' . number_format($discount, 0),
-                    'grand_total' => '₹' . number_format($grandTotal, 0),
-                    'amount_words' => numberToWordsIndian($grandTotal),
-                    'payment_method' => 'Card',
-                    'payment_status' => 'Success'
-                ];
+        if ($isWorkshop || !$receiptData) {
+            $wsNumericId = $targetId >= 1000 ? ($targetId - 1000) : $targetId;
+            $wsReceiptClean = preg_replace('/^WS-RCP-/i', '', $targetReceiptNo);
+            $wsReceiptClean = preg_replace('/^WS-/i', '', $wsReceiptClean);
+            if (is_numeric($wsReceiptClean) && (int)$wsReceiptClean > 0 && $wsNumericId <= 0) {
+                $wsNumericId = (int)$wsReceiptClean;
             }
-        }
 
-        // B. Check workshop bookings if not found in appointments
-        if (!$receiptData) {
-            $wsSql = "SELECT wb.*, w.title as ws_title, w.time as ws_time, w.date as ws_date 
+            $wsSql = "SELECT wb.*, w.title as ws_title, w.time as ws_time, w.date as ws_date, 
+                             w.speaker as ws_speaker, w.assign_speaker as ws_assign_speaker, 
+                             w.instructor as ws_instructor, w.speaker_role
                       FROM workshop_bookings wb 
-                      LEFT JOIN workshops w ON wb.workshop_id = w.id 
-                      WHERE wb.id = ? OR wb.booking_id = ? LIMIT 1";
+                      LEFT JOIN workshops w ON (wb.workshop_id = w.id OR wb.workshop_id = w.workshop_id) 
+                      WHERE wb.id = ? OR wb.booking_id = ? OR wb.booking_id = ? OR wb.id = ? 
+                      LIMIT 1";
+
             if ($wStmt = mysqli_prepare($connection1, $wsSql)) {
-                $wsNumericId = $targetId > 1000 ? ($targetId - 1000) : $targetId;
-                mysqli_stmt_bind_param($wStmt, "is", $wsNumericId, $targetBillingId);
+                mysqli_stmt_bind_param($wStmt, "issi", $wsNumericId, $targetBillingId, $targetReceiptNo, $wsNumericId);
                 mysqli_stmt_execute($wStmt);
                 $wRes = mysqli_stmt_get_result($wStmt);
                 $wsRow = mysqli_fetch_assoc($wRes);
@@ -264,8 +221,11 @@ if ($action === 'receipt_details' || $action === 'receipt' || $action === 'downl
                 if ($wsRow) {
                     $wsAmount = (float)($wsRow['amount'] ?? 799.00);
                     $wsTitle = !empty($wsRow['ws_title']) ? $wsRow['ws_title'] : 'Ayurveda Workshop';
-                    $wsDate = !empty($wsRow['booking_date']) ? date('j M Y', strtotime($wsRow['booking_date'])) : '18 Sept 2026';
+                    $wsDate = !empty($wsRow['booking_date']) ? date('j M Y', strtotime($wsRow['booking_date'])) : (!empty($wsRow['ws_date']) ? date('j M Y', strtotime($wsRow['ws_date'])) : date('j M Y'));
                     $wsTime = !empty($wsRow['ws_time']) ? $wsRow['ws_time'] : '8:00 AM';
+                    $speakerName = !empty($wsRow['ws_speaker']) ? $wsRow['ws_speaker'] : (!empty($wsRow['ws_assign_speaker']) ? $wsRow['ws_assign_speaker'] : (!empty($wsRow['ws_instructor']) ? $wsRow['ws_instructor'] : 'Dr. Nidhi Jha'));
+                    $speakerRole = !empty($wsRow['speaker_role']) ? $wsRow['speaker_role'] : 'Ayurveda Physician';
+                    $billedName = !empty($wsRow['doctor_name']) ? $wsRow['doctor_name'] : $patName;
 
                     $receiptData = [
                         'id' => 1000 + (int)$wsRow['id'],
@@ -274,15 +234,16 @@ if ($action === 'receipt_details' || $action === 'receipt' || $action === 'downl
                         'invoice_date' => $wsDate,
                         'visit_date' => "{$wsDate} {$wsTime}",
                         'billed_to' => [
-                            'name' => !empty($wsRow['doctor_name']) ? $wsRow['doctor_name'] : $patName,
+                            'name' => $billedName,
                             'gender' => $patGender,
                             'age' => "{$patAge} years"
                         ],
                         'doctor' => [
-                            'name' => 'Dr. Nidhi Jha',
-                            'role' => 'Ayurveda Physician'
+                            'name' => $speakerName,
+                            'role' => $speakerRole
                         ],
                         'package_name' => $wsTitle,
+                        'service_type' => 'Ayurveda Workshop Session',
                         'items' => [
                             [
                                 's_no' => '01',
@@ -303,6 +264,172 @@ if ($action === 'receipt_details' || $action === 'receipt' || $action === 'downl
                 }
             }
         }
+
+        // ------------------------------------------------------------------
+        // Case B: Patient Package Booking (PKG-RCP-xxx, #PKG, or id >= 2000)
+        // ------------------------------------------------------------------
+        $isPkg = stripos($targetReceiptNo, 'PKG-') !== false || 
+                 stripos($targetBillingId, 'PKG') !== false || 
+                 $targetId >= 2000;
+
+        if (!$receiptData && ($isPkg || $targetId > 0 || !empty($targetBillingId))) {
+            $pkgNumericId = $targetId >= 2000 ? ($targetId - 2000) : $targetId;
+            $pkgReceiptClean = preg_replace('/^PKG-RCP-/i', '', $targetReceiptNo);
+            if (is_numeric($pkgReceiptClean) && (int)$pkgReceiptClean > 0 && $pkgNumericId <= 0) {
+                $pkgNumericId = (int)$pkgReceiptClean;
+            }
+
+            $ppSql = "SELECT pp.*, p.short_description, p.duration as pkg_duration, p.price as pkg_price, 
+                             p.assigned_doctor, pat.gender as pat_gender, pat.age as pat_age, pat.full_name as pat_full_name
+                      FROM patient_packages pp
+                      LEFT JOIN packages p ON (p.id = pp.package_id OR p.package_name = pp.package_name COLLATE utf8mb4_unicode_ci)
+                      LEFT JOIN patients pat ON (pp.patient_id = pat.id)
+                      WHERE pp.id = ? OR pp.booking_id = ? OR pp.booking_id = ? OR pp.id = ? 
+                      LIMIT 1";
+
+            if ($ppStmt = mysqli_prepare($connection1, $ppSql)) {
+                mysqli_stmt_bind_param($ppStmt, "issi", $pkgNumericId, $targetBillingId, $targetReceiptNo, $pkgNumericId);
+                mysqli_stmt_execute($ppStmt);
+                $ppRes = mysqli_stmt_get_result($ppStmt);
+                $ppRow = mysqli_fetch_assoc($ppRes);
+                mysqli_stmt_close($ppStmt);
+
+                if ($ppRow) {
+                    $pkgAmount = (float)($ppRow['price'] > 0 ? $ppRow['price'] : ($ppRow['pkg_price'] ?? 5000.00));
+                    $pkgName = $ppRow['package_name'] ?: 'Ayurveda Wellness Package';
+                    $pkgDate = !empty($ppRow['booking_date']) ? date('j M Y', strtotime($ppRow['booking_date'])) : date('j M Y', strtotime($ppRow['created_at']));
+                    $pkgDoc = !empty($ppRow['doctor_name']) && $ppRow['doctor_name'] !== '0' ? $ppRow['doctor_name'] : (!empty($ppRow['assigned_doctor']) ? $ppRow['assigned_doctor'] : 'Dr. Nidhi Jha');
+                    $billedName = !empty($ppRow['pat_full_name']) ? $ppRow['pat_full_name'] : $patName;
+                    $billedGender = !empty($ppRow['pat_gender']) ? $ppRow['pat_gender'] : $patGender;
+                    $billedAge = !empty($ppRow['pat_age']) ? (int)$ppRow['pat_age'] : $patAge;
+
+                    $receiptData = [
+                        'id' => 2000 + (int)$ppRow['id'],
+                        'receipt_no' => 'PKG-RCP-' . str_pad($ppRow['id'], 3, '0', STR_PAD_LEFT),
+                        'billing_id' => $ppRow['booking_id'] ?: ('#PKG' . str_pad($ppRow['id'], 5, '0', STR_PAD_LEFT)),
+                        'invoice_date' => $pkgDate,
+                        'visit_date' => "{$pkgDate} 10:00 AM",
+                        'billed_to' => [
+                            'name' => $billedName,
+                            'gender' => $billedGender,
+                            'age' => "{$billedAge} years"
+                        ],
+                        'doctor' => [
+                            'name' => $pkgDoc,
+                            'role' => 'Senior Ayurveda Physician'
+                        ],
+                        'package_name' => $pkgName,
+                        'service_type' => 'Ayurveda Package Subscription',
+                        'items' => [
+                            [
+                                's_no' => '01',
+                                'service' => "{$pkgName} (Complete Wellness Program)",
+                                'qty' => '01',
+                                'amount' => '₹' . number_format($pkgAmount, 0),
+                                'discount' => '0',
+                                'total' => '₹' . number_format($pkgAmount, 0)
+                            ]
+                        ],
+                        'subtotal' => '₹' . number_format($pkgAmount, 0),
+                        'discount' => '₹0',
+                        'grand_total' => '₹' . number_format($pkgAmount, 0),
+                        'amount_words' => numberToWordsIndian($pkgAmount),
+                        'payment_method' => 'Card / Online',
+                        'payment_status' => 'Success'
+                    ];
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Case C: Consultation Appointment (EK-xxx, ABC-xxx, APT-xxx)
+        // ------------------------------------------------------------------
+        if (!$receiptData) {
+            $apptSql = "SELECT a.*, p.price as pkg_price, p.duration as pkg_duration, p.short_description as pkg_desc,
+                               pat.gender as pat_gender, pat.age as pat_age, pat.full_name as pat_full_name, pat.dob as pat_dob,
+                               d.expertise as doc_expertise, d.area as doc_area
+                        FROM appointments a
+                        LEFT JOIN packages p ON (a.package_name = p.package_name OR p.package_name LIKE CONCAT('%', a.package_name, '%'))
+                        LEFT JOIN patients pat ON (a.patient_id = pat.id OR a.patient_name = pat.full_name)
+                        LEFT JOIN doctors d ON (a.doctor_id = d.id OR a.doctor_name = d.full_name)
+                        WHERE a.id = ? OR a.appointment_id = ? OR a.appointment_id = ? OR a.id = ? 
+                        LIMIT 1";
+
+            if ($aStmt = mysqli_prepare($connection1, $apptSql)) {
+                $rNoClean = preg_replace('/^EK-/i', '', $targetReceiptNo);
+                $rNoInt = is_numeric($rNoClean) ? (int)$rNoClean : 0;
+                $searchId = $targetId > 0 && $targetId < 1000 ? $targetId : $rNoInt;
+
+                mysqli_stmt_bind_param($aStmt, "issi", $searchId, $targetBillingId, $targetReceiptNo, $searchId);
+                mysqli_stmt_execute($aStmt);
+                $aRes = mysqli_stmt_get_result($aStmt);
+                $row = mysqli_fetch_assoc($aRes);
+                mysqli_stmt_close($aStmt);
+
+                if ($row) {
+                    $rawDate = $row['appointment_date'];
+                    $ts = strtotime($rawDate);
+                    $formattedDate = $ts !== false ? date('j M Y', $ts) : date('j M Y');
+                    
+                    $timeDisplay = !empty($row['appointment_time']) ? $row['appointment_time'] : '9:30 AM';
+                    if (strpos($timeDisplay, '-') !== false) {
+                        $parts = explode('-', $timeDisplay);
+                        $timeDisplay = trim($parts[0]);
+                    }
+
+                    $recPatientName = !empty($row['pat_full_name']) ? $row['pat_full_name'] : (!empty($row['patient_name']) ? $row['patient_name'] : $patName);
+                    $recGender = !empty($row['pat_gender']) ? $row['pat_gender'] : $patGender;
+                    $recAge = !empty($row['pat_age']) ? (int)$row['pat_age'] : $patAge;
+
+                    $basePrice = !empty($row['pkg_price']) && (float)$row['pkg_price'] > 0 ? (float)$row['pkg_price'] : 500.00;
+                    $discount = 0.00;
+                    if ($basePrice >= 5000) {
+                        $discount = 500.00;
+                    }
+                    $grandTotal = max(0, $basePrice - $discount);
+
+                    $packageName = !empty($row['package_name']) ? $row['package_name'] : 'Ayurvedic Consultation';
+                    $serviceName = !empty($row['service_type']) ? $row['service_type'] : $packageName;
+
+                    $items = [
+                        [
+                            's_no' => '01',
+                            'service' => $serviceName,
+                            'qty' => '01',
+                            'amount' => '₹' . number_format($basePrice, 0),
+                            'discount' => $discount > 0 ? '₹' . number_format($discount, 0) : '0',
+                            'total' => '₹' . number_format($grandTotal, 0)
+                        ]
+                    ];
+
+                    $receiptData = [
+                        'id' => (int)$row['id'],
+                        'receipt_no' => 'EK-' . str_pad($row['id'], 3, '0', STR_PAD_LEFT),
+                        'billing_id' => !empty($row['appointment_id']) ? $row['appointment_id'] : ('ABC-' . str_pad($row['id'], 3, '0', STR_PAD_LEFT)),
+                        'invoice_date' => $formattedDate,
+                        'visit_date' => "{$formattedDate} {$timeDisplay}",
+                        'billed_to' => [
+                            'name' => $recPatientName,
+                            'gender' => $recGender,
+                            'age' => "{$recAge} years"
+                        ],
+                        'doctor' => [
+                            'name' => $row['doctor_name'] ?: 'Dr. Nidhi Jha',
+                            'role' => $row['doc_expertise'] ?: 'Senior Ayurveda Physician'
+                        ],
+                        'package_name' => $packageName,
+                        'service_type' => $serviceName,
+                        'items' => $items,
+                        'subtotal' => '₹' . number_format($basePrice, 0),
+                        'discount' => '₹' . number_format($discount, 0),
+                        'grand_total' => '₹' . number_format($grandTotal, 0),
+                        'amount_words' => numberToWordsIndian($grandTotal),
+                        'payment_method' => 'Card',
+                        'payment_status' => 'Success'
+                    ];
+                }
+            }
+        }
     }
 
     if ($receiptData) {
@@ -313,34 +440,77 @@ if ($action === 'receipt_details' || $action === 'receipt' || $action === 'downl
 }
 
 // --------------------------------------------------------------------------
-// 3. Fetch Active Package Details from `packages` table
+// 3. Fetch Active Package Details Dynamically from Database
 // --------------------------------------------------------------------------
-$currentPackageName = !empty($patient['package_name']) ? trim($patient['package_name']) : 'Stress & Sleep Balance';
-$pkgDetails = null;
+$activePackage = null;
 
 if ($connection1) {
-    $pQuery = "SELECT * FROM packages WHERE package_name = ? OR package_name LIKE ? OR package_name LIKE ? LIMIT 1";
-    if ($pStmt = mysqli_prepare($connection1, $pQuery)) {
-        $pClean = trim(preg_replace('/\s*-\s*consultation/i', '', $currentPackageName));
-        $pLike = '%' . $pClean . '%';
-        $pExact = $currentPackageName;
-        mysqli_stmt_bind_param($pStmt, "sss", $pExact, $pLike, $pClean);
-        mysqli_stmt_execute($pStmt);
-        $pRes = mysqli_stmt_get_result($pStmt);
-        $pkgDetails = mysqli_fetch_assoc($pRes);
-        mysqli_stmt_close($pStmt);
+    // A. First check `patient_packages` table for the patient's actively enrolled package
+    $ppQuery = "SELECT pp.*, p.short_description, p.duration as pkg_duration, p.price as pkg_price, 
+                       p.assigned_doctor, p.category
+                FROM patient_packages pp
+                LEFT JOIN packages p ON (p.id = pp.package_id OR p.package_name = pp.package_name COLLATE utf8mb4_unicode_ci)
+                WHERE ((pp.patient_id > 0 AND pp.patient_id = ?) 
+                   OR (pp.patient_phone != '' AND (? != '' AND (pp.patient_phone = ? OR pp.patient_phone = ?))))
+                  AND pp.status IN ('Active', 'Ongoing')
+                ORDER BY pp.id DESC 
+                LIMIT 1";
+
+    if ($ppStmt = mysqli_prepare($connection1, $ppQuery)) {
+        mysqli_stmt_bind_param($ppStmt, "isss", $patDbId, $patPhone, $patPhone, $phoneDigits);
+        mysqli_stmt_execute($ppStmt);
+        $ppRes = mysqli_stmt_get_result($ppStmt);
+        if ($ppRow = mysqli_fetch_assoc($ppRes)) {
+            $pkgPrice = (float)($ppRow['price'] > 0 ? $ppRow['price'] : ($ppRow['pkg_price'] ?? 5000.00));
+            $pkgDuration = !empty($ppRow['pkg_duration']) ? $ppRow['pkg_duration'] : '4 Weeks';
+            $pkgDesc = !empty($ppRow['short_description']) ? $ppRow['short_description'] : 'Comprehensive holistic wellness and lifestyle protocol.';
+            $docName = !empty($ppRow['doctor_name']) && $ppRow['doctor_name'] !== '0' ? $ppRow['doctor_name'] : (!empty($ppRow['assigned_doctor']) ? $ppRow['assigned_doctor'] : 'Dr. Nidhi Jha');
+
+            $activePackage = [
+                'id' => (int)$ppRow['id'],
+                'booking_id' => $ppRow['booking_id'] ?: ('#PKG' . str_pad($ppRow['id'], 5, '0', STR_PAD_LEFT)),
+                'title' => $ppRow['package_name'],
+                'description' => $pkgDesc,
+                'price' => $pkgPrice,
+                'price_formatted' => '₹' . number_format($pkgPrice, 0) . ' / month',
+                'duration' => $pkgDuration,
+                'doctor_name' => $docName,
+                'status' => $ppRow['status'] ?: 'Active',
+                'booking_date' => !empty($ppRow['booking_date']) ? date('j M Y', strtotime($ppRow['booking_date'])) : date('j M Y')
+            ];
+        }
+        mysqli_stmt_close($ppStmt);
+    }
+
+    // B. If not in patient_packages, check if patient record has a subscribed package_name
+    if (!$activePackage && !empty($patient['package_name']) && strtolower(trim($patient['package_name'])) !== 'none' && strtolower(trim($patient['package_name'])) !== 'null') {
+        $pName = trim($patient['package_name']);
+        $pClean = trim(preg_replace('/\s*-\s*consultation/i', '', $pName));
+        $pQuery = "SELECT * FROM packages WHERE package_name = ? OR package_name LIKE ? LIMIT 1";
+        if ($pStmt = mysqli_prepare($connection1, $pQuery)) {
+            $pLike = '%' . $pClean . '%';
+            mysqli_stmt_bind_param($pStmt, "ss", $pName, $pLike);
+            mysqli_stmt_execute($pStmt);
+            $pRes = mysqli_stmt_get_result($pStmt);
+            if ($pRow = mysqli_fetch_assoc($pRes)) {
+                $pkgPrice = (float)($pRow['price'] ?? 5000.00);
+                $activePackage = [
+                    'id' => (int)$pRow['id'],
+                    'booking_id' => '#PKG' . str_pad($pRow['id'], 5, '0', STR_PAD_LEFT),
+                    'title' => $pRow['package_name'],
+                    'description' => !empty($pRow['short_description']) ? $pRow['short_description'] : 'Personalized Ayurvedic health program.',
+                    'price' => $pkgPrice,
+                    'price_formatted' => '₹' . number_format($pkgPrice, 0) . ' / month',
+                    'duration' => !empty($pRow['duration']) ? $pRow['duration'] : '4 Weeks',
+                    'doctor_name' => !empty($pRow['assigned_doctor']) ? $pRow['assigned_doctor'] : 'Dr. Nidhi Jha',
+                    'status' => 'Active',
+                    'booking_date' => !empty($patient['created_at']) ? date('j M Y', strtotime($patient['created_at'])) : date('j M Y')
+                ];
+            }
+            mysqli_stmt_close($pStmt);
+        }
     }
 }
-
-$activePackage = [
-    'title' => !empty($pkgDetails['package_name']) ? $pkgDetails['package_name'] : $currentPackageName,
-    'description' => !empty($pkgDetails['short_description']) ? $pkgDetails['short_description'] : 'Stress management and sleep routine.',
-    'price' => !empty($pkgDetails['price']) ? (float)$pkgDetails['price'] : 5499.00,
-    'price_formatted' => '₹' . number_format(!empty($pkgDetails['price']) ? (float)$pkgDetails['price'] : 5499, 0) . ' / month',
-    'duration' => !empty($pkgDetails['duration']) ? $pkgDetails['duration'] : '3 Months',
-    'doctor_name' => !empty($pkgDetails['assigned_doctor']) ? $pkgDetails['assigned_doctor'] : 'Dr. Rohit Mishra',
-    'status' => 'Active'
-];
 
 // --------------------------------------------------------------------------
 // 4. Dynamically Fetch All Successful Payment Records from Database Schema
@@ -348,77 +518,125 @@ $activePackage = [
 $payments = [];
 
 if ($connection1) {
-    // Query appointments representing paid and confirmed bookings
+    // ----------------------------------------------------------------------
+    // 4A. Query `patient_packages` (Package Subscriptions & Enrollments)
+    // ----------------------------------------------------------------------
+    $ppBookQuery = "SELECT pp.*, p.short_description, p.duration as pkg_duration, p.price as pkg_price, 
+                           p.assigned_doctor, p.category
+                    FROM patient_packages pp
+                    LEFT JOIN packages p ON (p.id = pp.package_id OR p.package_name = pp.package_name COLLATE utf8mb4_unicode_ci)
+                    WHERE ((pp.patient_id > 0 AND pp.patient_id = ?) 
+                       OR (pp.patient_phone != '' AND (? != '' AND (pp.patient_phone = ? OR pp.patient_phone = ?))))
+                    ORDER BY pp.id DESC";
+
+    if ($ppStmt = mysqli_prepare($connection1, $ppBookQuery)) {
+        mysqli_stmt_bind_param($ppStmt, "isss", $patDbId, $patPhone, $patPhone, $phoneDigits);
+        mysqli_stmt_execute($ppStmt);
+        $ppRes = mysqli_stmt_get_result($ppStmt);
+        while ($ppRow = mysqli_fetch_assoc($ppRes)) {
+            $pkgPrice = (float)($ppRow['price'] > 0 ? $ppRow['price'] : ($ppRow['pkg_price'] ?? 5000.00));
+            $pkgTitle = $ppRow['package_name'] ?: 'Ayurveda Wellness Package';
+            $rawDate = !empty($ppRow['booking_date']) ? $ppRow['booking_date'] : $ppRow['created_at'];
+            $formattedDate = date('j M Y', strtotime($rawDate));
+            $docName = !empty($ppRow['doctor_name']) && $ppRow['doctor_name'] !== '0' ? $ppRow['doctor_name'] : (!empty($ppRow['assigned_doctor']) ? $ppRow['assigned_doctor'] : 'Dr. Nidhi Jha');
+            $duration = !empty($ppRow['pkg_duration']) ? $ppRow['pkg_duration'] : '4 Weeks';
+            $bookingCode = $ppRow['booking_id'] ?: ('#PKG' . str_pad($ppRow['id'], 5, '0', STR_PAD_LEFT));
+            $receiptCode = 'PKG-RCP-' . str_pad($ppRow['id'], 3, '0', STR_PAD_LEFT);
+
+            $payments[] = [
+                'id' => 2000 + (int)$ppRow['id'],
+                'billing_id' => $bookingCode,
+                'receipt_no' => $receiptCode,
+                'date' => $formattedDate,
+                'raw_date' => $rawDate,
+                'time' => '10:00 AM',
+                'duration' => $duration,
+                'doctor_name' => $docName,
+                'package_name' => $pkgTitle,
+                'service_type' => 'Ayurveda Wellness Program',
+                'patient_name' => $patName,
+                'patient_gender' => $patGender,
+                'patient_age' => $patAge . ' years',
+                'subtotal' => '₹' . number_format($pkgPrice, 0),
+                'discount' => '₹0',
+                'total' => '₹' . number_format($pkgPrice, 0),
+                'amount_raw' => $pkgPrice,
+                'amount_words' => numberToWordsIndian($pkgPrice),
+                'payment_status' => 'Success',
+                'payment_method' => 'Card / Online',
+                'items' => [
+                    [
+                        's_no' => '01',
+                        'service' => "{$pkgTitle} (Package Enrollment)",
+                        'qty' => '01',
+                        'amount' => '₹' . number_format($pkgPrice, 0),
+                        'discount' => '0',
+                        'total' => '₹' . number_format($pkgPrice, 0)
+                    ]
+                ]
+            ];
+        }
+        mysqli_stmt_close($ppStmt);
+    }
+
+    // ----------------------------------------------------------------------
+    // 4B. Query `appointments` (Paid Doctor Consultations)
+    // ----------------------------------------------------------------------
     $apptQuery = "SELECT a.*, p.price as pkg_price, p.duration as pkg_duration 
                   FROM appointments a 
                   LEFT JOIN packages p ON (a.package_name = p.package_name OR p.package_name LIKE CONCAT('%', a.package_name, '%'))
-                  WHERE a.status IN ('Scheduled', 'Upcoming', 'Completed', 'Active')
+                  WHERE ((a.patient_id > 0 AND a.patient_id = ?) 
+                     OR (a.patient_name != '' AND ? != '' AND a.patient_name = ?)
+                     OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
+                    AND a.status IN ('Scheduled', 'Upcoming', 'Completed', 'Active')
                   ORDER BY a.appointment_date DESC, a.id DESC";
 
-    $apptRes = mysqli_query($connection1, $apptQuery);
-    if ($apptRes) {
-        $rowIndex = 1;
+    if ($aStmt = mysqli_prepare($connection1, $apptQuery)) {
+        mysqli_stmt_bind_param($aStmt, "issssss", $patDbId, $patName, $patName, $patPhone, $patPhone, $phoneDigits);
+        mysqli_stmt_execute($aStmt);
+        $apptRes = mysqli_stmt_get_result($aStmt);
         while ($row = mysqli_fetch_assoc($apptRes)) {
             $appointmentCode = !empty($row['appointment_id']) ? $row['appointment_id'] : ('ABC-' . str_pad($row['id'], 3, '0', STR_PAD_LEFT));
             
             // Format Date
             $rawDate = $row['appointment_date'];
             $ts = strtotime($rawDate);
-            $formattedDate = $ts !== false ? date('j M Y', $ts) : '2 Sept 2026';
-            $receiptDate = $ts !== false ? date('j M Y', $ts) : '18 Sept 2026';
+            $formattedDate = $ts !== false ? date('j M Y', $ts) : date('j M Y');
             
             // Format Time
-            $timeDisplay = !empty($row['appointment_time']) ? $row['appointment_time'] : '4:00 PM';
+            $timeDisplay = !empty($row['appointment_time']) ? $row['appointment_time'] : '9:30 AM';
             if (strpos($timeDisplay, '-') !== false) {
                 $parts = explode('-', $timeDisplay);
                 $timeDisplay = trim($parts[0]);
             }
 
             // Duration
-            $durationDisplay = !empty($row['duration']) ? $row['duration'] : (!empty($row['pkg_duration']) ? $row['pkg_duration'] : '3 months');
+            $durationDisplay = !empty($row['duration']) ? $row['duration'] : (!empty($row['pkg_duration']) ? $row['pkg_duration'] : '45 mins');
             if (is_numeric($durationDisplay)) {
-                $durationDisplay = $durationDisplay . ' months';
+                $durationDisplay = $durationDisplay . ' mins';
             }
 
-            // Doctor & Package Name
-            $doctorName = !empty($row['doctor_name']) ? $row['doctor_name'] : 'Dr. Rohit Mishra';
-            $packageName = !empty($row['package_name']) ? $row['package_name'] : 'Stress & Sleep Balance';
-            $serviceType = !empty($row['service_type']) ? $row['service_type'] : 'Ayurvedic Consultation';
-
-            // Patient Name for this record
+            $doctorName = !empty($row['doctor_name']) ? $row['doctor_name'] : 'Dr. Nidhi Jha';
+            $packageName = !empty($row['package_name']) ? $row['package_name'] : 'Ayurvedic Consultation';
+            $serviceType = !empty($row['service_type']) ? $row['service_type'] : $packageName;
             $recPatientName = !empty($row['patient_name']) ? $row['patient_name'] : $patName;
 
-            // Financial Calculations
-            $basePrice = !empty($row['pkg_price']) && (float)$row['pkg_price'] > 0 ? (float)$row['pkg_price'] : 2700.00;
-            if ($basePrice <= 0) $basePrice = 2700.00;
-            
-            $discount = 500.00;
-            if ($basePrice <= 1000) {
-                $discount = 0.00;
+            // Fee
+            $basePrice = !empty($row['pkg_price']) && (float)$row['pkg_price'] > 0 ? (float)$row['pkg_price'] : 500.00;
+            $discount = 0.00;
+            if ($basePrice >= 5000) {
+                $discount = 500.00;
             }
             $totalAmount = max(0, $basePrice - $discount);
-            if ($totalAmount <= 0) $totalAmount = $basePrice;
-
-            // Itemized Breakdown
-            $item1Price = max(500, round($basePrice * 0.35));
-            $item2Price = $basePrice - $item1Price;
 
             $items = [
                 [
                     's_no' => '01',
-                    'service' => 'Dinchraya - Parkruti Charting',
+                    'service' => $serviceType,
                     'qty' => '01',
-                    'amount' => '₹' . number_format($item1Price, 0),
-                    'discount' => '0',
-                    'total' => '₹' . number_format($item1Price, 0)
-                ],
-                [
-                    's_no' => '02',
-                    'service' => !empty($packageName) && $packageName !== 'General Consultation' ? $packageName : 'Ayurvedic Consultation',
-                    'qty' => '01',
-                    'amount' => '₹' . number_format($item2Price, 0),
-                    'discount' => '0',
-                    'total' => '₹' . number_format($item2Price, 0)
+                    'amount' => '₹' . number_format($basePrice, 0),
+                    'discount' => $discount > 0 ? '₹' . number_format($discount, 0) : '0',
+                    'total' => '₹' . number_format($totalAmount, 0)
                 ]
             ];
 
@@ -445,23 +663,44 @@ if ($connection1) {
                 'payment_method' => 'Card',
                 'items' => $items
             ];
-            $rowIndex++;
         }
+        mysqli_stmt_close($aStmt);
     }
 
-    // Also include any successful workshop bookings
-    $wsBookQuery = "SELECT wb.*, w.title as workshop_title, w.time as workshop_time, w.date as workshop_date 
+    // ----------------------------------------------------------------------
+    // 4C. Query `workshop_bookings` (Paid Workshop Enrollments)
+    // ----------------------------------------------------------------------
+    $wsBookQuery = "SELECT wb.*, w.title as workshop_title, w.time as workshop_time, w.date as workshop_date,
+                           w.speaker as ws_speaker, w.assign_speaker as ws_assign_speaker, 
+                           w.instructor as ws_instructor, w.duration_text as ws_duration
                     FROM workshop_bookings wb 
-                    LEFT JOIN workshops w ON wb.workshop_id = w.id 
+                    LEFT JOIN workshops w ON (wb.workshop_id = w.id OR wb.workshop_id = w.workshop_id) 
                     WHERE wb.payment_status = 'Success' 
-                    ORDER BY wb.booking_date DESC LIMIT 10";
-    $wsRes = mysqli_query($connection1, $wsBookQuery);
-    if ($wsRes) {
+                      AND (
+                        (wb.doctor_phone != '' AND ? != '' AND (wb.doctor_phone = ? OR wb.doctor_phone = ?)) OR 
+                        (wb.doctor_email != '' AND ? != '' AND wb.doctor_email = ?) OR 
+                        (wb.doctor_name != '' AND ? != '' AND wb.doctor_name = ?) OR
+                        (? = '' AND ? = '' AND wb.doctor_id = ? AND ? > 0)
+                      )
+                    ORDER BY wb.booking_date DESC";
+
+    if ($wStmt = mysqli_prepare($connection1, $wsBookQuery)) {
+        mysqli_stmt_bind_param($wStmt, "ssssssssii", 
+            $patPhone, $patPhone, $phoneDigits,
+            $patient['email'], $patient['email'],
+            $patName, $patName,
+            $patPhone, $patient['email'],
+            $patDbId, $patDbId
+        );
+        mysqli_stmt_execute($wStmt);
+        $wsRes = mysqli_stmt_get_result($wStmt);
         while ($wsRow = mysqli_fetch_assoc($wsRes)) {
             $wsAmount = (float)($wsRow['amount'] ?? 799.00);
             $wsTitle = !empty($wsRow['workshop_title']) ? $wsRow['workshop_title'] : 'Ayurveda Workshop';
-            $wsDate = !empty($wsRow['booking_date']) ? date('j M Y', strtotime($wsRow['booking_date'])) : '2 Sept 2026';
+            $wsDate = !empty($wsRow['booking_date']) ? date('j M Y', strtotime($wsRow['booking_date'])) : (!empty($wsRow['ws_date']) ? date('j M Y', strtotime($wsRow['ws_date'])) : date('j M Y'));
             $wsTime = !empty($wsRow['workshop_time']) ? $wsRow['workshop_time'] : '8:00 AM';
+            $speaker = !empty($wsRow['ws_speaker']) ? $wsRow['ws_speaker'] : (!empty($wsRow['ws_assign_speaker']) ? $wsRow['ws_assign_speaker'] : (!empty($wsRow['ws_instructor']) ? $wsRow['ws_instructor'] : 'Dr. Nidhi Jha'));
+            $duration = !empty($wsRow['ws_duration']) ? $wsRow['ws_duration'] : 'Workshop Session';
 
             $payments[] = [
                 'id' => 1000 + (int)$wsRow['id'],
@@ -470,10 +709,10 @@ if ($connection1) {
                 'date' => $wsDate,
                 'raw_date' => $wsRow['booking_date'],
                 'time' => $wsTime,
-                'duration' => 'Workshop Session',
-                'doctor_name' => !empty($wsRow['doctor_name']) ? $wsRow['doctor_name'] : 'Dr. Nidhi Jha',
+                'duration' => $duration,
+                'doctor_name' => $speaker,
                 'package_name' => $wsTitle,
-                'service_type' => 'Live Interactive Workshop',
+                'service_type' => 'Interactive Workshop',
                 'patient_name' => !empty($wsRow['doctor_name']) ? $wsRow['doctor_name'] : $patName,
                 'patient_gender' => $patGender,
                 'patient_age' => $patAge . ' years',
@@ -496,6 +735,7 @@ if ($connection1) {
                 ]
             ];
         }
+        mysqli_stmt_close($wStmt);
     }
 }
 
