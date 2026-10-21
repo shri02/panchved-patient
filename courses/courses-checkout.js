@@ -246,6 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!data) return;
     activeWorkshopData = data;
 
+    const wsTitle = data.workshopTitle || data.title || 'Ayurveda Workshop';
+
     let speaker = data.doctorName || data.speaker || data.assign_speaker || data.instructor || '';
     if (speaker) {
       if (!speaker.toLowerCase().startsWith('by ')) {
@@ -272,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const formattedPrice = formatAmount(numericPrice);
 
-    if (checkoutWorkshopTitle) checkoutWorkshopTitle.textContent = title;
+    if (checkoutWorkshopTitle) checkoutWorkshopTitle.textContent = wsTitle;
     if (checkoutWorkshopSpeaker) checkoutWorkshopSpeaker.textContent = speaker;
     if (checkoutDateVal) checkoutDateVal.textContent = date;
     if (checkoutTimeVal) checkoutTimeVal.textContent = time;
