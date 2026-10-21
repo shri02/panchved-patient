@@ -592,7 +592,7 @@ if ($connection1) {
                   ORDER BY a.appointment_date DESC, a.id DESC";
 
     if ($aStmt = mysqli_prepare($connection1, $apptQuery)) {
-        mysqli_stmt_bind_param($aStmt, "issssss", $patDbId, $patName, $patName, $patPhone, $patPhone, $phoneDigits);
+        mysqli_stmt_bind_param($aStmt, "isssss", $patDbId, $patName, $patName, $patPhone, $patPhone, $phoneDigits);
         mysqli_stmt_execute($aStmt);
         $apptRes = mysqli_stmt_get_result($aStmt);
         while ($row = mysqli_fetch_assoc($apptRes)) {
@@ -672,7 +672,7 @@ if ($connection1) {
     // ----------------------------------------------------------------------
     $wsBookQuery = "SELECT wb.*, w.title as workshop_title, w.time as workshop_time, w.date as workshop_date,
                            w.speaker as ws_speaker, w.assign_speaker as ws_assign_speaker, 
-                           w.instructor as ws_instructor, w.duration_text as ws_duration
+                           w.instructor as ws_instructor
                     FROM workshop_bookings wb 
                     LEFT JOIN workshops w ON (wb.workshop_id = w.id OR wb.workshop_id = w.workshop_id) 
                     WHERE wb.payment_status = 'Success' 
@@ -685,7 +685,7 @@ if ($connection1) {
                     ORDER BY wb.booking_date DESC";
 
     if ($wStmt = mysqli_prepare($connection1, $wsBookQuery)) {
-        mysqli_stmt_bind_param($wStmt, "ssssssssii", 
+        mysqli_stmt_bind_param($wStmt, "sssssssssii", 
             $patPhone, $patPhone, $phoneDigits,
             $patient['email'], $patient['email'],
             $patName, $patName,

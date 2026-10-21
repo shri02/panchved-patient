@@ -129,8 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let cachedPhone = '';
   let cachedPatientId = '';
-  let cachedEmail = '';
-  let cachedUserId = '';
   try {
     const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
     const storedPatient = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
@@ -138,8 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
       applyUserHeader(storedUser, storedPatient);
       cachedPhone = storedPatient?.phone_number || storedUser?.phone_number || '';
       cachedPatientId = storedPatient?.patient_id || '';
-      cachedEmail = storedPatient?.email || storedUser?.email || '';
-      cachedUserId = storedPatient?.id || storedUser?.id || '';
     }
   } catch (err) {}
 
@@ -148,13 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      if (cachedEmail) params.append('email', cachedEmail);
-      if (cachedUserId) params.append('user_id', cachedUserId);
       const res = await fetch('../api/profile.php' + (params.toString() ? `?${params.toString()}` : ''));
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
           applyUserHeader(data.user, data.patient);
+          if (data.patient?.phone_number) cachedPhone = data.patient.phone_number;
+          if (data.patient?.patient_id) cachedPatientId = data.patient.patient_id;
         }
       }
     } catch (e) {}
@@ -451,11 +447,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (receiptNo) params.append('receipt_no', receiptNo);
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      if (cachedEmail) params.append('email', cachedEmail);
-      if (cachedUserId) params.append('user_id', cachedUserId);
 
-      const res = await fetch(`../api/billing.php?${params.toString()}`);
-      if (res.ok) {
+      let res;
+      try {
+        res = await fetch(`../api/billing.php?${params.toString()}`);
+      } catch (e) {}
+      if (!res || !res.ok) {
+        res = await fetch(`../api/billings.php?${params.toString()}`);
+      }
+
+      if (res && res.ok) {
         const data = await res.json();
         if (data.success && data.receipt) {
           populateReceiptUI(data.receipt);
@@ -574,11 +575,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
-      if (cachedEmail) params.append('email', cachedEmail);
-      if (cachedUserId) params.append('user_id', cachedUserId);
 
-      const res = await fetch('../api/billing.php' + (params.toString() ? `?${params.toString()}` : ''));
-      if (res.ok) {
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      let res;
+      try {
+        res = await fetch(`../api/billing.php${qs}`);
+      } catch (e) {}
+      if (!res || !res.ok) {
+        res = await fetch(`../api/billings.php${qs}`);
+      }
+
+      if (res && res.ok) {
         const data = await res.json();
         if (data.success) {
           // A. Update Active Package Detail
