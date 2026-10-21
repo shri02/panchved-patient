@@ -1,712 +1,1240 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <link rel="icon" type="image/png" href="../assets/favicon.png">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ocayur - Consultations</title>
-  <meta name="description" content="Ocayur Patient Portal - Manage and track your Ayurvedic and Physiotherapy consultations and appointment history.">
-  <link rel="stylesheet" href="../dashboard.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-</head>
-<body>
-
-  <!-- Page Loader Overlay -->
-  <div class="page-loader-overlay" id="pageLoader" role="status" aria-live="polite">
-    <div class="page-loader-card">
-      <div class="page-loader-spinner"></div>
-      <p class="page-loader-text">Loading consultations...</p>
+  <head>
+    <link rel="icon" type="image/png" href="../assets/favicon.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ocayur - Consultations</title>
+    <meta
+      name="description"
+      content="Ocayur Patient Portal - Manage and track your Ayurvedic and Physiotherapy consultations and appointment history."
+    />
+    <link rel="stylesheet" href="../dashboard.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Page Loader Overlay -->
+    <div
+      class="page-loader-overlay"
+      id="pageLoader"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="page-loader-card">
+        <div class="page-loader-spinner"></div>
+        <p class="page-loader-text">Loading consultations...</p>
+      </div>
     </div>
-  </div>
 
-  <!-- Mobile Top Navigation Bar -->
-  <header class="mobile-nav-bar" id="mobileNavBar">
-  <link rel="icon" type="image/png" href="../assets/favicon.png">
-    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" title="Toggle menu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
-      </svg>
-    </button>
-    <a href="../dashboard/dashboard.html" class="mobile-logo-link">
-      <img src="../assets/logo.svg" alt="Ocayur Logo" class="mobile-logo-img" />
-    </a>
-    <a href="../profile/profile.html" class="mobile-user-avatar" title="Patient Profile">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-      </svg>
-    </a>
-  </header>
+    <!-- Mobile Top Navigation Bar -->
+    <header class="mobile-nav-bar" id="mobileNavBar">
+      <link rel="icon" type="image/png" href="../assets/favicon.png" />
+      <button
+        class="mobile-menu-toggle"
+        id="mobileMenuToggle"
+        aria-label="Toggle navigation menu"
+        title="Toggle menu"
+      >
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <a href="../dashboard/dashboard.html" class="mobile-logo-link">
+        <img
+          src="../assets/logo.svg"
+          alt="Ocayur Logo"
+          class="mobile-logo-img"
+        />
+      </a>
+      <a
+        href="../profile/profile.html"
+        class="mobile-user-avatar"
+        title="Patient Profile"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </a>
+    </header>
 
-  <!-- Sidebar Overlay for Mobile -->
-  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-  <!-- Main Dashboard Layout Wrapper -->
-  <div class="dashboard-layout">
-    
-    <!-- Left Sidebar Navigation -->
-    <aside class="dashboard-sidebar" id="dashboardSidebar">
-      <div class="sidebar-brand-header">
-        <a href="../dashboard/dashboard.html" class="brand-logo-link" title="Ocayur Ayurveda Lifestyle">
-          <img src="../assets/logo.svg" alt="Ocayur Ayurveda Lifestyle" class="brand-logo-img" width="160" height="88" />
-        </a>
-      </div>
-
-      <!-- Navigation Menu -->
-      <nav class="sidebar-nav" aria-label="Main Navigation">
-        <ul class="nav-list">
-          <li class="nav-item">
-            <a href="../dashboard/dashboard.html" class="nav-link" id="navDashboard">
-              <span class="nav-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
-              </span>
-              <span class="nav-label">Dashboard</span>
-            </a>
-          </li>
-          
-          <li class="nav-item">
-            <a href="../packages/package.html" class="nav-link" id="navPackages">
-              <span class="nav-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              </span>
-              <span class="nav-label">Packages</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a href="consultation.html" class="nav-link active" id="navConsultations">
-              <span class="nav-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <line x1="19" y1="8" x2="19" y2="14"></line>
-                  <line x1="22" y1="11" x2="16" y2="11"></line>
-                </svg>
-              </span>
-              <span class="nav-label">Consultations</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a href="../chat/chat.html" class="nav-link" id="navChat">
-              <span class="nav-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-              </span>
-              <span class="nav-label">Messages</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a href="../courses/courses.html" class="nav-link" id="navCourses">
-              <span class="nav-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="9" cy="21" r="1"></circle>
-                  <circle cx="20" cy="21" r="1"></circle>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-              </span>
-              <span class="nav-label">Workshops</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a href="../billing/billing.html" class="nav-link" id="navBilling">
-              <span class="nav-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="2" y="5" width="20" height="14" rx="2"></rect>
-                  <line x1="2" y1="10" x2="22" y2="10"></line>
-                </svg>
-              </span>
-              <span class="nav-label">Billing</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-
-      <!-- Sidebar Footer (Log Out Button) -->
-      <div class="sidebar-footer">
-        <a href="../index.html" class="btn-logout" id="logoutBtn" title="Log out from patient portal">
-          <span class="logout-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-          </span>
-          <span>Log out</span>
-        </a>
-      </div>
-    </aside>
-
-    <!-- Main Content Area -->
-    <main class="dashboard-main-content">
-      
-      <!-- Top Header Section -->
-      <header class="dashboard-top-header">
-  <link rel="icon" type="image/png" href="../assets/favicon.png">
-        <div class="header-titles">
-          <h1 class="dashboard-heading">Consultations</h1>
-          <p class="greeting-subtitle">Manage and track your appointments.</p>
+    <!-- Main Dashboard Layout Wrapper -->
+    <div class="dashboard-layout">
+      <!-- Left Sidebar Navigation -->
+      <aside class="dashboard-sidebar" id="dashboardSidebar">
+        <div class="sidebar-brand-header">
+          <a
+            href="../dashboard/dashboard.html"
+            class="brand-logo-link"
+            title="Ocayur Ayurveda Lifestyle"
+          >
+            <img
+              src="../assets/logo.svg"
+              alt="Ocayur Ayurveda Lifestyle"
+              class="brand-logo-img"
+              width="160"
+              height="88"
+            />
+          </a>
         </div>
 
-        <!-- User Profile Pill -->
-        <a href="../profile/profile.html" class="user-profile-card" id="userProfileCard" aria-label="User profile">
-          <div class="user-avatar" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+        <!-- Navigation Menu -->
+        <nav class="sidebar-nav" aria-label="Main Navigation">
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a
+                href="../dashboard/dashboard.html"
+                class="nav-link"
+                id="navDashboard"
+              >
+                <span class="nav-icon" aria-hidden="true">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                    ></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
+                </span>
+                <span class="nav-label">Dashboard</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a
+                href="../packages/package.html"
+                class="nav-link"
+                id="navPackages"
+              >
+                <span class="nav-icon" aria-hidden="true">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </span>
+                <span class="nav-label">Packages</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a
+                href="consultation.html"
+                class="nav-link active"
+                id="navConsultations"
+              >
+                <span class="nav-icon" aria-hidden="true">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <line x1="19" y1="8" x2="19" y2="14"></line>
+                    <line x1="22" y1="11" x2="16" y2="11"></line>
+                  </svg>
+                </span>
+                <span class="nav-label">Consultations</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="../chat/chat.html" class="nav-link" id="navChat">
+                <span class="nav-icon" aria-hidden="true">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                    ></path>
+                  </svg>
+                </span>
+                <span class="nav-label">Messages</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a
+                href="../courses/courses.html"
+                class="nav-link"
+                id="navCourses"
+              >
+                <span class="nav-icon" aria-hidden="true">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path
+                      d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                    ></path>
+                  </svg>
+                </span>
+                <span class="nav-label">Workshops</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a
+                href="../billing/billing.html"
+                class="nav-link"
+                id="navBilling"
+              >
+                <span class="nav-icon" aria-hidden="true">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                    <line x1="2" y1="10" x2="22" y2="10"></line>
+                  </svg>
+                </span>
+                <span class="nav-label">Billing</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Sidebar Footer (Log Out Button) -->
+        <div class="sidebar-footer">
+          <a
+            href="../index.html"
+            class="btn-logout"
+            id="logoutBtn"
+            title="Log out from patient portal"
+          >
+            <span class="logout-icon" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </span>
+            <span>Log out</span>
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="dashboard-main-content">
+        <!-- Top Header Section -->
+        <header class="dashboard-top-header">
+          <link rel="icon" type="image/png" href="../assets/favicon.png" />
+          <div class="header-titles">
+            <h1 class="dashboard-heading">Consultations</h1>
+            <p class="greeting-subtitle">Manage and track your appointments.</p>
           </div>
-          <div class="user-meta">
-            <span class="user-name" id="userName">--</span>
-            <span class="user-patient-id" id="patientId">--</span>
-          </div>
-        </a>
-      </header>
 
-      <!-- Consultations Navigation Tabs -->
-      <nav class="consultations-tabs-bar" aria-label="Consultations Views">
-        <!-- Tab 1: My Appointments (Screen 1) -->
-        <button type="button" class="consult-tab-btn active" id="tabMyAppointments" role="tab" aria-selected="true" aria-controls="myAppointmentsContent">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-          </svg>
-          <span>My Appointments</span>
-        </button>
-
-        <!-- Tab 2: Appointment History (Screen 2) -->
-        <button type="button" class="consult-tab-btn" id="tabAppointmentHistory" role="tab" aria-selected="false" aria-controls="appointmentHistoryContent">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-          <span>Appointment History</span>
-        </button>
-      </nav>
-
-      <!-- Search & CTA Action Toolbar -->
-      <section class="consultations-toolbar" aria-label="Search and booking toolbar">
-        <div class="consult-search-wrap">
-          <span class="consult-search-icon" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </span>
-          <input 
-            type="text" 
-            id="consultSearchInput" 
-            class="consult-search-input" 
-            placeholder="Search by id, doctor's name" 
-            aria-label="Search appointments by ID or doctor's name"
-          />
-        </div>
-
-        <!-- Book Consultation CTA Button -->
-        <button type="button" class="btn-book-consult-cta" id="btnBookConsultCTA">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>Book Consultation</span>
-        </button>
-      </section>
-
-      <!-- VIEW 1: My Appointments Table (Screen 1) -->
-      <section class="consultation-table-card" id="myAppointmentsContent" role="tabpanel" aria-labelledby="tabMyAppointments">
-        <div class="table-responsive-wrapper">
-          <table class="consultations-data-table" id="myAppointmentsTable">
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Date</th>
-                <th scope="col">Time</th>
-                <th scope="col">Doctor's Name</th>
-                <th scope="col">Agenda</th>
-                <th scope="col">Duration</th>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody id="myAppointmentsTableBody">
-
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination Footer -->
-        <footer class="table-pagination-footer">
-          <span class="pagination-count" id="myApptsCountText">Showing 1 to 5 of 20 items</span>
-          <div class="pagination-controls">
-            <span class="pagination-label" id="myApptsPageLabel">1 of 4</span>
-            <div class="pagination-nav-btns">
-              <button type="button" class="btn-page-nav" id="btnMyApptsPrev" aria-label="Previous page" disabled>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </button>
-              <button type="button" class="btn-page-nav" id="btnMyApptsNext" aria-label="Next page">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
+          <!-- User Profile Pill -->
+          <a
+            href="../profile/profile.html"
+            class="user-profile-card"
+            id="userProfileCard"
+            aria-label="User profile"
+          >
+            <div class="user-avatar" aria-hidden="true">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
             </div>
-          </div>
-        </footer>
-      </section>
-
-      <!-- VIEW 2: Appointment History Table (Screen 2 - Initially Hidden) -->
-      <section class="consultation-table-card" id="appointmentHistoryContent" role="tabpanel" aria-labelledby="tabAppointmentHistory" style="display: none;">
-        <div class="table-responsive-wrapper">
-          <table class="consultations-data-table" id="appointmentHistoryTable">
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Date</th>
-                <th scope="col">Time</th>
-                <th scope="col">Doctor's Name</th>
-                <th scope="col">Agenda</th>
-                <th scope="col">Duration</th>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody id="appointmentHistoryTableBody">
-
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination Footer -->
-        <footer class="table-pagination-footer">
-          <span class="pagination-count" id="historyCountText">Showing 1 to 5 of 20 items</span>
-          <div class="pagination-controls">
-            <span class="pagination-label" id="historyPageLabel">1 of 4</span>
-            <div class="pagination-nav-btns">
-              <button type="button" class="btn-page-nav" id="btnHistoryPrev" aria-label="Previous page" disabled>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </button>
-              <button type="button" class="btn-page-nav" id="btnHistoryNext" aria-label="Next page">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
+            <div class="user-meta">
+              <span class="user-name" id="userName">--</span>
+              <span class="user-patient-id" id="patientId">--</span>
             </div>
-          </div>
-        </footer>
-      </section>
+          </a>
+        </header>
 
-    </main>
-  </div>
+        <!-- Consultations Navigation Tabs -->
+        <nav class="consultations-tabs-bar" aria-label="Consultations Views">
+          <!-- Tab 1: My Appointments (Screen 1) -->
+          <button
+            type="button"
+            class="consult-tab-btn active"
+            id="tabMyAppointments"
+            role="tab"
+            aria-selected="true"
+            aria-controls="myAppointmentsContent"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>My Appointments</span>
+          </button>
 
-  <!-- ========================================================
-       MODAL 1: View Appointment History Details (Screen 3)
-       ======================================================== -->
-  <div class="modal-backdrop" id="viewAppointmentModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
-    <div class="view-appointment-modal-box">
-      
-      <!-- Close Button -->
-      <button type="button" class="modal-close-btn" id="closeViewModalBtn" aria-label="Close view details modal">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
+          <!-- Tab 2: Appointment History (Screen 2) -->
+          <button
+            type="button"
+            class="consult-tab-btn"
+            id="tabAppointmentHistory"
+            role="tab"
+            aria-selected="false"
+            aria-controls="appointmentHistoryContent"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              ></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Appointment History</span>
+          </button>
+        </nav>
 
-      <!-- Modal Header (Eye icon circle + View title) -->
-      <div class="view-modal-header-row">
-        <div class="view-modal-eye-badge" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-        </div>
-        <div class="view-modal-title-wrap">
-          <h2 class="view-modal-title" id="viewModalTitle">View</h2>
-          <p class="view-modal-subtitle">Your Viewing Appointment History</p>
-        </div>
-      </div>
-
-      <!-- Key-Value Details List -->
-      <div class="view-details-list">
-        <div class="view-detail-row">
-          <span class="view-detail-label">Appointment ID:</span>
-          <span class="view-detail-value" id="viewDetailId">--</span>
-        </div>
-
-        <div class="view-detail-row">
-          <span class="view-detail-label">Date:</span>
-          <span class="view-detail-value" id="viewDetailDate">--</span>
-        </div>
-
-        <div class="view-detail-row">
-          <span class="view-detail-label">Time:</span>
-          <span class="view-detail-value" id="viewDetailTime">--</span>
-        </div>
-
-        <div class="view-detail-row">
-          <span class="view-detail-label">Doctors Name:</span>
-          <span class="view-detail-value" id="viewDetailDoctor">--</span>
-        </div>
-
-        <div class="view-detail-row">
-          <span class="view-detail-label">Duration:</span>
-          <span class="view-detail-value" id="viewDetailDuration">--</span>
-        </div>
-
-        <div class="view-detail-row">
-          <span class="view-detail-label">Agenda:</span>
-          <span class="view-detail-value" id="viewDetailAgenda">--</span>
-        </div>
-
-        <div class="view-detail-row">
-          <span class="view-detail-label">Prescription :</span>
-          <span class="view-detail-value">
-            <a href="#" class="view-prescription-link" id="btnOpenPrescriptionModal">View Prescription</a>
-          </span>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ========================================================
-       MODAL 2: Medical Prescription Document Sheet (Screen 4)
-       ======================================================== -->
-  <div class="modal-backdrop" id="prescriptionModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="prescriptionTitle">
-    <div class="prescription-modal-box">
-      
-      <!-- Close Button -->
-      <button type="button" class="modal-close-btn" id="closePrescriptionModalBtn" aria-label="Close prescription document">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-
-      <!-- Prescription Document Header -->
-      <header class="prescription-top-header">
-  <link rel="icon" type="image/png" href="../assets/favicon.png">
-        <div class="rx-logo-wrapper">
-          <img src="../assets/logo.svg" alt="Ocayur Logo" class="rx-logo-img" />
-        </div>
-        <h2 class="rx-document-title" id="prescriptionTitle">PRESCRIPTION</h2>
-        <div class="rx-date-time-stamp">
-          <p id="rxDate">08/09/2026</p>
-          <p id="rxTime">11:20 AM</p>
-        </div>
-      </header>
-
-      <!-- Patient Information Row -->
-      <div class="rx-patient-info-row">
-        <span>Patient Name : <strong id="rxPatientName">--</strong></span>
-        <span>Gender : <strong id="rxGender">--</strong></span>
-        <span>Age : <strong id="rxAge">--</strong></span>
-      </div>
-
-      <div class="rx-divider" aria-hidden="true"></div>
-
-      <!-- Clinical History & Diagnosis -->
-      <section class="rx-clinical-section" aria-label="Clinical findings and diagnosis">
-        <div class="rx-clinical-row">
-          <span class="rx-label">Medical History : </span>
-          <span class="rx-val" id="rxMedHistory">--</span>
-        </div>
-        <div class="rx-clinical-row">
-          <span class="rx-label">Symptoms : </span>
-          <span class="rx-val" id="rxSymptoms">--</span>
-        </div>
-        <div class="rx-clinical-row">
-          <span class="rx-label">Diagnosis : </span>
-          <span class="rx-val" id="rxDiagnosis">--</span>
-        </div>
-      </section>
-
-      <!-- Medication Schedule Columns/Table -->
-      <section class="rx-medication-grid" id="rxMedicationGrid" aria-label="Prescribed Medications">
-        <div class="rx-med-col">
-          <p class="rx-med-col-header">Medication:</p>
-          <p class="rx-med-col-val" id="rxMedName">--</p>
-        </div>
-        <div class="rx-med-col">
-          <p class="rx-med-col-header">Dose:</p>
-          <p class="rx-med-col-val" id="rxMedDose">--</p>
-        </div>
-        <div class="rx-med-col">
-          <p class="rx-med-col-header">Frequency:</p>
-          <p class="rx-med-col-val" id="rxMedFreq">--</p>
-        </div>
-        <div class="rx-med-col">
-          <p class="rx-med-col-header">Duration:</p>
-          <p class="rx-med-col-val" id="rxMedDuration">--</p>
-        </div>
-        <div class="rx-med-col">
-          <p class="rx-med-col-header">Remarks:</p>
-          <p class="rx-med-col-val" id="rxMedRemarks">--</p>
-        </div>
-      </section>
-
-      <!-- Examination & Notes -->
-      <section class="rx-findings-section" aria-label="Examination and doctor notes">
-        <div class="rx-findings-row">
-          <span class="rx-findings-label">Examination Findings : </span>
-          <span class="rx-findings-val" id="rxFindings">--</span>
-        </div>
-        <div class="rx-findings-row">
-          <span class="rx-findings-label">Notes : </span>
-          <span class="rx-findings-val" id="rxNotes">--</span>
-        </div>
-      </section>
-
-      <!-- Prescription Document Footer -->
-      <footer class="rx-footer-row">
-        <div class="rx-doctor-referral">
-          <span class="ref-label">Referred To:</span>
-          <span class="ref-doctor" id="rxReferralDoctor">--</span>
-          <span class="ref-specialty" id="rxReferralSpecialty">--</span>
-        </div>
-        <div class="rx-contact-info" id="rxContactInfo">
-          <span id="rxContactText">+91 7896543210 &nbsp;|&nbsp; care@ocayur.com</span>
-        </div>
-      </footer>
-
-      <!-- Extra Action: Print / Save Prescription -->
-      <div class="prescription-actions-row">
-        <button type="button" class="btn-print-rx" id="btnPrintPrescription">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 6 2 18 2 18 9"></polyline>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-            <rect x="6" y="14" width="12" height="8"></rect>
-          </svg>
-          <span>Print / Save PDF</span>
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ========================================================
-       MODAL 3: Online Ayurved Consultation Booking Modal
-       ======================================================== -->
-  <div class="modal-backdrop" id="consultationModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookModalTitle">
-    <div class="consultation-modal-box">
-      
-      <!-- Close Modal Button -->
-      <button type="button" class="modal-close-btn" id="closeConsultationModalBtn" aria-label="Close booking modal">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h2 class="modal-title" id="bookModalTitle">Online Ayurved Consultation</h2>
-        <p class="modal-subtitle">Book an appointment</p>
-      </div>
-
-      <!-- Consultation Booking Form -->
-      <form class="consultation-form" id="consultationBookingForm" novalidate>
-
-        <!-- Row 1: Name & Mobile Number (2 Columns) -->
-        <div class="modal-form-row">
-          <div class="form-group">
-            <label for="consultName" class="form-field-label">Name<span class="required-star">*</span></label>
-            <input 
-              type="text" 
-              id="consultName" 
-              name="name" 
-              class="modal-input" 
-              placeholder="Enter Full Name" 
-              value="" 
-              required 
+        <!-- Search & CTA Action Toolbar -->
+        <section
+          class="consultations-toolbar"
+          aria-label="Search and booking toolbar"
+        >
+          <div class="consult-search-wrap">
+            <span class="consult-search-icon" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input
+              type="text"
+              id="consultSearchInput"
+              class="consult-search-input"
+              placeholder="Search by id, doctor's name"
+              aria-label="Search appointments by ID or doctor's name"
             />
           </div>
 
-          <div class="form-group">
-            <label for="consultMobile" class="form-field-label">Mobile number<span class="required-star">*</span></label>
-            <div class="phone-input-combo">
-              <div class="country-code-pill" id="countryCodePill">
-                <span>+91</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+          <!-- Book Consultation CTA Button -->
+          <button
+            type="button"
+            class="btn-book-consult-cta"
+            id="btnBookConsultCTA"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Book Consultation</span>
+          </button>
+        </section>
+
+        <!-- VIEW 1: My Appointments Table (Screen 1) -->
+        <section
+          class="consultation-table-card"
+          id="myAppointmentsContent"
+          role="tabpanel"
+          aria-labelledby="tabMyAppointments"
+        >
+          <div class="table-responsive-wrapper">
+            <table class="consultations-data-table" id="myAppointmentsTable">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Time</th>
+                  <th scope="col">Doctor's Name</th>
+                  <th scope="col">Complaint</th>
+                  <th scope="col">Duration</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody id="myAppointmentsTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Footer -->
+          <footer class="table-pagination-footer">
+            <span class="pagination-count" id="myApptsCountText"
+              >Showing 1 to 5 of 20 items</span
+            >
+            <div class="pagination-controls">
+              <span class="pagination-label" id="myApptsPageLabel">1 of 4</span>
+              <div class="pagination-nav-btns">
+                <button
+                  type="button"
+                  class="btn-page-nav"
+                  id="btnMyApptsPrev"
+                  aria-label="Previous page"
+                  disabled
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="btn-page-nav"
+                  id="btnMyApptsNext"
+                  aria-label="Next page"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
               </div>
-              <input 
-                type="tel" 
-                id="consultMobile" 
-                name="mobile" 
-                class="modal-input phone-input" 
-                placeholder="Enter number" 
-                value="" 
-                maxlength="10" 
-                required 
-              />
             </div>
+          </footer>
+        </section>
+
+        <!-- VIEW 2: Appointment History Table (Screen 2 - Initially Hidden) -->
+        <section
+          class="consultation-table-card"
+          id="appointmentHistoryContent"
+          role="tabpanel"
+          aria-labelledby="tabAppointmentHistory"
+          style="display: none"
+        >
+          <div class="table-responsive-wrapper">
+            <table
+              class="consultations-data-table"
+              id="appointmentHistoryTable"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Time</th>
+                  <th scope="col">Doctor's Name</th>
+                  <th scope="col">Complaint</th>
+                  <th scope="col">Duration</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody id="appointmentHistoryTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Footer -->
+          <footer class="table-pagination-footer">
+            <span class="pagination-count" id="historyCountText"
+              >Showing 1 to 5 of 20 items</span
+            >
+            <div class="pagination-controls">
+              <span class="pagination-label" id="historyPageLabel">1 of 4</span>
+              <div class="pagination-nav-btns">
+                <button
+                  type="button"
+                  class="btn-page-nav"
+                  id="btnHistoryPrev"
+                  aria-label="Previous page"
+                  disabled
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="btn-page-nav"
+                  id="btnHistoryNext"
+                  aria-label="Next page"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </footer>
+        </section>
+      </main>
+    </div>
+
+    <!-- ========================================================
+       MODAL 1: View Appointment History Details (Screen 3)
+       ======================================================== -->
+    <div
+      class="modal-backdrop"
+      id="viewAppointmentModal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="viewModalTitle"
+    >
+      <div class="view-appointment-modal-box">
+        <!-- Close Button -->
+        <button
+          type="button"
+          class="modal-close-btn"
+          id="closeViewModalBtn"
+          aria-label="Close view details modal"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <!-- Modal Header (Eye icon circle + View title) -->
+        <div class="view-modal-header-row">
+          <div class="view-modal-eye-badge" aria-hidden="true">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </div>
+          <div class="view-modal-title-wrap">
+            <h2 class="view-modal-title" id="viewModalTitle">View</h2>
+            <p class="view-modal-subtitle">Your Viewing Appointment History</p>
           </div>
         </div>
 
-        <!-- Row 2: Email ID (Full Width) -->
-        <div class="form-group">
-          <label for="consultEmail" class="form-field-label">Email ID<span class="required-star">*</span></label>
-          <input 
-            type="email" 
-            id="consultEmail" 
-            name="email" 
-            class="modal-input" 
-            placeholder="Field text goes here" 
-            value="" 
-            required 
-          />
-        </div>
-
-        <!-- Row 3: Date & Start Time (2 Columns) -->
-        <div class="modal-form-row-dates">
-          <div class="form-group">
-            <label for="consultDate" class="form-field-label">Date<span class="required-star">*</span></label>
-            <div class="input-with-icon">
-              <input 
-                type="text" 
-                id="consultDate" 
-                name="date" 
-                class="modal-input icon-input" 
-                placeholder="Select Date here" 
-                value="" 
-                required 
-              />
-              <button type="button" class="field-icon-btn" id="btnDateCalendar" aria-label="Open calendar picker" title="Open calendar">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-              </button>
-              <input type="date" id="nativeDatePicker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;left:0;bottom:0;" aria-hidden="true" tabindex="-1" />
-            </div>
+        <!-- Key-Value Details List -->
+        <div class="view-details-list">
+          <div class="view-detail-row">
+            <span class="view-detail-label">Appointment ID:</span>
+            <span class="view-detail-value" id="viewDetailId">--</span>
           </div>
 
-          <div class="form-group">
-            <label for="consultStartTime" class="form-field-label">Start Time<span class="required-star">*</span></label>
-            <div class="input-with-icon time-picker-container">
-              <input 
-                type="text" 
-                id="consultStartTime" 
-                name="start_time" 
-                class="modal-input icon-input time-picker-input" 
-                placeholder="Select time" 
-                value="" 
-                autocomplete="off" 
-                required 
-              />
-              <button type="button" class="field-icon-btn" id="btnStartTimeClock" aria-label="Open start time picker" title="Open time list">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-              </button>
-              <div class="time-picker-dropdown" id="startTimeDropdown"></div>
-            </div>
+          <div class="view-detail-row">
+            <span class="view-detail-label">Date:</span>
+            <span class="view-detail-value" id="viewDetailDate">--</span>
           </div>
-        </div>
 
-        <!-- Row 4: Select Doctor Dropdown (Placed below Date and Start Time) -->
-        <div class="form-group">
-          <label for="consultDoctor" class="form-field-label">Select Doctor<span class="required-star">*</span></label>
-          <div class="select-wrapper">
-            <select id="consultDoctor" name="doctor" class="modal-input modal-select" required>
-              <option value="" disabled selected>Select Doctor</option>
-            </select>
-            <span class="select-arrow-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+          <div class="view-detail-row">
+            <span class="view-detail-label">Time:</span>
+            <span class="view-detail-value" id="viewDetailTime">--</span>
+          </div>
+
+          <div class="view-detail-row">
+            <span class="view-detail-label">Doctors Name:</span>
+            <span class="view-detail-value" id="viewDetailDoctor">--</span>
+          </div>
+
+          <div class="view-detail-row">
+            <span class="view-detail-label">Duration:</span>
+            <span class="view-detail-value" id="viewDetailDuration">--</span>
+          </div>
+
+          <div class="view-detail-row">
+            <span class="view-detail-label">Complaint:</span>
+            <span class="view-detail-value" id="viewDetailAgenda">--</span>
+          </div>
+
+          <div class="view-detail-row">
+            <span class="view-detail-label">Prescription :</span>
+            <span class="view-detail-value">
+              <a
+                href="#"
+                class="view-prescription-link"
+                id="btnOpenPrescriptionModal"
+                >View Prescription</a
+              >
             </span>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Row 5: Complaint (Renamed from Agenda) -->
-        <div class="form-group">
-          <label for="consultAgenda" class="form-field-label">Complaint<span class="required-star">*</span></label>
-          <input 
-            type="text" 
-            id="consultAgenda" 
-            name="complaint" 
-            class="modal-input" 
-            placeholder="Message text goes here" 
-            value="" 
-            required 
-          />
+    <!-- ========================================================
+       MODAL 2: Medical Prescription Document Sheet (Screen 4)
+       ======================================================== -->
+    <div
+      class="modal-backdrop"
+      id="prescriptionModal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="prescriptionTitle"
+    >
+      <div class="prescription-modal-box">
+        <!-- Close Button -->
+        <button
+          type="button"
+          class="modal-close-btn"
+          id="closePrescriptionModalBtn"
+          aria-label="Close prescription document"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <!-- Prescription Document Header -->
+        <header class="prescription-top-header">
+          <link rel="icon" type="image/png" href="../assets/favicon.png" />
+          <div class="rx-logo-wrapper">
+            <img
+              src="../assets/logo.svg"
+              alt="Ocayur Logo"
+              class="rx-logo-img"
+            />
+          </div>
+          <h2 class="rx-document-title" id="prescriptionTitle">PRESCRIPTION</h2>
+          <div class="rx-date-time-stamp">
+            <p id="rxDate">08/09/2026</p>
+            <p id="rxTime">11:20 AM</p>
+          </div>
+        </header>
+
+        <!-- Patient Information Row -->
+        <div class="rx-patient-info-row">
+          <span>Patient Name : <strong id="rxPatientName">--</strong></span>
+          <span>Gender : <strong id="rxGender">--</strong></span>
+          <span>Age : <strong id="rxAge">--</strong></span>
         </div>
 
-        <!-- Submit Button (Aligned to Right) -->
-        <div class="modal-form-actions">
-          <button type="submit" class="btn-modal-submit" id="submitConsultationBtn">
-            <span>Submit</span>
+        <div class="rx-divider" aria-hidden="true"></div>
+
+        <!-- Clinical History & Diagnosis -->
+        <section
+          class="rx-clinical-section"
+          aria-label="Clinical findings and diagnosis"
+        >
+          <div class="rx-clinical-row">
+            <span class="rx-label">Medical History : </span>
+            <span class="rx-val" id="rxMedHistory">--</span>
+          </div>
+          <div class="rx-clinical-row">
+            <span class="rx-label">Symptoms : </span>
+            <span class="rx-val" id="rxSymptoms">--</span>
+          </div>
+          <div class="rx-clinical-row">
+            <span class="rx-label">Diagnosis : </span>
+            <span class="rx-val" id="rxDiagnosis">--</span>
+          </div>
+        </section>
+
+        <!-- Medication Schedule Columns/Table -->
+        <section
+          class="rx-medication-grid"
+          id="rxMedicationGrid"
+          aria-label="Prescribed Medications"
+        >
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Medication:</p>
+            <p class="rx-med-col-val" id="rxMedName">--</p>
+          </div>
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Dose:</p>
+            <p class="rx-med-col-val" id="rxMedDose">--</p>
+          </div>
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Frequency:</p>
+            <p class="rx-med-col-val" id="rxMedFreq">--</p>
+          </div>
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Duration:</p>
+            <p class="rx-med-col-val" id="rxMedDuration">--</p>
+          </div>
+          <div class="rx-med-col">
+            <p class="rx-med-col-header">Remarks:</p>
+            <p class="rx-med-col-val" id="rxMedRemarks">--</p>
+          </div>
+        </section>
+
+        <!-- Examination & Notes -->
+        <section
+          class="rx-findings-section"
+          aria-label="Examination and doctor notes"
+        >
+          <div class="rx-findings-row">
+            <span class="rx-findings-label">Examination Findings : </span>
+            <span class="rx-findings-val" id="rxFindings">--</span>
+          </div>
+          <div class="rx-findings-row">
+            <span class="rx-findings-label">Notes : </span>
+            <span class="rx-findings-val" id="rxNotes">--</span>
+          </div>
+        </section>
+
+        <!-- Prescription Document Footer -->
+        <footer class="rx-footer-row">
+          <div class="rx-doctor-referral">
+            <span class="ref-label">Referred To:</span>
+            <span class="ref-doctor" id="rxReferralDoctor">--</span>
+            <span class="ref-specialty" id="rxReferralSpecialty">--</span>
+          </div>
+          <div class="rx-contact-info" id="rxContactInfo">
+            <span id="rxContactText"
+              >+91 7896543210 &nbsp;|&nbsp; care@ocayur.com</span
+            >
+          </div>
+        </footer>
+
+        <!-- Extra Action: Print / Save Prescription -->
+        <div class="prescription-actions-row">
+          <button type="button" class="btn-print-rx" id="btnPrintPrescription">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path
+                d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+              ></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            <span>Print / Save PDF</span>
           </button>
         </div>
-
-      </form>
-    </div>
-  </div>
-
-  <!-- Logout Confirmation Modal -->
-  <div class="modal-backdrop" id="logoutModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle">
-    <div class="logout-modal-box">
-      <button type="button" class="modal-close-btn" id="closeLogoutModalBtn" aria-label="Cancel and close modal">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-
-      <div class="logout-icon-badge">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-          <polyline points="16 17 21 12 16 7"></polyline>
-          <line x1="21" y1="12" x2="9" y2="12"></line>
-        </svg>
       </div>
+    </div>
 
-      <h3 class="logout-modal-title" id="logoutModalTitle">Log Out of Your Account?</h3>
-      <p class="logout-modal-desc">Are you sure you want to log out? You will need to sign back in to access your consultations, packages, and health records.</p>
-
-      <div class="logout-modal-actions">
-        <button type="button" class="btn-logout-cancel" id="cancelLogoutBtn">Cancel</button>
-        <button type="button" class="btn-logout-confirm" id="confirmLogoutBtn">
-          <span>Yes, Log Out</span>
+    <!-- ========================================================
+       MODAL 3: Online Ayurved Consultation Booking Modal
+       ======================================================== -->
+    <div
+      class="modal-backdrop"
+      id="consultationModal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bookModalTitle"
+    >
+      <div class="consultation-modal-box">
+        <!-- Close Modal Button -->
+        <button
+          type="button"
+          class="modal-close-btn"
+          id="closeConsultationModalBtn"
+          aria-label="Close booking modal"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
+
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h2 class="modal-title" id="bookModalTitle">
+            Online Ayurved Consultation
+          </h2>
+          <p class="modal-subtitle">Book an appointment</p>
+        </div>
+
+        <!-- Consultation Booking Form -->
+        <form class="consultation-form" id="consultationBookingForm" novalidate>
+          <!-- Row 1: Name & Mobile Number (2 Columns) -->
+          <div class="modal-form-row">
+            <div class="form-group">
+              <label for="consultName" class="form-field-label"
+                >Name<span class="required-star">*</span></label
+              >
+              <input
+                type="text"
+                id="consultName"
+                name="name"
+                class="modal-input"
+                placeholder="Enter Full Name"
+                value=""
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="consultMobile" class="form-field-label"
+                >Mobile number<span class="required-star">*</span></label
+              >
+              <div class="phone-input-combo">
+                <div class="country-code-pill" id="countryCodePill">
+                  <span>+91</span>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+                <input
+                  type="tel"
+                  id="consultMobile"
+                  name="mobile"
+                  class="modal-input phone-input"
+                  placeholder="Enter number"
+                  value=""
+                  maxlength="10"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Email ID (Full Width) -->
+          <div class="form-group">
+            <label for="consultEmail" class="form-field-label"
+              >Email ID<span class="required-star">*</span></label
+            >
+            <input
+              type="email"
+              id="consultEmail"
+              name="email"
+              class="modal-input"
+              placeholder="Field text goes here"
+              value=""
+              required
+            />
+          </div>
+
+          <!-- Row 3: Date & Start Time (2 Columns) -->
+          <div class="modal-form-row-dates">
+            <div class="form-group">
+              <label for="consultDate" class="form-field-label"
+                >Date<span class="required-star">*</span></label
+              >
+              <div class="input-with-icon">
+                <input
+                  type="text"
+                  id="consultDate"
+                  name="date"
+                  class="modal-input icon-input"
+                  placeholder="Select Date here"
+                  value=""
+                  required
+                />
+                <button
+                  type="button"
+                  class="field-icon-btn"
+                  id="btnDateCalendar"
+                  aria-label="Open calendar picker"
+                  title="Open calendar"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect
+                      x="3"
+                      y="4"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </button>
+                <input
+                  type="date"
+                  id="nativeDatePicker"
+                  style="
+                    position: absolute;
+                    opacity: 0;
+                    pointer-events: none;
+                    width: 0;
+                    height: 0;
+                    left: 0;
+                    bottom: 0;
+                  "
+                  aria-hidden="true"
+                  tabindex="-1"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="consultStartTime" class="form-field-label"
+                >Start Time<span class="required-star">*</span></label
+              >
+              <div class="input-with-icon time-picker-container">
+                <input
+                  type="text"
+                  id="consultStartTime"
+                  name="start_time"
+                  class="modal-input icon-input time-picker-input"
+                  placeholder="Select time"
+                  value=""
+                  autocomplete="off"
+                  required
+                />
+                <button
+                  type="button"
+                  class="field-icon-btn"
+                  id="btnStartTimeClock"
+                  aria-label="Open start time picker"
+                  title="Open time list"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </button>
+                <div class="time-picker-dropdown" id="startTimeDropdown"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 4: Select Doctor Dropdown (Placed below Date and Start Time) -->
+          <div class="form-group">
+            <label for="consultDoctor" class="form-field-label"
+              >Select Doctor<span class="required-star">*</span></label
+            >
+            <div class="select-wrapper">
+              <select
+                id="consultDoctor"
+                name="doctor"
+                class="modal-input modal-select"
+                required
+              >
+                <option value="" disabled selected>Select Doctor</option>
+              </select>
+              <span class="select-arrow-icon" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Row 5: Complaint (Renamed from Agenda) -->
+          <div class="form-group">
+            <label for="consultAgenda" class="form-field-label"
+              >Complaint<span class="required-star">*</span></label
+            >
+            <input
+              type="text"
+              id="consultAgenda"
+              name="complaint"
+              class="modal-input"
+              placeholder="Message text goes here"
+              value=""
+              required
+            />
+          </div>
+
+          <!-- Submit Button (Aligned to Right) -->
+          <div class="modal-form-actions">
+            <button
+              type="submit"
+              class="btn-modal-submit"
+              id="submitConsultationBtn"
+            >
+              <span>Submit</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </div>
 
-  <!-- Toast Notification System -->
-  <div id="toast" class="toast-msg" role="status" aria-live="polite">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-      <polyline points="22 4 12 14.01 9 11.01"></polyline>
-    </svg>
-    <span id="toastMsg">Action completed successfully!</span>
-  </div>
+    <!-- Logout Confirmation Modal -->
+    <div
+      class="modal-backdrop"
+      id="logoutModal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="logoutModalTitle"
+    >
+      <div class="logout-modal-box">
+        <button
+          type="button"
+          class="modal-close-btn"
+          id="closeLogoutModalBtn"
+          aria-label="Cancel and close modal"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
 
-  <script src="consultation.js"></script>
-</body>
+        <div class="logout-icon-badge">
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#ef4444"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </div>
+
+        <h3 class="logout-modal-title" id="logoutModalTitle">
+          Log Out of Your Account?
+        </h3>
+        <p class="logout-modal-desc">
+          Are you sure you want to log out? You will need to sign back in to
+          access your consultations, packages, and health records.
+        </p>
+
+        <div class="logout-modal-actions">
+          <button type="button" class="btn-logout-cancel" id="cancelLogoutBtn">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn-logout-confirm"
+            id="confirmLogoutBtn"
+          >
+            <span>Yes, Log Out</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification System -->
+    <div id="toast" class="toast-msg" role="status" aria-live="polite">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#22c55e"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span id="toastMsg">Action completed successfully!</span>
+    </div>
+
+    <script src="consultation.js"></script>
+  </body>
 </html>

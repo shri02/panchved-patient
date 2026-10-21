@@ -328,14 +328,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateFormatted = formatDate(appt.appointment_date).toLowerCase();
         const timeVal = (appt.appointment_time || '').toLowerCase();
         const doctorName = (appt.doctor_name || '').toLowerCase();
-        const agendaText = (appt.agenda || appt.service_type || '').toLowerCase();
+        const complaintText = (appt.complaint || appt.agenda || appt.service_type || '').toLowerCase();
         const durationVal = formatDuration(appt.duration).toLowerCase();
 
         return apptId.includes(term) ||
                dateFormatted.includes(term) ||
                timeVal.includes(term) ||
                doctorName.includes(term) ||
-               agendaText.includes(term) ||
+               complaintText.includes(term) ||
                durationVal.includes(term);
       });
 
@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const dateFormatted = formatDate(appt.appointment_date);
           const timeVal = appt.appointment_time || '3:00 PM';
           const doctorName = appt.doctor_name || 'Dr. Rohit Mehra';
-          const agendaText = appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics review';
+          const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics review';
           const durationVal = formatDuration(appt.duration);
           const prescriptionData = typeof appt.prescription === 'object' ? JSON.stringify(appt.prescription) : (appt.prescription || '');
 
@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
               <td class="table-time-cell">${escapeHtml(timeVal)}</td>
               <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
-              <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
+              <td class="table-agenda-cell" title="${escapeHtml(complaintText)}">${escapeHtml(complaintText)}</td>
               <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
               <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
                 <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #FAF6EE; color: #723F1E; border: 1px solid #ECE5D9; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
@@ -385,7 +385,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   data-time="${escapeHtml(timeVal)}" 
                   data-doctor="${escapeHtml(doctorName)}" 
                   data-duration="${escapeHtml(durationVal)}" 
-                  data-agenda="${escapeHtml(agendaText)}"
+                  data-complaint="${escapeHtml(complaintText)}"
+                  data-agenda="${escapeHtml(complaintText)}"
                   data-patient="${escapeHtml(appt.patient_name || '')}"
                   data-prescription="${escapeHtml(prescriptionData)}"
                   data-notes="${escapeHtml(appt.notes || '')}"
@@ -421,14 +422,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateFormatted = formatDate(appt.appointment_date).toLowerCase();
         const timeVal = (appt.appointment_time || '').toLowerCase();
         const doctorName = (appt.doctor_name || '').toLowerCase();
-        const agendaText = (appt.agenda || appt.service_type || '').toLowerCase();
+        const complaintText = (appt.complaint || appt.agenda || appt.service_type || '').toLowerCase();
         const durationVal = formatDuration(appt.duration).toLowerCase();
 
         return apptId.includes(term) ||
                dateFormatted.includes(term) ||
                timeVal.includes(term) ||
                doctorName.includes(term) ||
-               agendaText.includes(term) ||
+               complaintText.includes(term) ||
                durationVal.includes(term);
       });
 
@@ -450,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const dateFormatted = formatDate(appt.appointment_date);
           const timeVal = appt.appointment_time || '3:00 PM';
           const doctorName = appt.doctor_name || 'Dr. Rohit Mishra';
-          const agendaText = appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
+          const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
           const durationVal = formatDuration(appt.duration);
           const meetLink = appt.meet_link || getMeetLink(doctorName, apptId);
 
@@ -460,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
               <td class="table-time-cell">${escapeHtml(timeVal)}</td>
               <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
-              <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
+              <td class="table-agenda-cell" title="${escapeHtml(complaintText)}">${escapeHtml(complaintText)}</td>
               <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
               <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
                 <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #723F1E; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
@@ -591,7 +592,8 @@ document.addEventListener('DOMContentLoaded', () => {
             appointment_time: btn.getAttribute('data-time'),
             doctor_name: btn.getAttribute('data-doctor'),
             duration: btn.getAttribute('data-duration'),
-            agenda: btn.getAttribute('data-agenda'),
+            complaint: btn.getAttribute('data-complaint') || btn.getAttribute('data-agenda'),
+            agenda: btn.getAttribute('data-complaint') || btn.getAttribute('data-agenda'),
             patient_name: btn.getAttribute('data-patient'),
             prescription: btn.getAttribute('data-prescription'),
             notes: btn.getAttribute('data-notes')
@@ -603,14 +605,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const time = activeSelectedAppt.appointment_time || '03:00 - 03:45 PM';
         const doctor = activeSelectedAppt.doctor_name || 'Dr. Rohit Mehra';
         const duration = formatDuration(activeSelectedAppt.duration);
-        const agenda = activeSelectedAppt.agenda || 'Ayurvedic consultation and pulse diagnostics review';
+        const complaint = activeSelectedAppt.complaint || activeSelectedAppt.agenda || 'Ayurvedic consultation and pulse diagnostics review';
 
         if (viewDetailId) viewDetailId.textContent = id;
         if (viewDetailDate) viewDetailDate.textContent = date;
         if (viewDetailTime) viewDetailTime.textContent = time;
         if (viewDetailDoctor) viewDetailDoctor.textContent = doctor;
         if (viewDetailDuration) viewDetailDuration.textContent = duration;
-        if (viewDetailAgenda) viewDetailAgenda.textContent = agenda;
+        if (viewDetailAgenda) viewDetailAgenda.textContent = complaint;
 
         if (viewAppointmentModal) {
           viewAppointmentModal.classList.add('active');
@@ -655,7 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dateFormatted = formatDate(appt.appointment_date);
       const timeVal = appt.appointment_time || '3:00 PM';
       const doctorName = appt.doctor_name || 'Dr. Rohit Mishra';
-      const agendaText = appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
+      const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
       const durationVal = formatDuration(appt.duration);
       const meetLink = appt.meet_link || getMeetLink(doctorName, apptId);
 
@@ -665,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
           <td class="table-time-cell">${escapeHtml(timeVal)}</td>
           <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
-          <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
+          <td class="table-agenda-cell" title="${escapeHtml(complaintText)}">${escapeHtml(complaintText)}</td>
           <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
           <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
             <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #723F1E; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
@@ -728,7 +730,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dateFormatted = formatDate(appt.appointment_date);
       const timeVal = appt.appointment_time || '3:00 PM';
       const doctorName = appt.doctor_name || 'Dr. Rohit Mehra';
-      const agendaText = appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics review';
+      const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics review';
       const durationVal = formatDuration(appt.duration);
       const prescriptionData = typeof appt.prescription === 'object' ? JSON.stringify(appt.prescription) : (appt.prescription || '');
 
@@ -738,7 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
           <td class="table-time-cell">${escapeHtml(timeVal)}</td>
           <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
-          <td class="table-agenda-cell" title="${escapeHtml(agendaText)}">${escapeHtml(agendaText)}</td>
+          <td class="table-agenda-cell" title="${escapeHtml(complaintText)}">${escapeHtml(complaintText)}</td>
           <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
           <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
             <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #FAF6EE; color: #723F1E; border: 1px solid #ECE5D9; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
@@ -756,7 +758,8 @@ document.addEventListener('DOMContentLoaded', () => {
               data-time="${escapeHtml(timeVal)}" 
               data-doctor="${escapeHtml(doctorName)}" 
               data-duration="${escapeHtml(durationVal)}" 
-              data-agenda="${escapeHtml(agendaText)}"
+              data-complaint="${escapeHtml(complaintText)}"
+              data-agenda="${escapeHtml(complaintText)}"
               data-patient="${escapeHtml(appt.patient_name || '')}"
               data-prescription="${escapeHtml(prescriptionData)}"
               data-notes="${escapeHtml(appt.notes || '')}"

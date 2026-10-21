@@ -310,6 +310,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'appointment_time' => $r['appointment_time'],
                 'duration' => !empty($r['duration']) ? $r['duration'] : '45 min',
                 'service_type' => $r['service_type'],
+                'complaint' => !empty($r['complaint']) ? $r['complaint'] : (!empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation and pulse diagnostics review'),
                 'agenda' => !empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation and pulse diagnostics review',
                 'prescription' => $r['prescription'],
                 'prescription_data' => $prescPayload,
