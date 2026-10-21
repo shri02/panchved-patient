@@ -653,245 +653,271 @@ if ($requestMethod === 'GET') {
 // 2. POST REQUESTS: Enroll in Package & Book Appointment (Checkout Completion)
 // --------------------------------------------------------------------------
 if ($requestMethod === 'POST') {
-    $rawInput = file_get_contents('php://input');
-    $data = json_decode($rawInput, true);
-    if (!$data || !is_array($data)) {
-        $data = $_POST;
-    }
-
-    $action = isset($data['action']) ? trim($data['action']) : 'enroll';
-    $rawPackageName = isset($data['package_name']) ? trim($data['package_name']) : (isset($data['packageTitle']) ? trim($data['packageTitle']) : 'Gut Healing Package');
-    $packageName = cleanPackageName($rawPackageName);
-    if (empty($packageName)) $packageName = 'Gut Healing Package';
-    $patientName = !empty($data['patient_name']) ? trim($data['patient_name']) : (!empty($data['patientName']) ? trim($data['patientName']) : ($_SESSION['full_name'] ?? 'Patient'));
-    $patientEmail = !empty($data['patient_email']) ? trim($data['patient_email']) : (!empty($data['patientEmail']) ? trim($data['patientEmail']) : ($_SESSION['email'] ?? ''));
-    $patientPhone = !empty($data['patient_phone']) ? trim($data['patient_phone']) : (!empty($data['patientPhone']) ? trim($data['patientPhone']) : (!empty($data['phone_number']) ? trim($data['phone_number']) : ($_SESSION['phone_number'] ?? '')));
-    $patientId = isset($data['patient_id']) ? trim($data['patient_id']) : ($_SESSION['patient_id'] ?? '');
-
-    $doctorName = isset($data['doctor_name']) ? trim($data['doctor_name']) : (isset($data['doctorName']) ? trim($data['doctorName']) : 'Dr. Ananya Mehta');
-    $doctorRole = isset($data['doctor_role']) ? trim($data['doctor_role']) : (isset($data['doctorRole']) ? trim($data['doctorRole']) : 'Ayurveda Physician');
-    $appointmentDateRaw = isset($data['appointment_date']) ? trim($data['appointment_date']) : (isset($data['date']) ? trim($data['date']) : date('Y-m-d'));
-    $appointmentTime = isset($data['appointment_time']) ? trim($data['appointment_time']) : (isset($data['time']) ? trim($data['time']) : '07:00 - 07:45 PM');
-    $duration = isset($data['duration']) ? trim($data['duration']) : '45 min';
-    $agenda = isset($data['agenda']) ? trim($data['agenda']) : "Package Enrollment for {$packageName}";
-    $amount = 0.0;
-    if (isset($data['amount']) && is_numeric($data['amount'])) {
-        $amount = (float)$data['amount'];
-    } elseif (isset($data['fee'])) {
-        $cleanFee = preg_replace('/[^0-9.]/', '', (string)$data['fee']);
-        if (is_numeric($cleanFee)) {
-            $amount = (float)$cleanFee;
+    try {
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true);
+        if (!$data || !is_array($data)) {
+            $data = $_POST;
         }
-    }
 
-    // Normalize appointment date to YYYY-MM-DD
-    $appointmentDate = date('Y-m-d');
-    if (!empty($appointmentDateRaw)) {
-        $parsedTime = strtotime($appointmentDateRaw);
-        if ($parsedTime !== false) {
-            $appointmentDate = date('Y-m-d', $parsedTime);
-        }
-    }
+        $action = isset($data['action']) ? trim($data['action']) : 'enroll';
+        $rawPackageName = isset($data['package_name']) ? trim($data['package_name']) : (isset($data['packageTitle']) ? trim($data['packageTitle']) : 'Gut Healing Package');
+        $packageName = cleanPackageName($rawPackageName);
+        if (empty($packageName)) $packageName = 'Gut Healing Package';
+        $patientName = !empty($data['patient_name']) ? trim($data['patient_name']) : (!empty($data['patientName']) ? trim($data['patientName']) : ($_SESSION['full_name'] ?? 'Patient'));
+        $patientEmail = !empty($data['patient_email']) ? trim($data['patient_email']) : (!empty($data['patientEmail']) ? trim($data['patientEmail']) : ($_SESSION['email'] ?? ''));
+        $patientPhone = !empty($data['patient_phone']) ? trim($data['patient_phone']) : (!empty($data['patientPhone']) ? trim($data['patientPhone']) : (!empty($data['phone_number']) ? trim($data['phone_number']) : ($_SESSION['phone_number'] ?? '')));
+        $patientId = isset($data['patient_id']) ? trim($data['patient_id']) : ($_SESSION['patient_id'] ?? '');
 
-    // Phone digits
-    $phoneDigits = preg_replace('/[^\d]/', '', $patientPhone);
-    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
-        $phoneDigits = substr($phoneDigits, 2);
-    }
-
-    // 1. Resolve Patient in `patients` table
-    $patientDbId = 0;
-    $finalPatientCode = $patientId;
-
-    $findPatientQuery = "SELECT id, patient_id, full_name, email, phone_number, package_name, total_appointments FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1";
-    if ($pStmt = mysqli_prepare($connection1, $findPatientQuery)) {
-        mysqli_stmt_bind_param($pStmt, "ssss", $patientPhone, $phoneDigits, $patientEmail, $patientId);
-        mysqli_stmt_execute($pStmt);
-        $pRes = mysqli_stmt_get_result($pStmt);
-        $existingPatient = mysqli_fetch_assoc($pRes);
-        mysqli_stmt_close($pStmt);
-
-        if ($existingPatient) {
-            $patientDbId = (int)$existingPatient['id'];
-            $finalPatientCode = $existingPatient['patient_id'];
-        }
-    }
-
-    // 1b. Resolve packageDbId & price for validation
-    $pkgDbId = 0;
-    $fPkg = mysqli_query($connection1, "SELECT id, price FROM packages WHERE package_name = '" . mysqli_real_escape_string($connection1, $packageName) . "' OR package_name LIKE '%" . mysqli_real_escape_string($connection1, $packageName) . "%' LIMIT 1");
-    if ($fPkg && $pRow = mysqli_fetch_assoc($fPkg)) {
-        $pkgDbId = (int)$pRow['id'];
-        if ($amount <= 0 && isset($pRow['price']) && (float)$pRow['price'] > 0) {
-            $amount = (float)$pRow['price'];
-        }
-    }
-    if ($amount <= 0) {
-        $amount = 7999.00;
-    }
-
-    // 1c. Block duplicate enrollment: check if patient is already enrolled in this package
-    $alreadyEnrolled = false;
-    $existingBookingId = '';
-    $checkSql = "SELECT id, booking_id FROM patient_packages 
-                 WHERE ((patient_id > 0 AND patient_id = ?) OR (patient_phone != '' AND (patient_phone = ? OR patient_phone = ?))) 
-                   AND (package_name = ? OR package_name LIKE ? OR (package_id > 0 AND package_id = ?)) 
-                   AND status != 'Cancelled' LIMIT 1";
-    if ($chkStmt = mysqli_prepare($connection1, $checkSql)) {
-        $pkgLike = '%' . $packageName . '%';
-        mysqli_stmt_bind_param($chkStmt, "isssssi", $patientDbId, $patientPhone, $phoneDigits, $packageName, $pkgLike, $pkgDbId);
-        mysqli_stmt_execute($chkStmt);
-        $chkRes = mysqli_stmt_get_result($chkStmt);
-        if ($chkRow = mysqli_fetch_assoc($chkRes)) {
-            $alreadyEnrolled = true;
-            $existingBookingId = $chkRow['booking_id'] ?? '';
-        }
-        mysqli_stmt_close($chkStmt);
-    }
-
-    if (!$alreadyEnrolled && $patientDbId > 0) {
-        $checkApptSql = "SELECT id, appointment_id FROM appointments 
-                         WHERE patient_id = ? 
-                           AND (package_name = ? OR package_name LIKE ?) 
-                           AND service_type = 'Package Consultation' 
-                           AND status != 'Cancelled' LIMIT 1";
-        if ($cStmt = mysqli_prepare($connection1, $checkApptSql)) {
-            $pkgLike = '%' . $packageName . '%';
-            mysqli_stmt_bind_param($cStmt, "iss", $patientDbId, $packageName, $pkgLike);
-            mysqli_stmt_execute($cStmt);
-            $cRes = mysqli_stmt_get_result($cStmt);
-            if ($cRow = mysqli_fetch_assoc($cRes)) {
-                $alreadyEnrolled = true;
-                $existingBookingId = $cRow['appointment_id'] ?? '';
+        $doctorName = isset($data['doctor_name']) ? trim($data['doctor_name']) : (isset($data['doctorName']) ? trim($data['doctorName']) : 'Dr. Ananya Mehta');
+        $doctorRole = isset($data['doctor_role']) ? trim($data['doctor_role']) : (isset($data['doctorRole']) ? trim($data['doctorRole']) : 'Ayurveda Physician');
+        $appointmentDateRaw = isset($data['appointment_date']) ? trim($data['appointment_date']) : (isset($data['date']) ? trim($data['date']) : date('Y-m-d'));
+        $appointmentTime = isset($data['appointment_time']) ? trim($data['appointment_time']) : (isset($data['time']) ? trim($data['time']) : '07:00 - 07:45 PM');
+        $duration = isset($data['duration']) ? trim($data['duration']) : '45 min';
+        $agenda = isset($data['agenda']) ? trim($data['agenda']) : "Package Enrollment for {$packageName}";
+        $amount = 0.0;
+        if (isset($data['amount']) && is_numeric($data['amount'])) {
+            $amount = (float)$data['amount'];
+        } elseif (isset($data['fee'])) {
+            $cleanFee = preg_replace('/[^0-9.]/', '', (string)$data['fee']);
+            if (is_numeric($cleanFee)) {
+                $amount = (float)$cleanFee;
             }
-            mysqli_stmt_close($cStmt);
         }
-    }
 
-    if ($alreadyEnrolled) {
-        sendJsonResponse(false, "You are already enrolled in {$packageName}. Re-registration is not allowed.", [
-            'already_enrolled' => true,
+        // Normalize appointment date to YYYY-MM-DD
+        $appointmentDate = date('Y-m-d');
+        if (!empty($appointmentDateRaw)) {
+            $parsedTime = strtotime($appointmentDateRaw);
+            if ($parsedTime !== false) {
+                $appointmentDate = date('Y-m-d', $parsedTime);
+            }
+        }
+
+        // Phone digits
+        $phoneDigits = preg_replace('/[^\d]/', '', $patientPhone);
+        if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+            $phoneDigits = substr($phoneDigits, 2);
+        }
+
+        // 1. Resolve Patient in `patients` table
+        $patientDbId = 0;
+        $finalPatientCode = $patientId;
+
+        $findPatientQuery = "SELECT id, patient_id, full_name, email, phone_number, package_name, total_appointments FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1";
+        if ($pStmt = mysqli_prepare($connection1, $findPatientQuery)) {
+            mysqli_stmt_bind_param($pStmt, "ssss", $patientPhone, $phoneDigits, $patientEmail, $patientId);
+            mysqli_stmt_execute($pStmt);
+            $pRes = mysqli_stmt_get_result($pStmt);
+            $existingPatient = mysqli_fetch_assoc($pRes);
+            mysqli_stmt_close($pStmt);
+
+            if ($existingPatient) {
+                $patientDbId = (int)$existingPatient['id'];
+                $finalPatientCode = $existingPatient['patient_id'];
+            }
+        }
+
+        // 1b. Resolve packageDbId & price for validation
+        $pkgDbId = 0;
+        $fPkg = mysqli_query($connection1, "SELECT id, price FROM packages WHERE package_name = '" . mysqli_real_escape_string($connection1, $packageName) . "' OR package_name LIKE '%" . mysqli_real_escape_string($connection1, $packageName) . "%' LIMIT 1");
+        if ($fPkg && $pRow = mysqli_fetch_assoc($fPkg)) {
+            $pkgDbId = (int)$pRow['id'];
+            if ($amount <= 0 && isset($pRow['price']) && (float)$pRow['price'] > 0) {
+                $amount = (float)$pRow['price'];
+            }
+        }
+        if ($amount <= 0) {
+            $amount = 7999.00;
+        }
+
+        // 1c. Block duplicate enrollment: check if patient is already enrolled in this package
+        $alreadyEnrolled = false;
+        $existingBookingId = '';
+        $checkSql = "SELECT id, booking_id FROM patient_packages 
+                     WHERE ((patient_id > 0 AND patient_id = ?) OR (patient_phone != '' AND (patient_phone = ? OR patient_phone = ?))) 
+                       AND (package_name = ? OR package_name LIKE ? OR (package_id > 0 AND package_id = ?)) 
+                       AND status != 'Cancelled' LIMIT 1";
+        if ($chkStmt = mysqli_prepare($connection1, $checkSql)) {
+            $pkgLike = '%' . $packageName . '%';
+            // Correct format: "issssi" (6 types for 6 parameters: int, string, string, string, string, int)
+            mysqli_stmt_bind_param($chkStmt, "issssi", $patientDbId, $patientPhone, $phoneDigits, $packageName, $pkgLike, $pkgDbId);
+            mysqli_stmt_execute($chkStmt);
+            $chkRes = mysqli_stmt_get_result($chkStmt);
+            if ($chkRow = mysqli_fetch_assoc($chkRes)) {
+                $alreadyEnrolled = true;
+                $existingBookingId = $chkRow['booking_id'] ?? '';
+            }
+            mysqli_stmt_close($chkStmt);
+        }
+
+        if (!$alreadyEnrolled && $patientDbId > 0) {
+            $checkApptSql = "SELECT id, appointment_id FROM appointments 
+                             WHERE patient_id = ? 
+                               AND (package_name = ? OR package_name LIKE ?) 
+                               AND service_type = 'Package Consultation' 
+                               AND status != 'Cancelled' LIMIT 1";
+            if ($cStmt = mysqli_prepare($connection1, $checkApptSql)) {
+                $pkgLike = '%' . $packageName . '%';
+                mysqli_stmt_bind_param($cStmt, "iss", $patientDbId, $packageName, $pkgLike);
+                mysqli_stmt_execute($cStmt);
+                $cRes = mysqli_stmt_get_result($cStmt);
+                if ($cRow = mysqli_fetch_assoc($cRes)) {
+                    $alreadyEnrolled = true;
+                    $existingBookingId = $cRow['appointment_id'] ?? '';
+                }
+                mysqli_stmt_close($cStmt);
+            }
+        }
+
+        if ($alreadyEnrolled) {
+            sendJsonResponse(false, "You are already enrolled in {$packageName}. Re-registration is not allowed.", [
+                'already_enrolled' => true,
+                'package_name' => $packageName,
+                'booking_id' => $existingBookingId
+            ], 400);
+        }
+
+        // 1d. Patient record creation/update only after enrollment uniqueness is confirmed
+        if (!empty($existingPatient)) {
+            // Update patient's enrolled package & increment total appointments
+            $updatePQuery = "UPDATE patients SET package_name = ?, full_name = ?, email = ?, total_appointments = total_appointments + 1, status = 'Ongoing', updated_at = NOW() WHERE id = ?";
+            if ($upStmt = mysqli_prepare($connection1, $updatePQuery)) {
+                mysqli_stmt_bind_param($upStmt, "sssi", $packageName, $patientName, $patientEmail, $patientDbId);
+                mysqli_stmt_execute($upStmt);
+                mysqli_stmt_close($upStmt);
+            }
+        } else {
+            // Generate new patient_id if not present
+            if (empty($finalPatientCode)) {
+                $finalPatientCode = 'P' . rand(100, 999);
+            }
+            $insertPQuery = "INSERT INTO patients (patient_id, full_name, phone_number, email, package_name, total_appointments, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, 'Ongoing', NOW(), NOW())";
+            if ($inStmt = mysqli_prepare($connection1, $insertPQuery)) {
+                mysqli_stmt_bind_param($inStmt, "sssss", $finalPatientCode, $patientName, $patientPhone, $patientEmail, $packageName);
+                mysqli_stmt_execute($inStmt);
+                $patientDbId = mysqli_insert_id($connection1);
+                mysqli_stmt_close($inStmt);
+            }
+        }
+
+        // 2. Resolve Doctor in `doctors` table
+        $doctorDbId = 1;
+        $docRow = null;
+        $docQuery = "SELECT id, full_name FROM doctors WHERE full_name = ? OR full_name LIKE ? LIMIT 1";
+        if ($dStmt = mysqli_prepare($connection1, $docQuery)) {
+            $docLike = '%' . $doctorName . '%';
+            mysqli_stmt_bind_param($dStmt, "ss", $doctorName, $docLike);
+            mysqli_stmt_execute($dStmt);
+            $dRes = mysqli_stmt_get_result($dStmt);
+            $docRow = mysqli_fetch_assoc($dRes);
+            if ($docRow) {
+                $doctorDbId = (int)$docRow['id'];
+            }
+            mysqli_stmt_close($dStmt);
+        }
+        // If doctorName contains multiple doctors (comma separated e.g. "Madhuri Salvi, Sachin Rane")
+        if (!$docRow && strpos($doctorName, ',') !== false) {
+            $firstDoc = trim(explode(',', $doctorName)[0]);
+            $cleanFirst = preg_replace('/^(Dr\.|Dr)\s*/i', '', $firstDoc);
+            if ($dStmt2 = mysqli_prepare($connection1, "SELECT id, full_name FROM doctors WHERE full_name = ? OR full_name LIKE ? OR full_name LIKE ? LIMIT 1")) {
+                $fLike = '%' . $firstDoc . '%';
+                $cLike = '%' . $cleanFirst . '%';
+                mysqli_stmt_bind_param($dStmt2, "sss", $firstDoc, $fLike, $cLike);
+                mysqli_stmt_execute($dStmt2);
+                $dRes2 = mysqli_stmt_get_result($dStmt2);
+                $docRow = mysqli_fetch_assoc($dRes2);
+                if ($docRow) {
+                    $doctorDbId = (int)$docRow['id'];
+                }
+                mysqli_stmt_close($dStmt2);
+            }
+        }
+        if (!$docRow) {
+            $fActive = mysqli_query($connection1, "SELECT id, full_name FROM doctors WHERE status = 'Active' ORDER BY id ASC LIMIT 1");
+            if ($fActive && $aRow = mysqli_fetch_assoc($fActive)) {
+                $doctorDbId = (int)$aRow['id'];
+            }
+        }
+
+        // 3. Increment `enrollments` in `packages` table
+        $updatePkgQuery = "UPDATE packages SET enrollments = enrollments + 1, updated_at = NOW() WHERE package_name = ? OR package_name LIKE ?";
+        if ($pkgStmt = mysqli_prepare($connection1, $updatePkgQuery)) {
+            $pkgLike = '%' . $packageName . '%';
+            mysqli_stmt_bind_param($pkgStmt, "ss", $packageName, $pkgLike);
+            mysqli_stmt_execute($pkgStmt);
+            mysqli_stmt_close($pkgStmt);
+        }
+
+        // 4. Generate unique Appointment ID (e.g. APT-20260930-842 or ABC-492)
+        $appointmentCode = 'APT-' . date('Ymd') . '-' . rand(100, 999);
+        $bookingIdNumber = rand(100000, 999999);
+
+        // 5. Insert Scheduled Appointment into `appointments` table
+        $insertApptQuery = "INSERT INTO appointments (appointment_id, patient_id, patient_name, doctor_id, doctor_name, package_name, appointment_date, appointment_time, duration, service_type, agenda, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Package Consultation', ?, 'Scheduled', NOW(), NOW())";
+        if ($aStmt = mysqli_prepare($connection1, $insertApptQuery)) {
+            mysqli_stmt_bind_param($aStmt, "sisissssss", $appointmentCode, $patientDbId, $patientName, $doctorDbId, $doctorName, $packageName, $appointmentDate, $appointmentTime, $duration, $agenda);
+            mysqli_stmt_execute($aStmt);
+            mysqli_stmt_close($aStmt);
+        }
+
+        // 6. Store in `patient_packages` table for "My Packages" section
+        $bookingCode = '#' . $bookingIdNumber;
+        $pkgDbId = 0;
+        $fPkg = mysqli_query($connection1, "SELECT id, price FROM packages WHERE package_name = '" . mysqli_real_escape_string($connection1, $packageName) . "' OR package_name LIKE '%" . mysqli_real_escape_string($connection1, $packageName) . "%' LIMIT 1");
+        if ($fPkg && $pRow = mysqli_fetch_assoc($fPkg)) {
+            $pkgDbId = (int)$pRow['id'];
+            if ($amount <= 0 && isset($pRow['price']) && (float)$pRow['price'] > 0) {
+                $amount = (float)$pRow['price'];
+            }
+        }
+        if ($amount <= 0) {
+            $amount = 7999.00;
+        }
+
+        $insPpkg = mysqli_prepare($connection1, "INSERT INTO patient_packages (booking_id, patient_id, patient_phone, package_id, package_name, doctor_id, doctor_name, price, booking_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())");
+        if ($insPpkg) {
+            mysqli_stmt_bind_param($insPpkg, "sisisisds", $bookingCode, $patientDbId, $patientPhone, $pkgDbId, $packageName, $doctorDbId, $doctorName, $amount, $appointmentDate);
+            mysqli_stmt_execute($insPpkg);
+            mysqli_stmt_close($insPpkg);
+        }
+
+        // 7. Update status of recommended package to 'Accepted' if this was a recommended package
+        $upRec = mysqli_prepare($connection1, "UPDATE recommended_packages SET status = 'Accepted' WHERE (patient_id = ? OR patient_phone = ?) AND (package_name = ? OR package_id = ?)");
+        if ($upRec) {
+            mysqli_stmt_bind_param($upRec, "issi", $patientDbId, $patientPhone, $packageName, $pkgDbId);
+            mysqli_stmt_execute($upRec);
+            mysqli_stmt_close($upRec);
+        }
+
+        // Update Session
+        $_SESSION['package_name'] = $packageName;
+        if (!empty($patientPhone)) {
+            $_SESSION['phone_number'] = $patientPhone;
+        }
+        if (!empty($finalPatientCode)) {
+            $_SESSION['patient_id'] = $finalPatientCode;
+        }
+
+        sendJsonResponse(true, 'Package consultation booked and package enrolled successfully!', [
+            'booking_id' => '#' . $bookingIdNumber,
+            'appointment_id' => $appointmentCode,
             'package_name' => $packageName,
-            'booking_id' => $existingBookingId
-        ], 400);
+            'doctor_name' => $doctorName,
+            'doctor_role' => $doctorRole,
+            'patient_name' => $patientName,
+            'patient_id' => $finalPatientCode,
+            'date' => $appointmentDateRaw,
+            'time' => $appointmentTime,
+            'amount' => '₹' . number_format($amount, 2),
+            'status' => 'Scheduled'
+        ], 200);
+    } catch (Throwable $e) {
+        error_log("Enrollment error in packages.php: " . $e->getMessage());
+        sendJsonResponse(false, 'Failed to complete package booking: ' . $e->getMessage(), [
+            'error_details' => $e->getMessage()
+        ], 500);
     }
-
-    // 1d. Patient record creation/update only after enrollment uniqueness is confirmed
-    if (!empty($existingPatient)) {
-        // Update patient's enrolled package & increment total appointments
-        $updatePQuery = "UPDATE patients SET package_name = ?, full_name = ?, email = ?, total_appointments = total_appointments + 1, status = 'Ongoing', updated_at = NOW() WHERE id = ?";
-        if ($upStmt = mysqli_prepare($connection1, $updatePQuery)) {
-            mysqli_stmt_bind_param($upStmt, "sssi", $packageName, $patientName, $patientEmail, $patientDbId);
-            mysqli_stmt_execute($upStmt);
-            mysqli_stmt_close($upStmt);
-        }
-    } else {
-        // Generate new patient_id if not present
-        if (empty($finalPatientCode)) {
-            $finalPatientCode = 'P' . rand(100, 999);
-        }
-        $insertPQuery = "INSERT INTO patients (patient_id, full_name, phone_number, email, package_name, total_appointments, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, 'Ongoing', NOW(), NOW())";
-        if ($inStmt = mysqli_prepare($connection1, $insertPQuery)) {
-            mysqli_stmt_bind_param($inStmt, "sssss", $finalPatientCode, $patientName, $patientPhone, $patientEmail, $packageName);
-            mysqli_stmt_execute($inStmt);
-            $patientDbId = mysqli_insert_id($connection1);
-            mysqli_stmt_close($inStmt);
-        }
-    }
-
-    // 2. Resolve Doctor in `doctors` table
-    $doctorDbId = 1;
-    $docQuery = "SELECT id, full_name FROM doctors WHERE full_name = ? OR full_name LIKE ? LIMIT 1";
-    if ($dStmt = mysqli_prepare($connection1, $docQuery)) {
-        $docLike = '%' . $doctorName . '%';
-        mysqli_stmt_bind_param($dStmt, "ss", $doctorName, $docLike);
-        mysqli_stmt_execute($dStmt);
-        $dRes = mysqli_stmt_get_result($dStmt);
-        $docRow = mysqli_fetch_assoc($dRes);
-        if ($docRow) {
-            $doctorDbId = (int)$docRow['id'];
-        }
-        mysqli_stmt_close($dStmt);
-    }
-    if (!$docRow) {
-        $fActive = mysqli_query($connection1, "SELECT id, full_name FROM doctors WHERE status = 'Active' ORDER BY id ASC LIMIT 1");
-        if ($fActive && $aRow = mysqli_fetch_assoc($fActive)) {
-            $doctorDbId = (int)$aRow['id'];
-        }
-    }
-
-    // 3. Increment `enrollments` in `packages` table
-    $updatePkgQuery = "UPDATE packages SET enrollments = enrollments + 1, updated_at = NOW() WHERE package_name = ? OR package_name LIKE ?";
-    if ($pkgStmt = mysqli_prepare($connection1, $updatePkgQuery)) {
-        $pkgLike = '%' . $packageName . '%';
-        mysqli_stmt_bind_param($pkgStmt, "ss", $packageName, $pkgLike);
-        mysqli_stmt_execute($pkgStmt);
-        mysqli_stmt_close($pkgStmt);
-    }
-
-    // 4. Generate unique Appointment ID (e.g. APT-20260930-842 or ABC-492)
-    $appointmentCode = 'APT-' . date('Ymd') . '-' . rand(100, 999);
-    $bookingIdNumber = rand(100000, 999999);
-
-    // 5. Insert Scheduled Appointment into `appointments` table
-    $insertApptQuery = "INSERT INTO appointments (appointment_id, patient_id, patient_name, doctor_id, doctor_name, package_name, appointment_date, appointment_time, duration, service_type, agenda, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Package Consultation', ?, 'Scheduled', NOW(), NOW())";
-    if ($aStmt = mysqli_prepare($connection1, $insertApptQuery)) {
-        mysqli_stmt_bind_param($aStmt, "sisissssss", $appointmentCode, $patientDbId, $patientName, $doctorDbId, $doctorName, $packageName, $appointmentDate, $appointmentTime, $duration, $agenda);
-        mysqli_stmt_execute($aStmt);
-        mysqli_stmt_close($aStmt);
-    }
-
-    // 6. Store in `patient_packages` table for "My Packages" section
-    $bookingCode = '#' . $bookingIdNumber;
-    $pkgDbId = 0;
-    $fPkg = mysqli_query($connection1, "SELECT id, price FROM packages WHERE package_name = '" . mysqli_real_escape_string($connection1, $packageName) . "' OR package_name LIKE '%" . mysqli_real_escape_string($connection1, $packageName) . "%' LIMIT 1");
-    if ($fPkg && $pRow = mysqli_fetch_assoc($fPkg)) {
-        $pkgDbId = (int)$pRow['id'];
-        if ($amount <= 0 && isset($pRow['price']) && (float)$pRow['price'] > 0) {
-            $amount = (float)$pRow['price'];
-        }
-    }
-    if ($amount <= 0) {
-        $amount = 7999.00;
-    }
-
-    $insPpkg = mysqli_prepare($connection1, "INSERT INTO patient_packages (booking_id, patient_id, patient_phone, package_id, package_name, doctor_id, doctor_name, price, booking_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())");
-    if ($insPpkg) {
-        mysqli_stmt_bind_param($insPpkg, "sisisisds", $bookingCode, $patientDbId, $patientPhone, $pkgDbId, $packageName, $doctorDbId, $doctorName, $amount, $appointmentDate);
-        mysqli_stmt_execute($insPpkg);
-        mysqli_stmt_close($insPpkg);
-    }
-
-    // 7. Update status of recommended package to 'Accepted' if this was a recommended package
-    $upRec = mysqli_prepare($connection1, "UPDATE recommended_packages SET status = 'Accepted' WHERE (patient_id = ? OR patient_phone = ?) AND (package_name = ? OR package_id = ?)");
-    if ($upRec) {
-        mysqli_stmt_bind_param($upRec, "issi", $patientDbId, $patientPhone, $packageName, $pkgDbId);
-        mysqli_stmt_execute($upRec);
-        mysqli_stmt_close($upRec);
-    }
-
-    // Update Session
-    $_SESSION['package_name'] = $packageName;
-    if (!empty($patientPhone)) {
-        $_SESSION['phone_number'] = $patientPhone;
-    }
-    if (!empty($finalPatientCode)) {
-        $_SESSION['patient_id'] = $finalPatientCode;
-    }
-
-    sendJsonResponse(true, 'Package consultation booked and package enrolled successfully!', [
-        'booking_id' => '#' . $bookingIdNumber,
-        'appointment_id' => $appointmentCode,
-        'package_name' => $packageName,
-        'doctor_name' => $doctorName,
-        'doctor_role' => $doctorRole,
-        'patient_name' => $patientName,
-        'patient_id' => $finalPatientCode,
-        'date' => $appointmentDateRaw,
-        'time' => $appointmentTime,
-        'amount' => '₹' . number_format($amount, 2),
-        'status' => 'Scheduled'
-    ], 200);
 }
 
 if (!defined('IN_TEST_RUNNER')) {

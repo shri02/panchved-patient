@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action === 'register' || $action =
                      ) 
                      LIMIT 1";
         if ($chkStmt = mysqli_prepare($connection1, $chkQuery)) {
-            mysqli_stmt_bind_param($chkStmt, "iissssss", 
+            mysqli_stmt_bind_param($chkStmt, "iiissssss", 
                 $wsNumericId,
                 $patientId, $patientId, 
                 $patientPhone, $patientPhone, 
@@ -409,7 +409,7 @@ if ($action === 'check_registration') {
                          ) 
                          LIMIT 1";
             if ($chkStmt = mysqli_prepare($connection1, $chkQuery)) {
-                mysqli_stmt_bind_param($chkStmt, "iissssss", 
+                mysqli_stmt_bind_param($chkStmt, "iiissssss", 
                     $wsNumericId,
                     $patientId, $patientId, 
                     $patientPhone, $patientPhone, 
@@ -484,7 +484,7 @@ if ($action === 'details' || ($queryId > 0 || !empty($queryWsId) || !empty($quer
                          ) LIMIT 1";
             if ($chkStmt = mysqli_prepare($connection1, $chkQuery)) {
                 $wsNum = (int)$workshop['id'];
-                mysqli_stmt_bind_param($chkStmt, "iissssss", 
+                mysqli_stmt_bind_param($chkStmt, "iiissssss", 
                     $wsNum,
                     $patientId, $patientId, 
                     $patientPhone, $patientPhone, 
