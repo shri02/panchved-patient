@@ -64,7 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const wsIdNum = Number(ws.workshop_id);
     if (!isNaN(wsIdNum) && wsIdNum > 0 && registeredWorkshopsMap.has(wsIdNum)) return true;
     if (ws.workshop_id && registeredWorkshopsMap.has(String(ws.workshop_id).trim().toLowerCase())) return true;
+    if (ws.ws_code && registeredWorkshopsMap.has(String(ws.ws_code).trim().toLowerCase())) return true;
     if (ws.title && registeredWorkshopsMap.has(String(ws.title).trim().toLowerCase())) return true;
+    if (ws.workshopTitle && registeredWorkshopsMap.has(String(ws.workshopTitle).trim().toLowerCase())) return true;
     return false;
   };
 
@@ -75,7 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const wsIdNum = Number(ws.workshop_id);
     if (!isNaN(wsIdNum) && wsIdNum > 0 && registeredWorkshopsMap.has(wsIdNum)) return registeredWorkshopsMap.get(wsIdNum);
     if (ws.workshop_id && registeredWorkshopsMap.has(String(ws.workshop_id).trim().toLowerCase())) return registeredWorkshopsMap.get(String(ws.workshop_id).trim().toLowerCase());
+    if (ws.ws_code && registeredWorkshopsMap.has(String(ws.ws_code).trim().toLowerCase())) return registeredWorkshopsMap.get(String(ws.ws_code).trim().toLowerCase());
     if (ws.title && registeredWorkshopsMap.has(String(ws.title).trim().toLowerCase())) return registeredWorkshopsMap.get(String(ws.title).trim().toLowerCase());
+    if (ws.workshopTitle && registeredWorkshopsMap.has(String(ws.workshopTitle).trim().toLowerCase())) return registeredWorkshopsMap.get(String(ws.workshopTitle).trim().toLowerCase());
     return null;
   };
 
@@ -597,6 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const speakerName = ws.speaker || ws.assign_speaker || ws.instructor || '';
       const speakerRole = ws.speaker_role || '';
       const speakerBio = ws.speaker_bio || '';
+      const subtitleText = ws.subtitle || ws.title || 'Holistic Health & Ayurveda Insights';
       const aboutText = ws.about || subtitleText;
       const isRegistered = ws.is_registered === true || isWorkshopRegistered(ws);
 
@@ -749,47 +754,46 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Could not fetch dynamic My Workshops from DB:', e);
     }
 
-    // 2. Merge any local storage bookings so offline/instant bookings also appear seamlessly
+    // 2. Merge local storage confirmed registrations so instant offline bookings appear seamlessly
     try {
       const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
       if (Array.isArray(storedList)) {
         storedList.forEach(item => {
           const exists = registered.some(r => 
             (r.booking_id && item.booking_id && r.booking_id === item.booking_id) || 
-            (r.title && item.title && r.title.toLowerCase() === item.title.toLowerCase())
+            (r.workshop_id && item.workshop_id && r.workshop_id == item.workshop_id) ||
+            (r.title && item.title && r.title.trim().toLowerCase() === item.title.trim().toLowerCase())
           );
           if (!exists) registered.unshift(item);
         });
       }
     } catch (e) {}
 
-    // Single booking from checkout if not already in list
-    try {
-      const singleBooking = JSON.parse((localStorage.getItem('ocayur_workshop_booking') || localStorage.getItem('panchved_workshop_booking')) || 'null');
-      if (singleBooking && (singleBooking.workshopTitle || singleBooking.title)) {
-        const t = singleBooking.workshopTitle || singleBooking.title;
-        const already = registered.some(r => (r.title && r.title.toLowerCase() === t.toLowerCase()) || (r.id && r.id == singleBooking.id));
-        if (!already) {
-          registered.unshift({
-            id: singleBooking.id || 1,
-            title: t,
-            price: singleBooking.fee || '₹499/-',
-            date: singleBooking.date || '3 September, Wednesday',
-            time: singleBooking.time || '8:00 AM',
-            meet_link: singleBooking.meet_link || 'https://meet.google.com/abc-xyz-pqrs',
-            image_url: singleBooking.image_url || ''
-          });
-        }
-      }
-    } catch (e) {}
-
-    // Populate registeredWorkshopsMap
+    // Populate registeredWorkshopsMap comprehensively
     registeredWorkshopsMap.clear();
     registered.forEach(ws => {
-      if (ws.id) registeredWorkshopsMap.set(Number(ws.id), ws);
-      if (ws.workshop_id) registeredWorkshopsMap.set(Number(ws.workshop_id), ws);
+      // Find matching catalog item if any to associate all identifiers
+      const matched = loadedWorkshops.find(lw => 
+        (lw.id && (lw.id == ws.id || lw.id == ws.workshop_id)) ||
+        (lw.workshop_id && (lw.workshop_id == ws.workshop_id || lw.workshop_id == ws.id || lw.workshop_id == ws.ws_code)) ||
+        (lw.title && ws.title && lw.title.trim().toLowerCase() === ws.title.trim().toLowerCase())
+      );
+
+      if (ws.id && !isNaN(Number(ws.id))) registeredWorkshopsMap.set(Number(ws.id), ws);
+      if (ws.workshop_id && !isNaN(Number(ws.workshop_id))) registeredWorkshopsMap.set(Number(ws.workshop_id), ws);
       if (ws.workshop_id) registeredWorkshopsMap.set(String(ws.workshop_id).trim().toLowerCase(), ws);
+      if (ws.ws_code) registeredWorkshopsMap.set(String(ws.ws_code).trim().toLowerCase(), ws);
       if (ws.title) registeredWorkshopsMap.set(String(ws.title).trim().toLowerCase(), ws);
+      if (ws.workshopTitle) registeredWorkshopsMap.set(String(ws.workshopTitle).trim().toLowerCase(), ws);
+
+      if (matched) {
+        if (matched.id) registeredWorkshopsMap.set(Number(matched.id), ws);
+        if (matched.workshop_id) {
+          if (!isNaN(Number(matched.workshop_id))) registeredWorkshopsMap.set(Number(matched.workshop_id), ws);
+          registeredWorkshopsMap.set(String(matched.workshop_id).trim().toLowerCase(), ws);
+        }
+        if (matched.title) registeredWorkshopsMap.set(String(matched.title).trim().toLowerCase(), ws);
+      }
     });
 
     if (registered.length === 0) {
@@ -975,19 +979,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (data.success && Array.isArray(data.workshops)) {
           loadedWorkshops = data.workshops;
-          renderAllWorkshopsList(loadedWorkshops);
-        } else {
-          renderAllWorkshopsList([]);
         }
-      } else {
-        renderAllWorkshopsList([]);
       }
 
-      // 2. Fetch registered workshops (now loadedWorkshops is populated so any image gaps are instantly resolved!)
+      // 2. Fetch registered workshops (this populates registeredWorkshopsMap and renders My Workshops)
       await fetchMyWorkshopsFromDB();
+
+      // 3. Render all workshops list (now registeredWorkshopsMap is fully populated so all enrolled badges and buttons display accurately!)
+      renderAllWorkshopsList(loadedWorkshops);
     } catch (err) {
       console.warn('Notice: Error fetching workshops from DB:', err);
-      renderAllWorkshopsList([]);
+      renderAllWorkshopsList(loadedWorkshops.length ? loadedWorkshops : []);
     } finally {
       hidePageLoader();
     }

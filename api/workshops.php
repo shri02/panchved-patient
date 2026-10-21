@@ -212,19 +212,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $action === 'register' || $action =
                      WHERE `workshop_id` = ? 
                      AND `payment_status` = 'Success'
                      AND (
-                       (`doctor_id` = ? AND ? > 0) OR 
-                       (`doctor_phone` = ? AND ? != '') OR 
-                       (`doctor_phone` = ? AND ? != '') OR 
-                       (`doctor_email` = ? AND ? != '')
+                       (`doctor_phone` != '' AND ? != '' AND (`doctor_phone` = ? OR `doctor_phone` = ?)) OR 
+                       (`doctor_email` != '' AND ? != '' AND `doctor_email` = ?) OR 
+                       (? = '' AND ? = '' AND `doctor_id` = ? AND ? > 0)
                      ) 
                      LIMIT 1";
         if ($chkStmt = mysqli_prepare($connection1, $chkQuery)) {
-            mysqli_stmt_bind_param($chkStmt, "iiissssss", 
+            mysqli_stmt_bind_param($chkStmt, "isssssssii", 
                 $wsNumericId,
-                $patientId, $patientId, 
-                $patientPhone, $patientPhone, 
-                $cleanPhone, $cleanPhone, 
-                $patientEmail, $patientEmail
+                $patientPhone, $patientPhone, $cleanPhone, 
+                $patientEmail, $patientEmail,
+                $patientPhone, $patientEmail,
+                $patientId, $patientId
             );
             mysqli_stmt_execute($chkStmt);
             $chkRes = mysqli_stmt_get_result($chkStmt);
@@ -306,20 +305,19 @@ if ($action === 'my_workshops') {
                   FROM `workshop_bookings` wb
                   LEFT JOIN `workshops` w ON (wb.workshop_id = w.id OR wb.workshop_id = w.workshop_id)
                   WHERE (
-                    (wb.doctor_id = ? AND ? > 0) OR 
-                    (wb.doctor_phone = ? AND ? != '') OR 
-                    (wb.doctor_phone = ? AND ? != '') OR 
-                    (wb.doctor_email = ? AND ? != '')
+                    (wb.doctor_phone != '' AND ? != '' AND (wb.doctor_phone = ? OR wb.doctor_phone = ?)) OR 
+                    (wb.doctor_email != '' AND ? != '' AND wb.doctor_email = ?) OR 
+                    (? = '' AND ? = '' AND wb.doctor_id = ? AND ? > 0)
                   )
                   AND wb.payment_status = 'Success'
                   ORDER BY wb.id DESC";
 
         if ($stmt = mysqli_prepare($connection1, $query)) {
-            mysqli_stmt_bind_param($stmt, "iissssss", 
-                $patientId, $patientId, 
-                $patientPhone, $patientPhone, 
-                $cleanPhone, $cleanPhone, 
-                $patientEmail, $patientEmail
+            mysqli_stmt_bind_param($stmt, "sssssssii", 
+                $patientPhone, $patientPhone, $cleanPhone, 
+                $patientEmail, $patientEmail,
+                $patientPhone, $patientEmail,
+                $patientId, $patientId
             );
             mysqli_stmt_execute($stmt);
             $res = mysqli_stmt_get_result($stmt);
@@ -410,23 +408,22 @@ if ($action === 'check_registration') {
         if ($wsNumericId > 0 && (!empty($patientPhone) || !empty($cleanPhone) || !empty($patientEmail) || $patientId > 0)) {
             $chkQuery = "SELECT wb.id, wb.booking_id, wb.booking_date, w.meet_link 
                          FROM `workshop_bookings` wb
-                         LEFT JOIN `workshops` w ON wb.workshop_id = w.id
-                         WHERE wb.workshop_id = ? 
+                         LEFT JOIN `workshops` w ON (wb.workshop_id = w.id OR wb.workshop_id = w.workshop_id)
+                         WHERE (wb.workshop_id = ? OR w.id = ?) 
                          AND wb.payment_status = 'Success'
                          AND (
-                           (wb.doctor_id = ? AND ? > 0) OR 
-                           (wb.doctor_phone = ? AND ? != '') OR 
-                           (wb.doctor_phone = ? AND ? != '') OR 
-                           (wb.doctor_email = ? AND ? != '')
+                           (wb.doctor_phone != '' AND ? != '' AND (wb.doctor_phone = ? OR wb.doctor_phone = ?)) OR 
+                           (wb.doctor_email != '' AND ? != '' AND wb.doctor_email = ?) OR 
+                           (? = '' AND ? = '' AND wb.doctor_id = ? AND ? > 0)
                          ) 
                          LIMIT 1";
             if ($chkStmt = mysqli_prepare($connection1, $chkQuery)) {
-                mysqli_stmt_bind_param($chkStmt, "iiissssss", 
-                    $wsNumericId,
-                    $patientId, $patientId, 
-                    $patientPhone, $patientPhone, 
-                    $cleanPhone, $cleanPhone, 
-                    $patientEmail, $patientEmail
+                mysqli_stmt_bind_param($chkStmt, "iisssssssii", 
+                    $wsNumericId, $wsNumericId,
+                    $patientPhone, $patientPhone, $cleanPhone, 
+                    $patientEmail, $patientEmail,
+                    $patientPhone, $patientEmail,
+                    $patientId, $patientId
                 );
                 mysqli_stmt_execute($chkStmt);
                 $chkRes = mysqli_stmt_get_result($chkStmt);
@@ -537,27 +534,34 @@ if ($connection1) {
     }
 
     $bookedWorkshopIds = [];
+    $bookedWorkshopCodes = [];
     if (!empty($patientPhone) || !empty($cleanPhone) || !empty($patientEmail) || $patientId > 0) {
-        $bQuery = "SELECT DISTINCT workshop_id FROM workshop_bookings 
-                   WHERE payment_status = 'Success' 
+        $bQuery = "SELECT DISTINCT wb.workshop_id, w.workshop_id as ws_code 
+                   FROM `workshop_bookings` wb
+                   LEFT JOIN `workshops` w ON (wb.workshop_id = w.id OR wb.workshop_id = w.workshop_id)
+                   WHERE wb.payment_status = 'Success' 
                    AND (
-                     (doctor_id = ? AND ? > 0) OR 
-                     (doctor_phone = ? AND ? != '') OR 
-                     (doctor_phone = ? AND ? != '') OR 
-                     (doctor_email = ? AND ? != '')
+                     (wb.doctor_phone != '' AND ? != '' AND (wb.doctor_phone = ? OR wb.doctor_phone = ?)) OR 
+                     (wb.doctor_email != '' AND ? != '' AND wb.doctor_email = ?) OR 
+                     (? = '' AND ? = '' AND wb.doctor_id = ? AND ? > 0)
                    )";
         if ($bStmt = mysqli_prepare($connection1, $bQuery)) {
-            mysqli_stmt_bind_param($bStmt, "iissssss", 
-                $patientId, $patientId, 
-                $patientPhone, $patientPhone, 
-                $cleanPhone, $cleanPhone, 
-                $patientEmail, $patientEmail
+            mysqli_stmt_bind_param($bStmt, "sssssssii", 
+                $patientPhone, $patientPhone, $cleanPhone, 
+                $patientEmail, $patientEmail,
+                $patientPhone, $patientEmail,
+                $patientId, $patientId
             );
             mysqli_stmt_execute($bStmt);
             $bRes = mysqli_stmt_get_result($bStmt);
             if ($bRes) {
                 while ($bRow = mysqli_fetch_assoc($bRes)) {
-                    $bookedWorkshopIds[] = (int)$bRow['workshop_id'];
+                    if (!empty($bRow['workshop_id'])) {
+                        $bookedWorkshopIds[] = (int)$bRow['workshop_id'];
+                    }
+                    if (!empty($bRow['ws_code'])) {
+                        $bookedWorkshopCodes[] = strtolower(trim((string)$bRow['ws_code']));
+                    }
                 }
             }
             mysqli_stmt_close($bStmt);
@@ -573,7 +577,9 @@ if ($connection1) {
             $att = strtolower(trim((string)($row['attendee_type'] ?? '')));
             if ($att !== 'doctor') {
                 $formatted = formatWorkshopRecord($row);
-                $formatted['is_registered'] = in_array((int)$row['id'], $bookedWorkshopIds, true);
+                $isReg = in_array((int)$row['id'], $bookedWorkshopIds, true) 
+                    || (!empty($row['workshop_id']) && in_array(strtolower(trim((string)$row['workshop_id'])), $bookedWorkshopCodes, true));
+                $formatted['is_registered'] = $isReg;
                 $workshops[] = $formatted;
             }
         }

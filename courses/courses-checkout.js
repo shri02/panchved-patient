@@ -778,19 +778,29 @@ document.addEventListener('DOMContentLoaded', () => {
       // Save to registered workshops array in localStorage
       try {
         const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
+        const actualWsId = activeWorkshopData?.id || (data && data.workshop_id) || activeWorkshopData?.workshopId || 1;
+        const actualWsCode = activeWorkshopData?.workshopId || activeWorkshopData?.workshop_id || '';
         const newWorkshopItem = {
-          id: generatedBookingId,
+          id: actualWsId,
+          workshop_id: actualWsId,
+          ws_code: actualWsCode,
           booking_id: generatedBookingId,
-          workshop_id: activeWorkshopData?.id || activeWorkshopData?.workshopId,
           title: wsTitle,
+          workshopTitle: wsTitle,
           price: feeText,
           date: dateText,
           time: timeText,
           meet_link: activeWorkshopData?.meet_link || 'https://meet.google.com/abc-xyz-pqrs',
           image_url: activeWorkshopData?.image_url || ''
         };
-        storedList.unshift(newWorkshopItem);
-        localStorage.setItem('ocayur_registered_workshops', JSON.stringify(storedList));
+        const filteredList = storedList.filter(item => 
+          !(item.booking_id && item.booking_id === generatedBookingId) &&
+          !(item.workshop_id && actualWsId && item.workshop_id == actualWsId) &&
+          !(item.title && wsTitle && item.title.trim().toLowerCase() === wsTitle.trim().toLowerCase())
+        );
+        filteredList.unshift(newWorkshopItem);
+        localStorage.setItem('ocayur_registered_workshops', JSON.stringify(filteredList));
+        localStorage.setItem('panchved_registered_workshops', JSON.stringify(filteredList));
       } catch (err) {}
 
       // Show Success Modal
