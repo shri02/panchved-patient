@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // Helper: Update Payment Summary & Modal Confirmation amounts dynamically
-  const updatePaymentSummaryUI = (amountVal, feeLabel = 'Package fee') => {
+  const updatePaymentSummaryUI = (amountVal, feeLabel = 'Programme fee') => {
     const formatted = formatAmount(amountVal);
     if (checkoutSummaryFeeLabel) checkoutSummaryFeeLabel.textContent = feeLabel;
     if (checkoutSummaryFee) checkoutSummaryFee.textContent = formatted;
@@ -372,14 +372,14 @@ document.addEventListener('DOMContentLoaded', () => {
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
         <div>
-          <strong style="color: #065f46; font-size: 15px; display: block; margin-bottom: 4px;">You are already enrolled in this health package!</strong>
-          <p style="color: #047857; font-size: 13.5px; margin: 0 0 12px 0;">Your active treatment protocol for <strong>${pkgTitle || 'this package'}</strong> is already confirmed. Re-enrolling or paying again is not permitted.</p>
+          <strong style="color: #065f46; font-size: 15px; display: block; margin-bottom: 4px;">You are already enrolled in this health programme!</strong>
+          <p style="color: #047857; font-size: 13.5px; margin: 0 0 12px 0;">Your active treatment protocol for <strong>${pkgTitle || 'this programme'}</strong> is already confirmed. Re-enrolling or paying again is not permitted.</p>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <a href="package.html#my-packages" class="btn-package-action" style="padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>View in My Packages</span>
+              <span>View in My Programmes</span>
             </a>
             <a href="package.html" class="btn-package-secondary" style="padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>Back to Packages</span>
+              <span>Back to Programmes</span>
             </a>
           </div>
         </div>
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Update Summary Card & Modal Confirmation amounts dynamically
-    updatePaymentSummaryUI(pkg.price, 'Package fee');
+    updatePaymentSummaryUI(pkg.price, 'Programme fee');
 
     // Success Modal
     if (successServiceType) successServiceType.textContent = 'package';
@@ -642,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const storedPkgPrice = data.price ?? data.amount ?? (data.fee ? getNumericAmount(data.fee) : getNumericAmount(data.startingPrice));
         if (storedPkgPrice) {
-          updatePaymentSummaryUI(storedPkgPrice, 'Package fee');
+          updatePaymentSummaryUI(storedPkgPrice, 'Programme fee');
         }
       }
 

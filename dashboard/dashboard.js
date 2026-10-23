@@ -269,8 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const weekEl = document.getElementById('myPackageWeekInfo');
 
     if (!pkgData) {
-      if (nameEl) nameEl.textContent = 'No Active Package';
-      if (startEl) startEl.textContent = 'Explore our tailored wellness packages';
+      if (nameEl) nameEl.textContent = 'No Active Programme';
+      if (startEl) startEl.textContent = 'Explore our tailored wellness programmes';
       if (fillEl) fillEl.style.width = '0%';
       if (percentEl) percentEl.textContent = '0 %';
       if (weekEl) weekEl.textContent = 'Enroll today';

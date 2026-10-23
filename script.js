@@ -174,11 +174,11 @@ document.addEventListener('DOMContentLoaded', () => {
         void packagesSection.offsetWidth;
         packagesSection.style.animation = 'fadeInCard 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
       }
-      if (dashboardMainHeading) dashboardMainHeading.textContent = 'Packages';
-      if (userGreeting) userGreeting.textContent = 'View and purchase health packages.';
+      if (dashboardMainHeading) dashboardMainHeading.textContent = 'Programmes';
+      if (userGreeting) userGreeting.textContent = 'View and purchase health programmes.';
       if (navPackages) navPackages.classList.add('active');
       history.replaceState(null, '', '#packages');
-      showToast('Viewing Health Packages');
+      showToast('Viewing Health Programmes');
     } else if (subView === 'profile' || subView === 'settings') {
       if (dashboardOverviewSection) dashboardOverviewSection.style.display = 'none';
       if (packagesSection) packagesSection.style.display = 'none';
@@ -1614,7 +1614,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.btn-package-action').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const pkgTitle = btn.getAttribute('data-package') || 'Package';
+      const pkgTitle = btn.getAttribute('data-package') || 'Programme';
       showToast(`Selected "${pkgTitle}". Proceeding to consultation booking...`);
     });
   });

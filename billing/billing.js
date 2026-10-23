@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const rDate = row.date || row.payment_date || '--';
       const rDur = row.duration || '--';
       const rDoc = row.doctor_name || '--';
-      const rPkg = row.package_name || row.title || 'Consultation / Package';
+      const rPkg = row.package_name || row.title || 'Consultation / Programme';
       const rNo = row.receipt_no || ('EK-' + String(row.id).padStart(3, '0'));
       const rPat = row.patient_name || cachedPatientObj?.full_name || cachedUserObj?.full_name || 'Patient';
       const rGen = row.patient_gender || cachedPatientObj?.gender || '--';
@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const pkgBanner = document.querySelector('.active-package-banner');
           if (data.active_package) {
             const pkg = data.active_package;
-            if (activePkgTitle) activePkgTitle.textContent = pkg.title || 'Subscribed Package';
+            if (activePkgTitle) activePkgTitle.textContent = pkg.title || 'Subscribed Programme';
             if (activePkgDesc) activePkgDesc.textContent = pkg.description || 'Personalized wellness and healthcare routine.';
             if (activePkgPrice) activePkgPrice.textContent = pkg.price_formatted || (pkg.price ? `₹${pkg.price}` : '--');
             if (activePkgDuration) activePkgDuration.textContent = pkg.duration || '--';
@@ -604,17 +604,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (pkgBanner) pkgBanner.style.display = 'flex';
             if (activePkgActionLink) {
-              activePkgActionLink.textContent = 'View Package Details';
+              activePkgActionLink.textContent = 'View Programme Details';
               activePkgActionLink.href = '../packages/package.html';
               activePkgActionLink.style.display = 'inline-flex';
             }
           } else {
-            if (activePkgTitle) activePkgTitle.textContent = 'No Active Package';
-            if (activePkgDesc) activePkgDesc.textContent = 'You currently have no active wellness package. Visit the Packages section to explore customized programs.';
+            if (activePkgTitle) activePkgTitle.textContent = 'No Active Programme';
+            if (activePkgDesc) activePkgDesc.textContent = 'You currently have no active wellness programme. Visit the Programmes section to explore customized programs.';
             if (pkgBanner) pkgBanner.style.display = 'none';
             if (activePkgDoctorItem) activePkgDoctorItem.style.display = 'none';
             if (activePkgActionLink) {
-              activePkgActionLink.textContent = 'Explore Packages';
+              activePkgActionLink.textContent = 'Explore Programmes';
               activePkgActionLink.href = '../packages/package.html';
               activePkgActionLink.style.display = 'inline-flex';
             }

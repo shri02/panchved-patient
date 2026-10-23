@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
-          <span>Enrolled (Active Package)</span>
+          <span>Enrolled (Active Programme)</span>
         `;
 
         // Direct action box below CTA
@@ -415,14 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
             <div>
-              <strong style="color: #065f46; font-size: 14.5px; display: block; margin-bottom: 3px;">You are already enrolled in this health package!</strong>
+              <strong style="color: #065f46; font-size: 14.5px; display: block; margin-bottom: 3px;">You are already enrolled in this health programme!</strong>
               <p style="color: #047857; font-size: 13px; line-height: 1.45; margin: 0;">Your personalized Ayurvedic treatment protocol is active. Re-registering or paying again is not permitted.</p>
             </div>
           </div>
           <div style="display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap;">
             <button type="button" id="btnGoToMyPackagesFromDetails" class="btn-package-action" style="padding: 7px 14px; font-size: 12.5px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-              <span>View in My Packages</span>
+              <span>View in My Programmes</span>
             </button>
             <a href="../consultation/consultation.html" class="btn-package-secondary" style="padding: 7px 14px; font-size: 12.5px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bookConsultationBtn.style.backgroundColor = '';
         bookConsultationBtn.style.opacity = '';
         const priceLabel = pkg.price_formatted || (pkg.price ? `₹${parseFloat(pkg.price).toLocaleString('en-IN')}` : '');
-        bookConsultationBtn.innerHTML = `<span>Book Package${priceLabel ? ` (${priceLabel})` : ''}</span>`;
+        bookConsultationBtn.innerHTML = `<span>Book Programme${priceLabel ? ` (${priceLabel})` : ''}</span>`;
       }
     }
   };
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const matched = loadedPackages.find(p => (pkgId && (p.id == pkgId || p.package_id === pkgId)) || (pkgName && p.package_name && p.package_name.toLowerCase() === pkgName.toLowerCase()));
         
         if (matched && isPackageAlreadyEnrolled(matched)) {
-          showToast('You are already enrolled in this health package.', true);
+          showToast('You are already enrolled in this health programme.', true);
           showPackageDetail(matched);
           return;
         }
@@ -631,9 +631,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const pageSubtitle = document.getElementById('pageSubtitle');
     if (pageSubtitle) {
-      if (category === 'all') pageSubtitle.textContent = 'View and purchase health packages created and added to the portal system.';
-      else if (category === 'recommended') pageSubtitle.textContent = 'Packages specifically recommended by doctor for your personal health assessment.';
-      else if (category === 'my') pageSubtitle.textContent = 'Health packages booked and enrolled by you.';
+      if (category === 'all') pageSubtitle.textContent = 'View and purchase health programmes created and added to the portal system.';
+      else if (category === 'recommended') pageSubtitle.textContent = 'Programmes specifically recommended by doctor for your personal health assessment.';
+      else if (category === 'my') pageSubtitle.textContent = 'Health programmes booked and enrolled by you.';
     }
 
     renderCurrentCategory();
@@ -653,8 +653,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
               </svg>
             </div>
-            <h3 class="packages-empty-title">No Doctor Recommended Packages</h3>
-            <p class="packages-empty-desc">Your consulting physician has not recommended any specific health packages yet. Schedule an Ayurvedic consultation to receive personalized health recommendations.</p>
+            <h3 class="packages-empty-title">No Doctor Recommended Programmes</h3>
+            <p class="packages-empty-desc">Your consulting physician has not recommended any specific health programmes yet. Schedule an Ayurvedic consultation to receive personalized health recommendations.</p>
             <a href="../consultation/consultation.html" class="packages-empty-action-btn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -673,14 +673,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
             </div>
-            <h3 class="packages-empty-title">No Packages Booked Yet</h3>
-            <p class="packages-empty-desc">You have not booked any health packages yet. Browse all available packages or doctor-recommended packages to begin your wellness journey.</p>
+            <h3 class="packages-empty-title">No Programmes Booked Yet</h3>
+            <p class="packages-empty-desc">You have not booked any health programmes yet. Browse all available programmes or doctor-recommended programmes to begin your wellness journey.</p>
             <button type="button" class="packages-empty-action-btn" id="emptyExploreAllBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
               </svg>
-              <span>Explore All Packages</span>
+              <span>Explore All Programmes</span>
             </button>
           </div>
         `;
@@ -694,8 +694,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
               </svg>
             </div>
-            <h3 class="packages-empty-title">No Health Packages Found</h3>
-            <p class="packages-empty-desc">There are currently no health packages added to the portal system. Please check back shortly or explore our live workshops and consultations.</p>
+            <h3 class="packages-empty-title">No Health Programmes Found</h3>
+            <p class="packages-empty-desc">There are currently no health programmes added to the portal system. Please check back shortly or explore our live workshops and consultations.</p>
             <a href="../courses/courses.html" class="packages-empty-action-btn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="9" cy="21" r="1"></circle>
@@ -794,7 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
               ` : `
                 <button type="button" class="btn-package-action btn-direct-book-package" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
-                  <span>Book Package</span>
+                  <span>Book Programme</span>
                 </button>
               `}
             </div>
@@ -825,7 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </span>
             </div>
             <h2 class="package-title">${pkg.package_name}</h2>
-            <p class="package-subtitle">${pkg.short_description || pkg.overview || 'Your enrolled health rehabilitation package.'}</p>
+            <p class="package-subtitle">${pkg.short_description || pkg.overview || 'Your enrolled health rehabilitation programme.'}</p>
           </div>
 
           <div class="package-meta-list">
@@ -892,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div style="margin-bottom: 6px;">
                 <span class="package-enrolled-pill">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>Enrolled (Active Package)</span>
+                  <span>Enrolled (Active Programme)</span>
                 </span>
               </div>
             ` : ''}
@@ -943,7 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
               ` : `
                 <button type="button" class="btn-package-action btn-direct-book-package" data-id="${pkg.id}" data-package-id="${pkg.package_id || pkg.id}" data-package="${pkg.package_name}">
-                  <span>Book Package</span>
+                  <span>Book Programme</span>
                 </button>
               `}
             </div>
@@ -1046,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       if (currentSelectedPackage && isPackageAlreadyEnrolled(currentSelectedPackage)) {
-        showToast('You are already enrolled in this health package.', true);
+        showToast('You are already enrolled in this health programme.', true);
         return;
       }
 
@@ -1103,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
         time: '07:00 - 07:45 PM',
         slot: '7:00 PM - 10:00 PM',
-        agenda: `Package Enrollment for ${pkgTitle}`,
+        agenda: `Programme Enrollment for ${pkgTitle}`,
         fee: feeFormatted
       };
 
