@@ -734,6 +734,42 @@ document.addEventListener('DOMContentLoaded', () => {
         time: timeText
       };
 
+      // Process payment through PayU Gateway
+      if (window.PayUCheckout) {
+        try {
+          const payuPayload = {
+            service_type: 'workshop',
+            workshop_id: payload.workshop_id,
+            workshop_title: wsTitle,
+            item_id: payload.id,
+            patient_id: pId,
+            patient_name: patName,
+            patient_email: patEmail,
+            patient_phone: patPhone,
+            amount: numericAmount,
+            date: dateText,
+            time: timeText
+          };
+
+          const payuResult = await window.PayUCheckout.processPayment(payuPayload, async (unconfiguredNotice) => {
+            showToast('PayU credentials pending in App Service settings. Processing test registration...');
+            return null;
+          });
+
+          if (payuResult && payuResult.redirected) {
+            return; // Browser has redirected to PayU payment gateway
+          }
+        } catch (payuErr) {
+          if (payuErr.data && payuErr.data.already_registered) {
+            showToast(payuErr.message, true);
+            applyAlreadyRegisteredCheckoutUI(payuErr.data);
+            confirmPaymentBtn.disabled = true;
+            return;
+          }
+          console.warn('PayU Workshop gateway notice:', payuErr.message);
+        }
+      }
+
       let registrationError = null;
       try {
         const res = await fetch('../api/workshops.php', {

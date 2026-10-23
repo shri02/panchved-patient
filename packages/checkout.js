@@ -928,6 +928,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      // Check if PayU Payment Gateway is selected or available
+      if (window.PayUCheckout) {
+        try {
+          const payuPayload = {
+            service_type: 'package',
+            package_name: currentPkgTitle,
+            item_id: activeBookingData?.packageDbId || activeBookingData?.packageId || currentPkgTitle,
+            patient_name: pName,
+            patient_email: pEmail,
+            patient_phone: pPhone,
+            patient_id: activeBookingData?.patientId || '',
+            amount: finalAmount,
+            doctor_name: activeBookingData?.doctorName || checkoutDoctorName?.textContent.trim() || 'Dr. Nidhi Jha',
+            doctor_role: activeBookingData?.doctorRole || checkoutDoctorRole?.textContent.trim() || 'Ayurveda Physician',
+            appointment_date: new Date().toISOString().split('T')[0],
+            appointment_time: '07:00 - 07:45 PM',
+            agenda: `Package Enrollment for ${currentPkgTitle}`
+          };
+
+          const payuResult = await window.PayUCheckout.processPayment(payuPayload, async (unconfiguredNotice) => {
+            // PayU credentials pending in App Service settings - notify and proceed with test flow
+            showToast('PayU credentials pending in App Service settings. Processing test booking...');
+            return null;
+          });
+
+          if (payuResult && payuResult.redirected) {
+            return; // Browser has redirected to PayU payment gateway
+          }
+        } catch (payuErr) {
+          if (payuErr.data && payuErr.data.already_enrolled) {
+            showToast(payuErr.message, true);
+            showAlreadyEnrolledCheckoutUI(currentPkgTitle);
+            confirmPaymentBtn.disabled = true;
+            return;
+          }
+          console.warn('PayU payment gateway notice:', payuErr.message);
+        }
+      }
+
       let paymentSuccessful = false;
 
       try {

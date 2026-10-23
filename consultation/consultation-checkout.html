@@ -278,7 +278,19 @@
 
             <div class="payment-methods-list" role="radiogroup" aria-label="Select Payment Method">
               
-              <!-- Option 1: Credit / Debit Card -->
+              <!-- Option 1: PayU Payment Gateway -->
+              <label class="payment-method-item active" for="payPayU">
+                <div class="payment-radio-left">
+                  <input type="radio" name="paymentMethod" id="payPayU" value="payu" checked />
+                  <span class="custom-radio"></span>
+                  <span class="payment-name">PayU (UPI, Cards, NetBanking)</span>
+                </div>
+                <div class="payment-logo-badge" aria-hidden="true">
+                  <span style="font-weight: 800; font-size: 15px; color: #009933; letter-spacing: -0.5px;">Pay<span style="color: #66cc33;">U</span></span>
+                </div>
+              </label>
+
+              <!-- Option 2: Credit / Debit Card -->
               <label class="payment-method-item" for="payCard">
                 <div class="payment-radio-left">
                   <input type="radio" name="paymentMethod" id="payCard" value="card" />
@@ -450,6 +462,7 @@
     <span id="toastMsg">Action completed successfully!</span>
   </div>
 
+  <script src="../assets/payu_checkout.js"></script>
   <script src="consultation-checkout.js"></script>
 </body>
 </html>
