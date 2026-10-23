@@ -732,6 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!myWorkshopsSection) return;
 
     let registered = [];
+    let dbFetchSuccessful = false;
 
     // 1. Fetch live enrolled workshops from database
     try {
@@ -748,26 +749,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (data.success && Array.isArray(data.workshops)) {
           registered = data.workshops;
+          dbFetchSuccessful = true;
+          // Synchronize localStorage with live DB truth so deleted or phantom registrations are cleared
+          try {
+            localStorage.setItem('ocayur_registered_workshops', JSON.stringify(registered));
+            localStorage.setItem('panchved_registered_workshops', JSON.stringify(registered));
+          } catch (e) {}
         }
       }
     } catch (e) {
       console.warn('Could not fetch dynamic My Workshops from DB:', e);
     }
 
-    // 2. Merge local storage confirmed registrations so instant offline bookings appear seamlessly
-    try {
-      const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
-      if (Array.isArray(storedList)) {
-        storedList.forEach(item => {
-          const exists = registered.some(r => 
-            (r.booking_id && item.booking_id && r.booking_id === item.booking_id) || 
-            (r.workshop_id && item.workshop_id && r.workshop_id == item.workshop_id) ||
-            (r.title && item.title && r.title.trim().toLowerCase() === item.title.trim().toLowerCase())
-          );
-          if (!exists) registered.unshift(item);
-        });
-      }
-    } catch (e) {}
+    // 2. Only if the DB fetch failed (offline or network error), fallback to cached local storage
+    if (!dbFetchSuccessful) {
+      try {
+        const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
+        if (Array.isArray(storedList)) {
+          registered = storedList;
+        }
+      } catch (e) {}
+    }
 
     // Populate registeredWorkshopsMap comprehensively
     registeredWorkshopsMap.clear();

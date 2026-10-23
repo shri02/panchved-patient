@@ -433,20 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wsId = ws.workshopId || ws.workshop_id || ws.id;
     const wsTitle = ws.workshopTitle || ws.title;
 
-    // 1. Check local storage
-    try {
-      const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
-      const matchInLocal = storedList.some(item => 
-        (wsId && (item.id == wsId || item.workshop_id == wsId)) ||
-        (wsTitle && item.title && item.title.trim().toLowerCase() === wsTitle.trim().toLowerCase())
-      );
-      if (matchInLocal) {
-        applyAlreadyRegisteredCheckoutUI();
-        return true;
-      }
-    } catch (e) {}
-
-    // 2. Query backend API action=check_registration
+    // 1. Query backend API action=check_registration (Authoritative)
     try {
       const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
       const storedPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
@@ -466,12 +453,41 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`../api/workshops.php?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.success && data.is_registered) {
-          applyAlreadyRegisteredCheckoutUI(data.booking);
-          return true;
+        if (data.success) {
+          if (data.is_registered) {
+            applyAlreadyRegisteredCheckoutUI(data.booking);
+            return true;
+          } else {
+            // DB confirms user is NOT registered: purge matching stale item from localStorage
+            try {
+              let storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
+              if (Array.isArray(storedList)) {
+                storedList = storedList.filter(item => 
+                  !(wsId && (item.id == wsId || item.workshop_id == wsId)) &&
+                  !(wsTitle && item.title && item.title.trim().toLowerCase() === wsTitle.trim().toLowerCase())
+                );
+                localStorage.setItem('ocayur_registered_workshops', JSON.stringify(storedList));
+                localStorage.setItem('panchved_registered_workshops', JSON.stringify(storedList));
+              }
+            } catch (e) {}
+            return false;
+          }
         }
       }
     } catch (err) {}
+
+    // 2. Offline fallback to local storage only if network check failed
+    try {
+      const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
+      const matchInLocal = storedList.some(item => 
+        (wsId && (item.id == wsId || item.workshop_id == wsId)) ||
+        (wsTitle && item.title && item.title.trim().toLowerCase() === wsTitle.trim().toLowerCase())
+      );
+      if (matchInLocal) {
+        applyAlreadyRegisteredCheckoutUI();
+        return true;
+      }
+    } catch (e) {}
 
     return false;
   };
