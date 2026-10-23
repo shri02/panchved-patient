@@ -259,25 +259,32 @@ document.addEventListener('DOMContentLoaded', () => {
   // Helper: Check if package is already booked / enrolled by current patient
   const isPackageAlreadyEnrolled = (pkg) => {
     if (!pkg) return false;
-    const targetId = pkg.id || null;
-    const targetPkgCode = pkg.package_id || null;
-    const targetName = normalizePackageName(pkg.package_name || pkg.packageTitle || pkg.title);
+    const targetId = pkg.id ? String(pkg.id) : null;
+    const targetPkgCode = pkg.package_id ? String(pkg.package_id).trim().toUpperCase() : null;
+    const targetName = normalizePackageName(pkg.package_name || pkg.packageTitle || pkg.title || '');
 
     // 1. Check categoriesData.my
     if (Array.isArray(categoriesData.my) && categoriesData.my.length > 0) {
       const foundInMy = categoriesData.my.some(bp => {
         if (!bp) return false;
-        const bpId = bp.id || null;
-        const bpPkgCode = bp.package_id || null;
-        const bpName = normalizePackageName(bp.package_name || bp.packageTitle || bp.title);
-        if (targetId && bpId && String(targetId) === String(bpId)) return true;
-        if (targetPkgCode && bpPkgCode && String(targetPkgCode).toUpperCase() === String(bpPkgCode).toUpperCase()) return true;
-        if (targetId && bpPkgCode && String(targetId).toUpperCase() === String(bpPkgCode).toUpperCase()) return true;
-        if (targetPkgCode && bpId && String(targetPkgCode).toUpperCase() === String(bpId).toUpperCase()) return true;
-        if (targetName && bpName) {
-          if (targetName === bpName) return true;
-          if ((targetName.length >= 6 && bpName.includes(targetName)) || (bpName.length >= 6 && targetName.includes(bpName))) return true;
+        const bpName = normalizePackageName(bp.package_name || bp.packageTitle || bp.title || '');
+        const bpPkgCode = bp.package_id ? String(bp.package_id).trim().toUpperCase() : null;
+        const bpId = bp.id ? String(bp.id) : null;
+
+        // Match strictly by exact normalized name
+        if (targetName && bpName && targetName === bpName) return true;
+
+        // Match by standard package code (e.g. PKG-004) if present on both
+        if (targetPkgCode && bpPkgCode && targetPkgCode.startsWith('PKG-') && bpPkgCode.startsWith('PKG-') && targetPkgCode === bpPkgCode) {
+          return true;
         }
+
+        // Match by database primary key ONLY if names match or both have identical package_id
+        if (targetId && bpId && targetId === bpId) {
+          if (targetName && bpName && targetName === bpName) return true;
+          if (targetPkgCode && bpPkgCode && targetPkgCode === bpPkgCode) return true;
+        }
+
         return false;
       });
       if (foundInMy) return true;
@@ -289,13 +296,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (Array.isArray(localBooked) && localBooked.length > 0) {
         const foundInLocal = localBooked.some(lb => {
           if (!lb) return false;
-          const lbName = normalizePackageName(lb.package_name || lb.packageTitle);
-          const lbId = lb.package_id || lb.packageDbId || lb.id || null;
-          if (targetId && lbId && String(targetId) === String(lbId)) return true;
-          if (targetPkgCode && lbId && String(targetPkgCode).toUpperCase() === String(lbId).toUpperCase()) return true;
-          if (targetName && lbName) {
-            if (targetName === lbName) return true;
-            if ((targetName.length >= 6 && lbName.includes(targetName)) || (lbName.length >= 6 && targetName.includes(lbName))) return true;
+          const lbName = normalizePackageName(lb.package_name || lb.packageTitle || lb.title || '');
+          const lbPkgCode = (lb.package_id || lb.packageCode) ? String(lb.package_id || lb.packageCode).trim().toUpperCase() : null;
+
+          if (targetName && lbName && targetName === lbName) return true;
+          if (targetPkgCode && lbPkgCode && targetPkgCode.startsWith('PKG-') && lbPkgCode.startsWith('PKG-') && targetPkgCode === lbPkgCode) {
+            return true;
           }
           return false;
         });
@@ -604,17 +610,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // 3. Card surface click opens details
-    const cards = document.querySelectorAll('.package-card');
-    cards.forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-package-action') || e.target.closest('a') || e.target.closest('button')) return;
-        const pkgId = card.getAttribute('data-id') || card.getAttribute('data-package-id');
-        const pkgName = card.getAttribute('data-package') || card.querySelector('.package-title')?.textContent.trim();
-        const matched = loadedPackages.find(p => (pkgId && (p.id == pkgId || p.package_id === pkgId)) || (pkgName && p.package_name && p.package_name.toLowerCase() === pkgName.toLowerCase()));
-        showPackageDetail(matched || card);
-      });
-    });
   };
 
   // Switch Active Category (all, recommended, my)

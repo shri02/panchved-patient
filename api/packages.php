@@ -420,7 +420,7 @@ function getMyBookedPackagesForPatient($connection1, $patient, $phone = '', $pat
 
     // 1. Fetch strictly from `patient_packages` table (actual packages booked by patient)
     // INNER JOIN with active packages so only valid packages appear
-    $ppSql = "SELECT pp.*, p.overview, p.short_description, p.image_url, p.benefits, p.duration AS pkg_duration, p.price AS pkg_price, p.assigned_doctor AS pkg_doctor
+    $ppSql = "SELECT p.*, pp.id AS patient_package_id, pp.booking_id, pp.booking_date, pp.doctor_name AS booked_doctor_name, pp.status AS booking_status, pp.created_at AS booked_created_at
               FROM patient_packages pp
               INNER JOIN packages p ON (p.id = pp.package_id OR p.package_name = pp.package_name COLLATE utf8mb4_unicode_ci)
               WHERE ((pp.patient_id > 0 AND pp.patient_id = ?) OR (pp.patient_phone != '' AND (pp.patient_phone = ? OR pp.patient_phone = ?)))
@@ -436,19 +436,20 @@ function getMyBookedPackagesForPatient($connection1, $patient, $phone = '', $pat
             if (empty($pkgName)) continue;
 
             $formatted = formatPackageRecord($row, $connection1);
-            $formatted['booking_id'] = !empty($row['booking_id']) ? $row['booking_id'] : ('#PKG' . str_pad($row['id'], 5, '0', STR_PAD_LEFT));
-            $formatted['booking_date'] = !empty($row['booking_date']) ? date('d M Y', strtotime($row['booking_date'])) : date('d M Y', strtotime($row['created_at']));
-            $formatted['booking_status'] = !empty($row['status']) ? $row['status'] : 'Active';
+            $formatted['booking_id'] = !empty($row['booking_id']) ? $row['booking_id'] : ('#PKG' . str_pad($row['patient_package_id'] ?? $row['id'], 5, '0', STR_PAD_LEFT));
+            $formatted['booking_date'] = !empty($row['booking_date']) ? date('d M Y', strtotime($row['booking_date'])) : date('d M Y', strtotime($row['booked_created_at'] ?? $row['created_at']));
+            $formatted['booking_status'] = !empty($row['booking_status']) ? $row['booking_status'] : 'Active';
 
             $docName = '';
-            if (!empty($row['doctor_name']) && $row['doctor_name'] !== '0') {
-                $docName = $row['doctor_name'];
+            if (!empty($row['booked_doctor_name']) && $row['booked_doctor_name'] !== '0') {
+                $docName = $row['booked_doctor_name'];
             } elseif (!empty($formatted['doctor']['name'])) {
                 $docName = $formatted['doctor']['name'];
             } else {
                 $docName = 'Dr. Nidhi Jha';
             }
             $formatted['booked_doctor'] = $docName;
+            $formatted['patient_package_id'] = (int)($row['patient_package_id'] ?? 0);
 
             $key = strtolower($pkgName);
             if (!isset($seenNames[$key])) {
