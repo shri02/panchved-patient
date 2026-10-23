@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const getSelectedPaymentMethod = () => {
     const activeRadio = document.querySelector('input[name="paymentMethod"]:checked');
-    return activeRadio ? activeRadio.value : 'card';
+    return activeRadio ? activeRadio.value : 'payu';
   };
 
   // 4. Confirm Payment -> Backend API Sync & Success Modal

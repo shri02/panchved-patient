@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const successPaymentAmount = document.getElementById('successPaymentAmount');
 
   let activeWorkshopData = null;
-  let selectedPaymentMethod = 'Card';
+  let selectedPaymentMethod = 'PayU';
 
   // Helper: Toast Message
   const showToast = (message, isError = false) => {
@@ -689,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const radio = item.querySelector('input[type="radio"]');
         if (radio) {
           radio.checked = true;
-          selectedPaymentMethod = item.querySelector('.payment-name')?.textContent.trim() || 'Card';
+          selectedPaymentMethod = 'PayU';
         }
       });
     });

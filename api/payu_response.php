@@ -186,14 +186,15 @@ if ($isSuccess && $connection1) {
     }
 }
 
-// Redirect target path
-$redirectTarget = '../dashboard/dashboard.html';
+// Redirect target path (points directly to portal.ocayur.com)
+$portalBase = getPayUBaseUrl();
+$redirectTarget = $portalBase . '/dashboard/dashboard.html';
 if ($serviceType === 'package' || $serviceType === 'programme') {
-    $redirectTarget = '../packages/package.html#my-packages';
+    $redirectTarget = $portalBase . '/packages/package.html#my-packages';
 } elseif ($serviceType === 'workshop') {
-    $redirectTarget = '../courses/courses.html#my-workshops';
+    $redirectTarget = $portalBase . '/courses/courses.html#my-workshops';
 } elseif ($serviceType === 'consultation') {
-    $redirectTarget = '../consultation/consultation.html#my-appointments';
+    $redirectTarget = $portalBase . '/consultation/consultation.html#my-appointments';
 }
 ?>
 <!DOCTYPE html>

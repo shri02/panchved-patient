@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Helper: Get Selected Payment Method
   const getSelectedPaymentMethod = () => {
     const activeRadio = document.querySelector('input[name="paymentMethod"]:checked');
-    return activeRadio ? activeRadio.value : 'card';
+    return activeRadio ? activeRadio.value : 'payu';
   };
 
   // 5. Confirm Payment & Show Success Modal with MySQL DB Backend Sync
