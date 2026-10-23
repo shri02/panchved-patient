@@ -464,7 +464,7 @@ function getMyBookedPackagesForPatient($connection1, $patient, $phone = '', $pat
     $apptSql = "SELECT a.id AS appt_id, a.appointment_id, a.package_name, a.doctor_name, a.appointment_date, a.appointment_time, a.status AS appt_status, a.created_at, p.*
                 FROM appointments a
                 INNER JOIN packages p ON (p.package_name = a.package_name COLLATE utf8mb4_unicode_ci)
-                WHERE ((a.patient_id > 0 AND a.patient_id = ?) OR (a.patient_name != '' AND a.patient_name = ?) OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
+                WHERE ((a.patient_id > 0 AND a.patient_id = ?) OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
                   AND a.service_type = 'Package Consultation'
                   AND a.package_name IS NOT NULL
                   AND a.package_name != ''
@@ -472,7 +472,7 @@ function getMyBookedPackagesForPatient($connection1, $patient, $phone = '', $pat
                 ORDER BY a.id DESC";
 
     if ($stmt = mysqli_prepare($connection1, $apptSql)) {
-        mysqli_stmt_bind_param($stmt, "issss", $patientDbId, $patientName, $patientPhone, $patientPhone, $phoneDigits);
+        mysqli_stmt_bind_param($stmt, "isss", $patientDbId, $patientPhone, $patientPhone, $phoneDigits);
         mysqli_stmt_execute($stmt);
         $res = mysqli_stmt_get_result($stmt);
         while ($row = mysqli_fetch_assoc($res)) {

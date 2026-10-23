@@ -147,27 +147,11 @@ if (!$patient && $connection1 && (!empty($phone) || !empty($phoneDigits) || !emp
     }
 }
 
-// Fallback if no specific user identity was passed at all
-if (!$patient && $connection1 && empty($phone) && empty($email) && empty($patientId) && $userId <= 0) {
-    $res = mysqli_query($connection1, "SELECT * FROM patients ORDER BY id ASC LIMIT 1");
-    if ($res && ($row = mysqli_fetch_assoc($res))) {
-        $patient = $row;
-    }
-}
-
 if (!$patient) {
-    $patient = [
-        'id' => $_SESSION['patient_id'] ?? 1,
-        'patient_id' => !empty($_SESSION['patient_id']) ? ('P00' . $_SESSION['patient_id']) : 'P001',
-        'full_name' => $_SESSION['full_name'] ?? 'Patient',
-        'phone_number' => $_SESSION['phone_number'] ?? '',
-        'email' => $_SESSION['email'] ?? '',
-        'gender' => 'Male',
-        'age' => 28,
-        'package_name' => '',
-        'total_appointments' => 0,
-        'status' => 'Ongoing'
-    ];
+    sendJsonResponse(true, 'No billing records found.', [
+        'active_package' => null,
+        'payments' => []
+    ]);
 }
 
 $patDbId = (int)$patient['id'];
@@ -586,13 +570,12 @@ if ($connection1) {
                   FROM appointments a 
                   LEFT JOIN packages p ON (a.package_name = p.package_name OR p.package_name LIKE CONCAT('%', a.package_name, '%'))
                   WHERE ((a.patient_id > 0 AND a.patient_id = ?) 
-                     OR (a.patient_name != '' AND ? != '' AND a.patient_name = ?)
                      OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
                     AND a.status IN ('Scheduled', 'Upcoming', 'Completed', 'Active')
                   ORDER BY a.appointment_date DESC, a.id DESC";
 
     if ($aStmt = mysqli_prepare($connection1, $apptQuery)) {
-        mysqli_stmt_bind_param($aStmt, "isssss", $patDbId, $patName, $patName, $patPhone, $patPhone, $phoneDigits);
+        mysqli_stmt_bind_param($aStmt, "isss", $patDbId, $patPhone, $patPhone, $phoneDigits);
         mysqli_stmt_execute($aStmt);
         $apptRes = mysqli_stmt_get_result($aStmt);
         while ($row = mysqli_fetch_assoc($apptRes)) {

@@ -32,12 +32,19 @@ if ((empty($_SESSION['user_id']) && empty($_SESSION['phone_number'])) || ($sessi
 
 $phone = $_SESSION['phone_number'] ?? '';
 $userId = $_SESSION['user_id'] ?? 0;
+$sessionPatientId = $_SESSION['patient_id'] ?? '';
+$sessionEmail = $_SESSION['email'] ?? '';
+
+$phoneDigits = preg_replace('/[^\d]/', '', $phone);
+if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+    $phoneDigits = substr($phoneDigits, 2);
+}
 
 $patient = null;
-if (!empty($phone)) {
-    $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status FROM patients WHERE phone_number = ? LIMIT 1";
+if (!empty($phone) || !empty($phoneDigits) || !empty($sessionPatientId) || !empty($sessionEmail)) {
+    $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (patient_id != '' AND patient_id = ?) OR (email != '' AND email = ?) LIMIT 1";
     if ($stmt = mysqli_prepare($connection1, $pQuery)) {
-        mysqli_stmt_bind_param($stmt, "s", $phone);
+        mysqli_stmt_bind_param($stmt, "ssss", $phone, $phoneDigits, $sessionPatientId, $sessionEmail);
         mysqli_stmt_execute($stmt);
         $res = mysqli_stmt_get_result($stmt);
         $patient = mysqli_fetch_assoc($res);

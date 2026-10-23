@@ -979,10 +979,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Also sync any locally booked packages that match this patient
           try {
+            const cleanDigits = (p) => String(p || '').replace(/\D/g, '').replace(/^91/, '');
             const localBooked = JSON.parse(localStorage.getItem('ocayur_booked_packages') || '[]');
-            if (Array.isArray(localBooked) && localBooked.length > 0) {
+            if (Array.isArray(localBooked) && localBooked.length > 0 && cachedPhone) {
+              const currentDigits = cleanDigits(cachedPhone);
               localBooked.forEach(lb => {
-                const phoneMatch = !cachedPhone || !lb.patient_phone || lb.patient_phone === cachedPhone;
+                const lbDigits = cleanDigits(lb.patient_phone);
+                const phoneMatch = currentDigits && lbDigits && currentDigits === lbDigits;
                 if (phoneMatch && lb.package_name) {
                   const alreadyInMy = categoriesData.my.some(p => p.package_name && p.package_name.toLowerCase() === lb.package_name.toLowerCase());
                   if (!alreadyInMy) {

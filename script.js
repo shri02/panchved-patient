@@ -843,6 +843,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await response.json();
 
         if (response.ok && result.success) {
+          try {
+            localStorage.removeItem('ocayur_booked_packages');
+            localStorage.removeItem('panchved_booked_packages');
+          } catch (e) {}
           if (result.user) {
             try {
               localStorage.setItem('ocayur_patient_user', JSON.stringify(result.user));
@@ -1297,6 +1301,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await response.json();
 
         if (response.ok && result.success) {
+          try {
+            localStorage.removeItem('ocayur_booked_packages');
+            localStorage.removeItem('panchved_booked_packages');
+          } catch (e) {}
           if (result.user) {
             try { localStorage.setItem('ocayur_user', JSON.stringify(result.user)); } catch (e) {}
           }

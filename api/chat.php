@@ -64,15 +64,19 @@ if (!$hasTable) {
 $patientId = 0;
 $phone = $_SESSION['phone_number'] ?? '';
 $sessPatientCode = $_SESSION['patient_id'] ?? '';
+$phoneDigits = preg_replace('/[^\d]/', '', $phone);
+if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+    $phoneDigits = substr($phoneDigits, 2);
+}
 
 if (!empty($_GET['patient_id'])) {
     $patientId = (int)$_GET['patient_id'];
 } elseif (!empty($_POST['patient_id'])) {
     $patientId = (int)$_POST['patient_id'];
-} elseif (!empty($phone)) {
-    $pStmt = mysqli_prepare($connection1, "SELECT id FROM patients WHERE phone_number = ? LIMIT 1");
+} elseif (!empty($phone) || !empty($phoneDigits)) {
+    $pStmt = mysqli_prepare($connection1, "SELECT id FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) LIMIT 1");
     if ($pStmt) {
-        mysqli_stmt_bind_param($pStmt, "s", $phone);
+        mysqli_stmt_bind_param($pStmt, "ss", $phone, $phoneDigits);
         mysqli_stmt_execute($pStmt);
         $res = mysqli_stmt_get_result($pStmt);
         if ($pRow = mysqli_fetch_assoc($res)) {
@@ -93,14 +97,9 @@ if (!empty($_GET['patient_id'])) {
     }
 }
 
-// Fallback to first patient in database (e.g. ID 1)
+// Strict security: Never fall back to another patient in database
 if ($patientId <= 0) {
-    $qPatFirst = mysqli_query($connection1, "SELECT id FROM patients ORDER BY id ASC LIMIT 1");
-    if ($qPatFirst && $fRow = mysqli_fetch_assoc($qPatFirst)) {
-        $patientId = (int)$fRow['id'];
-    } else {
-        $patientId = 1;
-    }
+    sendJson(false, 'Patient session not active.', ['authenticated' => false, 'messages' => [], 'threads' => []], 401);
 }
 
 // Fetch active Patient Details

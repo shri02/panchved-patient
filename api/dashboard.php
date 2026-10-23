@@ -662,13 +662,17 @@ function getNotifications($connection, $patient)
     }
 
     $patientDbId = (int)$patient['id'];
-    $patientName = (string)($patient['full_name'] ?? '');
+    $patientPhone = (string)($patient['phone_number'] ?? '');
+    $phoneDigits = preg_replace('/\D+/', '', $patientPhone);
+    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+        $phoneDigits = substr($phoneDigits, 2);
+    }
 
     $sql = "SELECT id, appointment_id, doctor_name, appointment_date, appointment_time,
                    service_type, agenda, status, created_at
             FROM appointments
             WHERE patient_id = ?
-               OR (? <> '' AND (patient_name = ? OR patient_name LIKE ?))
+               OR (? <> '' AND patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?))
             ORDER BY id DESC
             LIMIT 10";
 
@@ -677,8 +681,7 @@ function getNotifications($connection, $patient)
         return [];
     }
 
-    $nameLike = '%' . $patientName . '%';
-    mysqli_stmt_bind_param($stmt, 'isss', $patientDbId, $patientName, $patientName, $nameLike);
+    mysqli_stmt_bind_param($stmt, 'isss', $patientDbId, $patientPhone, $patientPhone, $phoneDigits);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
@@ -1020,15 +1023,19 @@ $packageProgress = calculatePackageProgress($patient, $package);
 /* Upcoming consultations are patient-specific. */
 $upcomingCount = 0;
 if (tableExists($connection1, 'appointments')) {
+    $phoneDigits = preg_replace('/\D+/', '', $patientPhone);
+    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+        $phoneDigits = substr($phoneDigits, 2);
+    }
+
     $sql = "SELECT COUNT(*) AS count
             FROM appointments
-            WHERE (patient_id = ? OR (? <> '' AND (patient_name = ? OR patient_name LIKE ?)))
+            WHERE (patient_id = ? OR (? <> '' AND patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
               AND status IN ('Scheduled', 'Upcoming')";
 
     $stmt = mysqli_prepare($connection1, $sql);
     if ($stmt) {
-        $nameLike = '%' . $patientName . '%';
-        mysqli_stmt_bind_param($stmt, 'isss', $patientDbId, $patientName, $patientName, $nameLike);
+        mysqli_stmt_bind_param($stmt, 'isss', $patientDbId, $patientPhone, $patientPhone, $phoneDigits);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         $row = mysqli_fetch_assoc($result);

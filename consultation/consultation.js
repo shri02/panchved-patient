@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.ok) {
         const data = await res.json();
         if (data.success && (data.patient || data.user)) {
+          const prevPhone = cachedPhone;
           if (data.patient) {
             cachedPatient = data.patient;
             try { localStorage.setItem('ocayur_patient', JSON.stringify(data.patient)); } catch (e) {}
@@ -175,6 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!cachedPhone && data.user.phone_number) cachedPhone = data.user.phone_number;
           }
           applyUserHeader(data.user, data.patient);
+          if (!prevPhone && cachedPhone) {
+            loadAppointmentsFromDB();
+          }
         }
       }
     } catch (e) {}
@@ -785,7 +789,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const loadAppointmentsFromDB = async () => {
     try {
-      const res = await fetch('../api/consultations.php');
+      const params = new URLSearchParams();
+      if (cachedPhone) params.append('phone', cachedPhone);
+      if (cachedPatientId) params.append('patient_id', cachedPatientId);
+      const url = '../api/consultations.php' + (params.toString() ? `?${params.toString()}` : '');
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {

@@ -87,17 +87,8 @@ function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAp
     if (!$prescRow && $patientId > 0) {
         $prescRow = $prescByPatient[$patientId] ?? null;
     }
-    if (!$prescRow && !empty($patientName)) {
-        foreach ($prescByPatient as $pr) {
-            if (strcasecmp($pr['patient_name'], $patientName) === 0 || stripos($pr['patient_name'], $patientName) !== false) {
-                $prescRow = $pr;
-                break;
-            }
-        }
-    }
-    if (!$prescRow) {
-        $prescRow = $defaultPrescription;
-    }
+    // Strict prescription resolution: NEVER fall back to another patient's prescription or match by patient name.
+
 
     $rawApptPresc = trim($appt['prescription'] ?? '');
     $parsedApptPresc = null;
@@ -274,64 +265,143 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     // 1.3 Action: List Appointments (My Appointments & History)
-    $apptsQuery = "SELECT a.*, d.expertise, d.area, d.doctorid AS doctor_code, p.gender, p.age, p.phone_number AS patient_phone, p.email AS patient_email FROM appointments a LEFT JOIN doctors d ON a.doctor_id = d.id LEFT JOIN patients p ON (a.patient_id = p.id OR a.patient_name = p.full_name) ORDER BY a.appointment_date DESC, a.id DESC";
-    $apptsRes = mysqli_query($connection1, $apptsQuery);
+    // Resolve current authenticated patient from session or query params
+    $phone = isset($_GET['phone']) ? trim($_GET['phone']) : ($_SESSION['phone_number'] ?? '');
+    $patientId = isset($_GET['patient_id']) ? trim($_GET['patient_id']) : ($_SESSION['patient_id'] ?? '');
+    $email = isset($_GET['email']) ? trim($_GET['email']) : ($_SESSION['email'] ?? '');
+    $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : ($_SESSION['user_id'] ?? 0);
+
+    $phoneDigits = preg_replace('/[^\d]/', '', $phone);
+    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
+        $phoneDigits = substr($phoneDigits, 2);
+    }
+
+    $patient = null;
+    if (!empty($phone) || !empty($phoneDigits) || !empty($email) || !empty($patientId)) {
+        $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status, created_at 
+                   FROM patients 
+                   WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) 
+                      OR (email != '' AND email = ?) 
+                      OR (patient_id != '' AND patient_id = ?) 
+                   LIMIT 1";
+        if ($stmt = mysqli_prepare($connection1, $pQuery)) {
+            mysqli_stmt_bind_param($stmt, "ssss", $phone, $phoneDigits, $email, $patientId);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            $patient = mysqli_fetch_assoc($res);
+            mysqli_stmt_close($stmt);
+        }
+    }
+
+    if (!$patient && $userId > 0) {
+        $uQuery = "SELECT id, full_name, email, phone_number FROM users WHERE id = ? LIMIT 1";
+        if ($uStmt = mysqli_prepare($connection1, $uQuery)) {
+            mysqli_stmt_bind_param($uStmt, "i", $userId);
+            mysqli_stmt_execute($uStmt);
+            $uRes = mysqli_stmt_get_result($uStmt);
+            if ($uRow = mysqli_fetch_assoc($uRes)) {
+                $pQuery = "SELECT id, patient_id, full_name, dob, age, phone_number, gender, email, package_name, total_appointments, status, created_at 
+                           FROM patients 
+                           WHERE phone_number = ? OR email = ? LIMIT 1";
+                if ($pStmt2 = mysqli_prepare($connection1, $pQuery)) {
+                    mysqli_stmt_bind_param($pStmt2, "ss", $uRow['phone_number'], $uRow['email']);
+                    mysqli_stmt_execute($pStmt2);
+                    $pRes2 = mysqli_stmt_get_result($pStmt2);
+                    $patient = mysqli_fetch_assoc($pRes2);
+                    mysqli_stmt_close($pStmt2);
+                }
+            }
+            mysqli_stmt_close($uStmt);
+        }
+    }
+
     $myAppointments = [];
     $historyAppointments = [];
     $allAppointments = [];
     $now = time();
 
-    if ($apptsRes) {
-        while ($r = mysqli_fetch_assoc($apptsRes)) {
-            $rawDate = $r['appointment_date'];
-            $rawTime = $r['appointment_time'];
+    // If no patient is authenticated or found, strictly return empty appointment arrays (prevent viewing other patients' data)
+    if (!$patient) {
+        sendJsonResponse(true, 'No appointments found for patient.', [
+            'my_appointments' => [],
+            'history_appointments' => [],
+            'appointments' => [],
+            'all_appointments' => []
+        ]);
+    }
 
-            $ts = parseAppointmentTimestamp($rawDate, $rawTime);
-            $isUpcoming = ($ts !== false && $ts > $now);
+    $patDbId = (int)$patient['id'];
+    $patPhone = trim((string)$patient['phone_number']);
+    $patPhoneDigits = preg_replace('/[^\d]/', '', $patPhone);
+    if (strlen($patPhoneDigits) === 12 && substr($patPhoneDigits, 0, 2) === '91') {
+        $patPhoneDigits = substr($patPhoneDigits, 2);
+    }
 
-            $apptId = !empty($r['appointment_id']) ? $r['appointment_id'] : ('APT-' . $r['id']);
-            $docName = !empty($r['doctor_name']) ? $r['doctor_name'] : 'Dr. Nidhi Jha';
-            $cleanDoc = strtolower(preg_replace('/[^a-z0-9]/i', '', str_replace(['Dr.', 'Dr '], '', $docName)));
-            $meetLink = "https://meet.google.com/abc-{$cleanDoc}-ocayur";
+    $apptsQuery = "SELECT a.*, d.expertise, d.area, d.doctorid AS doctor_code, p.gender, p.age, p.phone_number AS patient_phone, p.email AS patient_email 
+                   FROM appointments a 
+                   LEFT JOIN doctors d ON a.doctor_id = d.id 
+                   LEFT JOIN patients p ON a.patient_id = p.id 
+                   WHERE (a.patient_id = ? OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
+                   ORDER BY a.appointment_date DESC, a.id DESC";
 
-            $prescPayload = resolvePrescriptionPayload($r, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient, $defaultPrescription);
+    if ($aStmt = mysqli_prepare($connection1, $apptsQuery)) {
+        mysqli_stmt_bind_param($aStmt, "isss", $patDbId, $patPhone, $patPhone, $patPhoneDigits);
+        mysqli_stmt_execute($aStmt);
+        $apptsRes = mysqli_stmt_get_result($aStmt);
 
-            $item = [
-                'id' => (int)$r['id'],
-                'appointment_id' => $apptId,
-                'patient_id' => $r['patient_id'],
-                'patient_name' => $r['patient_name'],
-                'gender' => $r['gender'] ?? ($prescPayload['gender'] ?? 'Male'),
-                'age' => $r['age'] ?? ($prescPayload['age'] ?? 34),
-                'doctor_id' => $r['doctor_id'],
-                'doctor_name' => $docName,
-                'package_name' => $r['package_name'],
-                'appointment_date' => $r['appointment_date'],
-                'appointment_time' => $r['appointment_time'],
-                'duration' => !empty($r['duration']) ? $r['duration'] : '45 min',
-                'service_type' => $r['service_type'],
-                'complaint' => !empty($r['complaint']) ? $r['complaint'] : (!empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation and pulse diagnostics review'),
-                'agenda' => !empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation and pulse diagnostics review',
-                'prescription' => $r['prescription'],
-                'prescription_data' => $prescPayload,
-                'status' => $r['status'],
-                'notes' => $r['notes'],
-                'expertise' => $r['expertise'],
-                'area' => $r['area'],
-                'role' => !empty($r['area']) ? "{$r['expertise']} ({$r['area']})" : $r['expertise'],
-                'meet_link' => $meetLink,
-                'is_upcoming' => $isUpcoming,
-                'timestamp' => $ts
-            ];
+        if ($apptsRes) {
+            while ($r = mysqli_fetch_assoc($apptsRes)) {
+                $rawDate = $r['appointment_date'];
+                $rawTime = $r['appointment_time'];
 
-            $allAppointments[] = $item;
+                $ts = parseAppointmentTimestamp($rawDate, $rawTime);
+                $isUpcoming = ($ts !== false && $ts > $now);
 
-            if ($isUpcoming) {
-                $myAppointments[] = $item;
-            } else {
-                $historyAppointments[] = $item;
+                $apptId = !empty($r['appointment_id']) ? $r['appointment_id'] : ('APT-' . $r['id']);
+                $docName = !empty($r['doctor_name']) ? $r['doctor_name'] : 'Dr. Nidhi Jha';
+                $cleanDoc = strtolower(preg_replace('/[^a-z0-9]/i', '', str_replace(['Dr.', 'Dr '], '', $docName)));
+                $meetLink = "https://meet.google.com/abc-{$cleanDoc}-ocayur";
+
+                $prescPayload = resolvePrescriptionPayload($r, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient, $defaultPrescription);
+
+                $item = [
+                    'id' => (int)$r['id'],
+                    'appointment_id' => $apptId,
+                    'patient_id' => $r['patient_id'],
+                    'patient_name' => $r['patient_name'],
+                    'gender' => $r['gender'] ?? ($prescPayload['gender'] ?? 'Male'),
+                    'age' => $r['age'] ?? ($prescPayload['age'] ?? 34),
+                    'doctor_id' => $r['doctor_id'],
+                    'doctor_name' => $docName,
+                    'package_name' => $r['package_name'],
+                    'appointment_date' => $r['appointment_date'],
+                    'appointment_time' => $r['appointment_time'],
+                    'duration' => !empty($r['duration']) ? $r['duration'] : '45 min',
+                    'service_type' => $r['service_type'],
+                    'complaint' => !empty($r['complaint']) ? $r['complaint'] : (!empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation and pulse diagnostics review'),
+                    'agenda' => !empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation and pulse diagnostics review',
+                    'prescription' => $r['prescription'],
+                    'prescription_data' => $prescPayload,
+                    'status' => $r['status'],
+                    'notes' => $r['notes'],
+                    'expertise' => $r['expertise'],
+                    'area' => $r['area'],
+                    'role' => !empty($r['area']) ? "{$r['expertise']} ({$r['area']})" : $r['expertise'],
+                    'meet_link' => $meetLink,
+                    'is_upcoming' => $isUpcoming,
+                    'timestamp' => $ts
+                ];
+
+                $allAppointments[] = $item;
+
+                if ($isUpcoming) {
+                    $myAppointments[] = $item;
+                } else {
+                    $historyAppointments[] = $item;
+                }
             }
         }
+        mysqli_stmt_close($aStmt);
     }
 
     sendJsonResponse(true, 'Appointments retrieved successfully', [
@@ -384,10 +454,16 @@ if ($dStmt) {
 }
 
 // Resolve Patient DB ID
-$patientDbId = 1;
-$pStmt = mysqli_prepare($connection1, "SELECT id, patient_id FROM patients WHERE (phone_number != '' AND phone_number = ?) OR (email != '' AND email = ?) LIMIT 1");
+$patientPhoneDigits = preg_replace('/[^\d]/', '', $patientPhone);
+if (strlen($patientPhoneDigits) === 12 && substr($patientPhoneDigits, 0, 2) === '91') {
+    $patientPhoneDigits = substr($patientPhoneDigits, 2);
+}
+$patientDbId = 0;
+$sessPatId = $_SESSION['patient_id'] ?? '';
+
+$pStmt = mysqli_prepare($connection1, "SELECT id, patient_id FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1");
 if ($pStmt) {
-    mysqli_stmt_bind_param($pStmt, "ss", $patientPhone, $patientEmail);
+    mysqli_stmt_bind_param($pStmt, "ssss", $patientPhone, $patientPhoneDigits, $patientEmail, $sessPatId);
     mysqli_stmt_execute($pStmt);
     $pRes = mysqli_stmt_get_result($pStmt);
     if ($pRow = mysqli_fetch_assoc($pRes)) {
@@ -396,6 +472,7 @@ if ($pStmt) {
     }
     mysqli_stmt_close($pStmt);
 }
+
 
 // Generate unique Appointment ID
 $appointmentCode = 'APT-' . date('Ymd') . '-' . rand(100, 999);
