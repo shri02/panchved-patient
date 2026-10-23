@@ -21,6 +21,9 @@ if (empty($postData)) {
         parse_str($raw, $postData);
     }
 }
+if (empty($postData) && !empty($_GET)) {
+    $postData = $_GET;
+}
 
 $config = getPayUConfig();
 $salt = $config['salt'];
@@ -64,24 +67,36 @@ $doctorName = !empty($udf4) ? $udf4 : 'Dr. Nidhi Jha';
 $apptDate = $meta['date'] ?? date('Y-m-d');
 $apptTime = $meta['time'] ?? '07:00 - 07:45 PM';
 
-// Try to record in optional `payu_transactions` table if user created it
+// Log PayU callback for diagnostics
+@file_put_contents(
+    __DIR__ . '/payu_debug.log',
+    "[" . date('Y-m-d H:i:s') . "] METHOD=" . ($_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN') . 
+    " HTTPS=" . (isset($_SERVER['HTTPS']) ? $_SERVER['HTTPS'] : 'off') . 
+    " PROTO=" . ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'none') . 
+    " POST_COUNT=" . count($_POST) . 
+    " TXNID=" . ($postData['txnid'] ?? 'empty') . 
+    " STATUS=" . ($postData['status'] ?? 'empty') . 
+    " HASH_VALID=" . ($hashValid ? 'true' : 'false') . 
+    " RAW=" . json_encode($postData) . "\n",
+    FILE_APPEND
+);
+
+// Try to record in `payu_transactions` table
 if ($connection1 && !empty($txnid)) {
-    @mysqli_query($connection1, "INSERT INTO `payu_transactions` 
-        (`txnid`, `mihpayid`, `service_type`, `item_id`, `item_title`, `patient_name`, `patient_email`, `patient_phone`, `amount`, `payment_status`, `bank_ref_num`, `raw_response`)
-        VALUES (
-            '" . mysqli_real_escape_string($connection1, $txnid) . "',
-            '" . mysqli_real_escape_string($connection1, $mihpayid) . "',
-            '" . mysqli_real_escape_string($connection1, $serviceType) . "',
-            '" . mysqli_real_escape_string($connection1, $udf2) . "',
-            '" . mysqli_real_escape_string($connection1, $productInfo) . "',
-            '" . mysqli_real_escape_string($connection1, $firstName) . "',
-            '" . mysqli_real_escape_string($connection1, $email) . "',
-            '" . mysqli_real_escape_string($connection1, $phone) . "',
-            " . floatval($amount) . ",
-            '" . mysqli_real_escape_string($connection1, $isSuccess ? 'Success' : 'Failed') . "',
-            '" . mysqli_real_escape_string($connection1, $bankRefNum) . "',
-            '" . mysqli_real_escape_string($connection1, json_encode($postData)) . "'
-        )");
+    $insTx = mysqli_prepare($connection1, "INSERT INTO `payu_transactions` 
+        (`txnid`, `mihpayid`, `service_type`, `item_id`, `item_title`, `patient_name`, `patient_email`, `patient_phone`, `amount`, `payment_method`, `payment_status`, `bank_ref_num`, `raw_response`, `created_at`)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PayU', ?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE `payment_status` = VALUES(`payment_status`), `bank_ref_num` = VALUES(`bank_ref_num`), `raw_response` = VALUES(`raw_response`)");
+    if ($insTx) {
+        $pStatus = $isSuccess ? 'Success' : 'Failed';
+        $rawJson = json_encode($postData);
+        $amtVal = floatval($amount);
+        mysqli_stmt_bind_param($insTx, "ssssssssdsss", 
+            $txnid, $mihpayid, $serviceType, $udf2, $productInfo, $firstName, $email, $phone, $amtVal, $pStatus, $bankRefNum, $rawJson
+        );
+        mysqli_stmt_execute($insTx);
+        mysqli_stmt_close($insTx);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -464,7 +479,9 @@ if ($serviceType === 'package' || $serviceType === 'programme') {
       <h1 class="status-title">Payment Not Completed</h1>
       <p class="status-subtitle">
         <?php 
-          if (!$hashValid && !empty($salt)) {
+          if (empty($postData) || empty($txnid)) {
+            echo 'No payment transaction data was received from the gateway. If your payment was completed, please return to your portal.';
+          } elseif (!$hashValid && !empty($salt)) {
             echo 'Security signature verification failed. Please contact support if your account was debited.';
           } elseif (!empty($errorMsg)) {
             echo htmlspecialchars($errorMsg);
