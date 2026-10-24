@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Helper: Get Selected Payment Method
   const getSelectedPaymentMethod = () => {
     const activeRadio = document.querySelector('input[name="paymentMethod"]:checked');
-    return activeRadio ? activeRadio.value : 'card';
+    return activeRadio ? activeRadio.value : 'payu';
   };
 
   // 5. Confirm Payment & Show Success Modal with MySQL DB Backend Sync
@@ -924,6 +924,39 @@ document.addEventListener('DOMContentLoaded', () => {
           `;
           showToast('You are already enrolled in this health package.', true);
           showAlreadyEnrolledCheckoutUI(currentPkgTitle);
+          return;
+        }
+      }
+
+      // Process with PayU Payment Gateway if selected
+      if (payMethod === 'payu' && window.PayUCheckout) {
+        try {
+          const payuPayload = {
+            service_type: 'package',
+            package_name: currentPkgTitle,
+            item_id: activeBookingData?.packageDbId || activeBookingData?.packageId || currentPkgTitle,
+            patient_name: pName,
+            patient_email: pEmail,
+            patient_phone: pPhone,
+            patient_id: activeBookingData?.patientId || '',
+            amount: finalAmount,
+            doctor_name: activeBookingData?.doctorName || checkoutDoctorName?.textContent.trim() || 'Dr. Nidhi Jha',
+            doctor_role: activeBookingData?.doctorRole || checkoutDoctorRole?.textContent.trim() || 'Ayurveda Physician',
+            appointment_date: new Date().toISOString().split('T')[0],
+            appointment_time: '07:00 - 07:45 PM',
+            agenda: `Package Enrollment for ${currentPkgTitle}`
+          };
+
+          const res = await window.PayUCheckout.processPayment(payuPayload);
+          if (res && res.redirected) {
+            return; // Browser redirected to PayU gateway
+          }
+        } catch (payuErr) {
+          console.error('PayU Checkout Error:', payuErr);
+          showToast(payuErr.message || 'Payment initiation failed. Please try again.', true);
+          confirmPaymentBtn.disabled = false;
+          confirmPaymentBtn.style.opacity = '1';
+          confirmPaymentBtn.innerHTML = originalHtml;
           return;
         }
       }

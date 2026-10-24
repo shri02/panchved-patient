@@ -278,6 +278,18 @@
 
             <div class="payment-methods-list" role="radiogroup" aria-label="Select Payment Method">
               
+              <!-- PayU Payment Gateway (Supports UPI, Cards, NetBanking, Wallets) -->
+              <label class="payment-method-item active" for="payPayU">
+                <div class="payment-radio-left">
+                  <input type="radio" name="paymentMethod" id="payPayU" value="payu" checked />
+                  <span class="custom-radio"></span>
+                  <span class="payment-name">PayU Payment Gateway</span>
+                </div>
+                <div class="payment-logo-badge" aria-hidden="true">
+                  <span style="font-weight: 800; font-size: 16px; color: #009933; letter-spacing: -0.5px;">Pay<span style="color: #66cc33;">U</span></span>
+                </div>
+              </label>
+
               <!-- Option 1: Credit / Debit Card -->
               <label class="payment-method-item" for="payCard">
                 <div class="payment-radio-left">
@@ -308,22 +320,6 @@
                     <path d="M48 6L56 15L48 24H52L60 15L52 6H48Z" fill="#008000" />
                     <path d="M54 6L62 15L54 24H58L66 15L58 6H54Z" fill="#FF7A00" />
                     <text x="0" y="28" font-family="'Inter', sans-serif" font-weight="600" font-size="5.2" fill="#718096" letter-spacing="0.5">UNIFIED PAYMENTS INTERFACE</text>
-                  </svg>
-                </div>
-              </label>
-
-              <!-- Option 3: PayPal -->
-              <label class="payment-method-item" for="payPaypal">
-                <div class="payment-radio-left">
-                  <input type="radio" name="paymentMethod" id="payPaypal" value="paypal" />
-                  <span class="custom-radio"></span>
-                  <span class="payment-name">PayPal</span>
-                </div>
-                <div class="payment-logo-badge" aria-hidden="true">
-                  <!-- PayPal Logo -->
-                  <svg width="22" height="26" viewBox="0 0 24 28" fill="none">
-                    <path d="M6 25L9.2 4H18C21.3 4 23 5.8 22.4 9C21.8 12.2 19.3 14 16.3 14H12L10.3 25H6Z" fill="#003087"/>
-                    <path d="M2.5 25L5.7 4H14.5C17.8 4 19.5 5.8 18.9 9C18.3 12.2 15.8 14 12.8 14H8.5L6.8 25H2.5Z" fill="#0079C1" fill-opacity="0.85"/>
                   </svg>
                 </div>
               </label>
@@ -450,6 +446,7 @@
     <span id="toastMsg">Action completed successfully!</span>
   </div>
 
+  <script src="../assets/payu_checkout.js"></script>
   <script src="consultation-checkout.js"></script>
 </body>
 </html>

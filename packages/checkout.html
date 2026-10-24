@@ -274,10 +274,22 @@
 
             <div class="payment-methods-list" role="radiogroup" aria-label="Select Payment Method">
               
-              <!-- Option 1: Credit / Debit Card -->
-              <label class="payment-method-item active" for="payCard">
+              <!-- PayU Payment Gateway (Supports UPI, Cards, NetBanking, Wallets) -->
+              <label class="payment-method-item active" for="payPayU">
                 <div class="payment-radio-left">
-                  <input type="radio" name="paymentMethod" id="payCard" value="card" checked />
+                  <input type="radio" name="paymentMethod" id="payPayU" value="payu" checked />
+                  <span class="custom-radio"></span>
+                  <span class="payment-name">PayU Payment Gateway</span>
+                </div>
+                <div class="payment-logo-badge" aria-hidden="true">
+                  <span style="font-weight: 800; font-size: 16px; color: #009933; letter-spacing: -0.5px;">Pay<span style="color: #66cc33;">U</span></span>
+                </div>
+              </label>
+
+              <!-- Option 1: Credit / Debit Card -->
+              <label class="payment-method-item" for="payCard">
+                <div class="payment-radio-left">
+                  <input type="radio" name="paymentMethod" id="payCard" value="card" />
                   <span class="custom-radio"></span>
                   <span class="payment-name">Card</span>
                 </div>
@@ -303,22 +315,6 @@
                     <span class="upi-text">UPI</span>
                     <span class="upi-arrows">▶</span>
                   </div>
-                </div>
-              </label>
-
-              <!-- Option 3: PayPal -->
-              <label class="payment-method-item" for="payPaypal">
-                <div class="payment-radio-left">
-                  <input type="radio" name="paymentMethod" id="payPaypal" value="paypal" />
-                  <span class="custom-radio"></span>
-                  <span class="payment-name">PayPal</span>
-                </div>
-                <div class="payment-logo-badge" aria-hidden="true">
-                  <!-- PayPal Logo -->
-                  <svg width="32" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M7 21L9.5 5H16.5C19 5 20.5 6.5 20 9C19.5 11.5 17.5 13 15 13H11.5L10 21H7Z" fill="#003087"/>
-                    <path d="M4 21L6.5 5H13.5C16 5 17.5 6.5 17 9C16.5 11.5 14.5 13 12 13H8.5L7 21H4Z" fill="#0079C1" fill-opacity="0.8"/>
-                  </svg>
                 </div>
               </label>
 
@@ -444,6 +440,7 @@
     <span id="toastMsg">Action completed successfully!</span>
   </div>
 
+  <script src="../assets/payu_checkout.js"></script>
   <script src="checkout.js"></script>
 </body>
 </html>

@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const successPaymentAmount = document.getElementById('successPaymentAmount');
 
   let activeWorkshopData = null;
-  let selectedPaymentMethod = 'Card';
+  let selectedPaymentMethod = 'PayU';
 
   // Helper: Toast Message
   const showToast = (message, isError = false) => {
@@ -733,6 +733,38 @@ document.addEventListener('DOMContentLoaded', () => {
         date: dateText,
         time: timeText
       };
+
+      // Process with PayU Payment Gateway if selected
+      const isPayU = (selectedPaymentMethod.toLowerCase().includes('payu') || selectedPaymentMethod.toLowerCase() === 'payu');
+      if (isPayU && window.PayUCheckout) {
+        try {
+          const payuPayload = {
+            service_type: 'workshop',
+            workshop_id: activeWorkshopData?.workshopId || activeWorkshopData?.id || 'WS-002',
+            workshop_title: wsTitle,
+            item_id: activeWorkshopData?.id || 1,
+            patient_id: pId,
+            patient_name: patName,
+            patient_email: patEmail,
+            patient_phone: patPhone,
+            amount: numericAmount,
+            date: dateText,
+            time: timeText
+          };
+
+          const res = await window.PayUCheckout.processPayment(payuPayload);
+          if (res && res.redirected) {
+            return; // Browser redirected to PayU gateway
+          }
+        } catch (payuErr) {
+          console.error('PayU Workshop Error:', payuErr);
+          showToast(payuErr.message || 'Payment initiation failed. Please try again.', true);
+          confirmPaymentBtn.disabled = false;
+          confirmPaymentBtn.style.opacity = '1';
+          confirmPaymentBtn.innerHTML = originalHtml;
+          return;
+        }
+      }
 
       let registrationError = null;
       try {

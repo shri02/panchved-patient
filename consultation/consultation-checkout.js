@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const getSelectedPaymentMethod = () => {
     const activeRadio = document.querySelector('input[name="paymentMethod"]:checked');
-    return activeRadio ? activeRadio.value : 'card';
+    return activeRadio ? activeRadio.value : 'payu';
   };
 
   // 4. Confirm Payment -> Backend API Sync & Success Modal
@@ -335,6 +335,37 @@ document.addEventListener('DOMContentLoaded', () => {
       const payMethod = getSelectedPaymentMethod();
 
       let bookingId = '#' + Math.floor(100000 + Math.random() * 900000);
+
+      // Process with PayU Payment Gateway if selected
+      if (payMethod === 'payu' && window.PayUCheckout) {
+        try {
+          const payuPayload = {
+            service_type: 'consultation',
+            doctor_name: docName,
+            doctor_role: docRole,
+            patient_name: pName,
+            patient_email: pEmail,
+            patient_phone: pPhone,
+            patient_id: storedPat.id || storedPat.patient_id || '',
+            appointment_date: dateText,
+            appointment_time: timeText,
+            agenda: activeBookingData?.complaint || activeBookingData?.agenda || `Online consultation with ${docName}`,
+            amount: 500.00
+          };
+
+          const res = await window.PayUCheckout.processPayment(payuPayload);
+          if (res && res.redirected) {
+            return; // Browser redirected to PayU gateway
+          }
+        } catch (payuErr) {
+          console.error('PayU Consultation Error:', payuErr);
+          showToast(payuErr.message || 'Payment initiation failed. Please try again.', true);
+          confirmPaymentBtn.disabled = false;
+          confirmPaymentBtn.style.opacity = '1';
+          confirmPaymentBtn.innerHTML = originalHtml;
+          return;
+        }
+      }
 
       try {
         const payload = {
