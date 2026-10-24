@@ -82,25 +82,42 @@ $doctorName = !empty($udf4) ? $udf4 : ($pending['doctor_name'] ?? 'Dr. Nidhi Jha
 $apptDate = $meta['date'] ?? ($pending['appointment_date'] ?? date('Y-m-d'));
 $apptTime = $meta['time'] ?? ($pending['appointment_time'] ?? '07:00 - 07:45 PM');
 
+mysqli_report(MYSQLI_REPORT_OFF);
+
+// Log callback for debugging
+@file_put_contents(
+    __DIR__ . '/payu_debug.log',
+    "[" . date('Y-m-d H:i:s') . "] METHOD=" . ($_SERVER['REQUEST_METHOD'] ?? 'GET') . 
+    " STATUS=" . $status . 
+    " TXNID=" . $txnid . 
+    " HASH_VALID=" . ($hashValid ? 'YES' : 'NO') . 
+    " POST=" . json_encode($postData) . "\n",
+    FILE_APPEND
+);
+
 // Update payu_transactions table
 if ($connection1 && !empty($txnid)) {
-    $insTx = mysqli_prepare($connection1, "INSERT INTO `payu_transactions` 
-        (`txnid`, `mihpayid`, `service_type`, `item_id`, `item_title`, `patient_name`, `patient_email`, `patient_phone`, `amount`, `payment_method`, `payment_status`, `bank_ref_num`, `raw_response`, `created_at`)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PayU', ?, ?, ?, NOW())
-        ON DUPLICATE KEY UPDATE 
-            `mihpayid` = VALUES(`mihpayid`),
-            `payment_status` = VALUES(`payment_status`),
-            `bank_ref_num` = VALUES(`bank_ref_num`),
-            `raw_response` = VALUES(`raw_response`)");
-    if ($insTx) {
-        $pStatus = $isSuccess ? 'Success' : 'Failed';
-        $rawJson = json_encode($postData);
-        $amtVal = floatval($amount);
-        mysqli_stmt_bind_param($insTx, "ssssssssdsss", 
-            $txnid, $mihpayid, $serviceType, $udf2, $productInfo, $firstName, $email, $phone, $amtVal, $pStatus, $bankRefNum, $rawJson
-        );
-        mysqli_stmt_execute($insTx);
-        mysqli_stmt_close($insTx);
+    try {
+        $insTx = @mysqli_prepare($connection1, "INSERT INTO `payu_transactions` 
+            (`txnid`, `mihpayid`, `service_type`, `item_id`, `item_title`, `patient_name`, `patient_email`, `patient_phone`, `amount`, `payment_method`, `payment_status`, `bank_ref_num`, `raw_response`, `created_at`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PayU', ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE 
+                `mihpayid` = VALUES(`mihpayid`),
+                `payment_status` = VALUES(`payment_status`),
+                `bank_ref_num` = VALUES(`bank_ref_num`),
+                `raw_response` = VALUES(`raw_response`)");
+        if ($insTx) {
+            $pStatus = $isSuccess ? 'Success' : 'Failed';
+            $rawJson = json_encode($postData);
+            $amtVal = floatval($amount);
+            @mysqli_stmt_bind_param($insTx, "ssssssssdsss", 
+                $txnid, $mihpayid, $serviceType, $udf2, $productInfo, $firstName, $email, $phone, $amtVal, $pStatus, $bankRefNum, $rawJson
+            );
+            @mysqli_stmt_execute($insTx);
+            @mysqli_stmt_close($insTx);
+        }
+    } catch (Throwable $txErr) {
+        error_log('PayU Txn Log Error: ' . $txErr->getMessage());
     }
 }
 
@@ -108,99 +125,103 @@ if ($connection1 && !empty($txnid)) {
 // DB BOOKING FULFILLMENT ON SUCCESS
 // ----------------------------------------------------------------------------
 if ($isSuccess && $connection1) {
-    $cleanPhone = preg_replace('/[^\d]/', '', $phone);
-    if (strlen($cleanPhone) === 12 && substr($cleanPhone, 0, 2) === '91') {
-        $cleanPhone = substr($cleanPhone, 2);
-    }
+    try {
+        $cleanPhone = preg_replace('/[^\d]/', '', $phone);
+        if (strlen($cleanPhone) === 12 && substr($cleanPhone, 0, 2) === '91') {
+            $cleanPhone = substr($cleanPhone, 2);
+        }
 
-    // Resolve Patient ID
-    $patientDbId = (int)$udf3;
-    if ($patientDbId <= 0) {
-        $pQuery = "SELECT id, full_name FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) LIMIT 1";
-        if ($pStmt = mysqli_prepare($connection1, $pQuery)) {
-            mysqli_stmt_bind_param($pStmt, "sss", $phone, $cleanPhone, $email);
-            mysqli_stmt_execute($pStmt);
-            $pRes = mysqli_stmt_get_result($pStmt);
-            if ($pRow = mysqli_fetch_assoc($pRes)) {
-                $patientDbId = (int)$pRow['id'];
+        // Resolve Patient ID
+        $patientDbId = (int)$udf3;
+        if ($patientDbId <= 0) {
+            $pQuery = "SELECT id, full_name FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) LIMIT 1";
+            if ($pStmt = @mysqli_prepare($connection1, $pQuery)) {
+                @mysqli_stmt_bind_param($pStmt, "sss", $phone, $cleanPhone, $email);
+                @mysqli_stmt_execute($pStmt);
+                $pRes = @mysqli_stmt_get_result($pStmt);
+                if ($pRow = @mysqli_fetch_assoc($pRes)) {
+                    $patientDbId = (int)$pRow['id'];
+                }
+                @mysqli_stmt_close($pStmt);
             }
-            mysqli_stmt_close($pStmt);
-        }
-    }
-
-    // Resolve Doctor ID
-    $doctorDbId = 1;
-    $dQuery = "SELECT id FROM doctors WHERE full_name = ? OR full_name LIKE ? LIMIT 1";
-    if ($dStmt = mysqli_prepare($connection1, $dQuery)) {
-        $docLike = '%' . $doctorName . '%';
-        mysqli_stmt_bind_param($dStmt, "ss", $doctorName, $docLike);
-        mysqli_stmt_execute($dStmt);
-        $dRes = mysqli_stmt_get_result($dStmt);
-        if ($dRow = mysqli_fetch_assoc($dRes)) {
-            $doctorDbId = (int)$dRow['id'];
-        }
-        mysqli_stmt_close($dStmt);
-    }
-
-    // A. Package Fulfillment
-    if ($serviceType === 'package' || $serviceType === 'programme') {
-        $cleanPkgName = trim(str_ireplace('Package:', '', $productInfo));
-        if (empty($cleanPkgName)) {
-            $cleanPkgName = 'Health Package';
         }
 
-        $insPpkg = mysqli_prepare($connection1, "INSERT INTO patient_packages 
-            (booking_id, patient_id, patient_phone, package_name, doctor_id, doctor_name, price, booking_date, status, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), 'Active', NOW(), NOW())");
-        if ($insPpkg) {
-            mysqli_stmt_bind_param($insPpkg, "sissisd", $bookingId, $patientDbId, $phone, $cleanPkgName, $doctorDbId, $doctorName, $amount);
-            mysqli_stmt_execute($insPpkg);
-            mysqli_stmt_close($insPpkg);
+        // Resolve Doctor ID
+        $doctorDbId = 1;
+        $dQuery = "SELECT id FROM doctors WHERE full_name = ? OR full_name LIKE ? LIMIT 1";
+        if ($dStmt = @mysqli_prepare($connection1, $dQuery)) {
+            $docLike = '%' . $doctorName . '%';
+            @mysqli_stmt_bind_param($dStmt, "ss", $doctorName, $docLike);
+            @mysqli_stmt_execute($dStmt);
+            $dRes = @mysqli_stmt_get_result($dStmt);
+            if ($dRow = @mysqli_fetch_assoc($dRes)) {
+                $doctorDbId = (int)$dRow['id'];
+            }
+            @mysqli_stmt_close($dStmt);
         }
 
-        $insAppt = mysqli_prepare($connection1, "INSERT INTO appointments 
-            (appointment_id, patient_id, patient_name, doctor_id, doctor_name, package_name, appointment_date, appointment_time, duration, service_type, agenda, status, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, '45 min', 'Package Consultation', ?, 'Scheduled', NOW(), NOW())");
-        if ($insAppt) {
-            $agendaTxt = "Package Enrollment for {$cleanPkgName} (Txn: {$txnid})";
-            mysqli_stmt_bind_param($insAppt, "sisisssss", $appointmentCode, $patientDbId, $firstName, $doctorDbId, $doctorName, $cleanPkgName, $apptDate, $apptTime, $agendaTxt);
-            mysqli_stmt_execute($insAppt);
-            mysqli_stmt_close($insAppt);
-        }
+        // A. Package Fulfillment
+        if ($serviceType === 'package' || $serviceType === 'programme') {
+            $cleanPkgName = trim(str_ireplace('Package:', '', $productInfo));
+            if (empty($cleanPkgName)) {
+                $cleanPkgName = 'Health Package';
+            }
 
-        if ($patientDbId > 0) {
-            mysqli_query($connection1, "UPDATE patients SET package_name = '" . mysqli_real_escape_string($connection1, $cleanPkgName) . "', total_appointments = total_appointments + 1, status = 'Ongoing' WHERE id = $patientDbId");
-        }
+            $insPpkg = @mysqli_prepare($connection1, "INSERT INTO patient_packages 
+                (booking_id, patient_id, patient_phone, package_name, doctor_id, doctor_name, price, booking_date, status, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), 'Active', NOW(), NOW())");
+            if ($insPpkg) {
+                @mysqli_stmt_bind_param($insPpkg, "sissisd", $bookingId, $patientDbId, $phone, $cleanPkgName, $doctorDbId, $doctorName, $amount);
+                @mysqli_stmt_execute($insPpkg);
+                @mysqli_stmt_close($insPpkg);
+            }
 
-    // B. Workshop Fulfillment
-    } elseif ($serviceType === 'workshop') {
-        $cleanWsTitle = trim(str_ireplace('Workshop:', '', $productInfo));
-        $wsId = intval($udf2);
+            $insAppt = @mysqli_prepare($connection1, "INSERT INTO appointments 
+                (appointment_id, patient_id, patient_name, doctor_id, doctor_name, package_name, appointment_date, appointment_time, duration, service_type, agenda, status, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, '45 min', 'Package Consultation', ?, 'Scheduled', NOW(), NOW())");
+            if ($insAppt) {
+                $agendaTxt = "Package Enrollment for {$cleanPkgName} (Txn: {$txnid})";
+                @mysqli_stmt_bind_param($insAppt, "sisisssss", $appointmentCode, $patientDbId, $firstName, $doctorDbId, $doctorName, $cleanPkgName, $apptDate, $apptTime, $agendaTxt);
+                @mysqli_stmt_execute($insAppt);
+                @mysqli_stmt_close($insAppt);
+            }
 
-        $insWs = mysqli_prepare($connection1, "INSERT INTO workshop_bookings 
-            (booking_id, workshop_id, doctor_id, doctor_name, doctor_email, doctor_phone, amount, payment_method, payment_status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'PayU', 'Success', NOW())");
-        if ($insWs) {
-            mysqli_stmt_bind_param($insWs, "siisssd", $bookingId, $wsId, $patientDbId, $firstName, $email, $phone, $amount);
-            mysqli_stmt_execute($insWs);
-            mysqli_stmt_close($insWs);
-        }
+            if ($patientDbId > 0) {
+                @mysqli_query($connection1, "UPDATE patients SET package_name = '" . mysqli_real_escape_string($connection1, $cleanPkgName) . "', total_appointments = total_appointments + 1, status = 'Ongoing' WHERE id = $patientDbId");
+            }
 
-        if ($wsId > 0) {
-            mysqli_query($connection1, "UPDATE workshops SET registrations = registrations + 1, enrolled = enrolled + 1 WHERE id = $wsId");
-        }
+        // B. Workshop Fulfillment
+        } elseif ($serviceType === 'workshop') {
+            $cleanWsTitle = trim(str_ireplace('Workshop:', '', $productInfo));
+            $wsId = intval($udf2);
 
-    // C. Consultation Fulfillment
-    } elseif ($serviceType === 'consultation') {
-        $insAppt = mysqli_prepare($connection1, "INSERT INTO appointments 
-            (appointment_id, patient_id, patient_name, doctor_id, doctor_name, package_name, appointment_date, appointment_time, duration, service_type, agenda, status, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, 'Consultation', ?, ?, '45 min', 'Consultation', ?, 'Scheduled', NOW(), NOW())");
-        if ($insAppt) {
-            $agendaTxt = "Doctor Consultation with {$doctorName} (Txn: {$txnid})";
-            mysqli_stmt_bind_param($insAppt, "sisisssss", $appointmentCode, $patientDbId, $firstName, $doctorDbId, $doctorName, $apptDate, $apptTime, $agendaTxt);
-            mysqli_stmt_execute($insAppt);
-            mysqli_stmt_close($insAppt);
+            $insWs = @mysqli_prepare($connection1, "INSERT INTO workshop_bookings 
+                (booking_id, workshop_id, doctor_id, doctor_name, doctor_email, doctor_phone, amount, payment_method, payment_status, booking_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'PayU', 'Success', NOW())");
+            if ($insWs) {
+                @mysqli_stmt_bind_param($insWs, "siisssd", $bookingId, $wsId, $doctorDbId, $doctorName, $email, $phone, $amount);
+                @mysqli_stmt_execute($insWs);
+                @mysqli_stmt_close($insWs);
+            }
+
+            if ($wsId > 0) {
+                @mysqli_query($connection1, "UPDATE workshops SET registrations = registrations + 1, enrolled = enrolled + 1 WHERE id = $wsId");
+            }
+
+        // C. Consultation Fulfillment
+        } elseif ($serviceType === 'consultation') {
+            $insAppt = @mysqli_prepare($connection1, "INSERT INTO appointments 
+                (appointment_id, patient_id, patient_name, doctor_id, doctor_name, package_name, appointment_date, appointment_time, duration, service_type, agenda, status, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, 'Consultation', ?, ?, '45 min', 'Consultation', ?, 'Scheduled', NOW(), NOW())");
+            if ($insAppt) {
+                $agendaTxt = "Doctor Consultation with {$doctorName} (Txn: {$txnid})";
+                @mysqli_stmt_bind_param($insAppt, "sisissss", $appointmentCode, $patientDbId, $firstName, $doctorDbId, $doctorName, $apptDate, $apptTime, $agendaTxt);
+                @mysqli_stmt_execute($insAppt);
+                @mysqli_stmt_close($insAppt);
+            }
         }
+    } catch (Throwable $fulfillErr) {
+        error_log('PayU Booking Fulfillment Error: ' . $fulfillErr->getMessage());
     }
 }
 
