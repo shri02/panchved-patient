@@ -10,8 +10,8 @@
 |
 */
 
-// Database server IP address or hostname
-$dbHost = "162.214.80.27";
+// Database server IP address or hostname (using persistent connection p: to reuse open sockets)
+$dbHost = "p:162.214.80.27";
 
 // Database name
 $dbName = "jewrzsmy_panchved";

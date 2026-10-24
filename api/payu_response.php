@@ -548,7 +548,7 @@ if ($serviceType === 'package' || $serviceType === 'programme') {
             }
           } elseif (empty($postData) || empty($txnid)) {
             echo '<p>No payment transaction data was received from the gateway. If your payment was completed, please return to your portal.</p>';
-          } elseif (!$hashValid && !empty($salt)) {
+          } elseif ($status === 'success' && !$hashValid && !empty($salt)) {
             echo '<p>Security signature verification failed. Please contact support if your account was debited.</p>';
           } else {
             echo '<p>Your payment transaction was declined or cancelled. No amount was deducted.</p>';
