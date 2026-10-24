@@ -113,7 +113,7 @@ if (!function_exists('getPayUConfig')) {
                 $merchantKey = 'gtKFFx';
             }
             if (empty($salt)) {
-                $salt = 'eCwWELxi';
+                $salt = '4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW';
             }
         }
 

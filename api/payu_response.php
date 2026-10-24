@@ -540,7 +540,7 @@ if ($serviceType === 'package' || $serviceType === 'programme') {
               echo '<p style="font-size:13px; color:#4b5563; line-height:1.5;">PayU Sandbox reported an onboarding circuit breaker error. This typically happens when a <strong>Live Production Merchant Key</strong> is used in Sandbox/Test mode, or when PayU\'s test service is temporarily down.</p>';
               echo '<div style="background:#f1f5f9; padding:10px 14px; border-radius:8px; font-size:12px; color:#334155; margin-top:10px; text-align:left;">';
               echo '<strong>To fix in Azure App Service Configuration:</strong><br>';
-              echo '• For Test Mode: set <code>PAYU_MERCHANT_KEY = gtKFFx</code> and <code>PAYU_SALT = eCwWELxi</code> (PayU Official Sandbox Key/Salt).<br>';
+              echo '• For Test Mode: set <code>PAYU_MERCHANT_KEY = gtKFFx</code> and <code>PAYU_SALT = 4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW</code> (PayU Official Sandbox Key/Salt).<br>';
               echo '• For Production: set <code>PAYU_ENV = prod</code> with your live merchant credentials.';
               echo '</div>';
             } else {
