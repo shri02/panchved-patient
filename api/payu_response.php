@@ -65,8 +65,10 @@ if (!$pending && !empty($txnid) && $connection1) {
     }
 }
 
+$isSimulation = (!$config['is_live'] && isset($_GET['simulate_success']) && $_GET['simulate_success'] == '1');
+
 $status = strtolower(trim((string)($postData['status'] ?? ($_GET['status'] ?? ''))));
-if (empty($status) && isset($postData['unmappedstatus']) && in_array(strtolower($postData['unmappedstatus']), ['captured', 'success', 'successful'])) {
+if ($isSimulation || (empty($status) && isset($postData['unmappedstatus']) && in_array(strtolower($postData['unmappedstatus']), ['captured', 'success', 'successful']))) {
     $status = 'success';
 }
 if (empty($status)) {
@@ -79,9 +81,15 @@ $firstName = trim((string)($postData['firstname'] ?? ($pending['patient_name'] ?
 $email = trim((string)($postData['email'] ?? ($pending['patient_email'] ?? '')));
 $phone = trim((string)($postData['phone'] ?? ($pending['patient_phone'] ?? '')));
 $key = trim((string)($postData['key'] ?? ''));
-$mihpayid = trim((string)($postData['mihpayid'] ?? ''));
-$bankRefNum = trim((string)($postData['bank_ref_num'] ?? ''));
-$errorMsg = trim((string)($postData['error_Message'] ?? ($postData['unmappedstatus'] ?? '')));
+$mihpayid = trim((string)($postData['mihpayid'] ?? ($isSimulation ? ('SIM_' . time()) : '')));
+$bankRefNum = trim((string)($postData['bank_ref_num'] ?? ($isSimulation ? ('SIM_REF_' . rand(100000, 999999)) : '')));
+$errorMsg = trim((string)(
+    $postData['error'] 
+    ?? ($postData['error_Message'] 
+    ?? ($postData['errorMessage'] 
+    ?? ($postData['field9'] 
+    ?? ($postData['unmappedstatus'] ?? ''))))
+));
 
 $udf1 = trim((string)($postData['udf1'] ?? ($pending['service_type'] ?? ($_GET['service'] ?? 'package'))));
 $udf2 = trim((string)($postData['udf2'] ?? ($pending['item_id'] ?? '')));
@@ -100,7 +108,7 @@ if (!empty($salt) && !empty($postData['hash'])) {
 
 // In test environment, accept simulated test bank success
 if (!$hashValid && !$config['is_live']) {
-    if ($status === 'success' || (isset($postData['unmappedstatus']) && in_array(strtolower($postData['unmappedstatus']), ['captured', 'success']))) {
+    if ($isSimulation || $status === 'success' || (isset($postData['unmappedstatus']) && in_array(strtolower($postData['unmappedstatus']), ['captured', 'success']))) {
         $hashValid = true;
     }
 }
@@ -524,19 +532,29 @@ if ($serviceType === 'package' || $serviceType === 'programme') {
         </svg>
       </div>
       <h1 class="status-title">Payment Not Completed</h1>
-      <p class="status-subtitle">
+      <div class="status-subtitle">
         <?php 
-          if (empty($postData) || empty($txnid)) {
-            echo 'No payment transaction data was received from the gateway. If your payment was completed, please return to your portal.';
+          if (!empty($errorMsg)) {
+            if (stripos($errorMsg, 'circuit breaker') !== false || stripos($errorMsg, 'uat-onboarding') !== false) {
+              echo '<p style="color:#b91c1c; font-weight:600; margin-bottom:8px;">PayU Gateway Error: Salt could not be fetched</p>';
+              echo '<p style="font-size:13px; color:#4b5563; line-height:1.5;">PayU Sandbox reported an onboarding circuit breaker error. This typically happens when a <strong>Live Production Merchant Key</strong> is used in Sandbox/Test mode, or when PayU\'s test service is temporarily down.</p>';
+              echo '<div style="background:#f1f5f9; padding:10px 14px; border-radius:8px; font-size:12px; color:#334155; margin-top:10px; text-align:left;">';
+              echo '<strong>To fix in Azure App Service Configuration:</strong><br>';
+              echo '• For Test Mode: set <code>PAYU_MERCHANT_KEY = gtKFFx</code> and <code>PAYU_SALT = eCwWELxi</code> (PayU Official Sandbox Key/Salt).<br>';
+              echo '• For Production: set <code>PAYU_ENV = prod</code> with your live merchant credentials.';
+              echo '</div>';
+            } else {
+              echo '<p>' . htmlspecialchars($errorMsg) . '</p>';
+            }
+          } elseif (empty($postData) || empty($txnid)) {
+            echo '<p>No payment transaction data was received from the gateway. If your payment was completed, please return to your portal.</p>';
           } elseif (!$hashValid && !empty($salt)) {
-            echo 'Security signature verification failed. Please contact support if your account was debited.';
-          } elseif (!empty($errorMsg)) {
-            echo htmlspecialchars($errorMsg);
+            echo '<p>Security signature verification failed. Please contact support if your account was debited.</p>';
           } else {
-            echo 'Your payment transaction was declined or cancelled. No amount was deducted.';
+            echo '<p>Your payment transaction was declined or cancelled. No amount was deducted.</p>';
           }
         ?>
-      </p>
+      </div>
 
       <?php if (!empty($txnid)): ?>
       <div class="receipt-box">
@@ -548,6 +566,21 @@ if ($serviceType === 'package' || $serviceType === 'programme') {
           <span class="receipt-label">Status</span>
           <span class="receipt-value" style="color: #ef4444;"><?php echo htmlspecialchars(ucfirst($status)); ?></span>
         </div>
+      </div>
+      <?php endif; ?>
+
+      <?php if (!$config['is_live'] && !empty($txnid)): ?>
+      <div style="margin: 16px 0 20px 0; padding: 14px; background: #ecfdf5; border: 1px dashed #10b981; border-radius: 12px; text-align: center;">
+        <div style="font-size: 13px; font-weight: 700; color: #065f46; margin-bottom: 4px;">🧪 Developer Sandbox Bypass</div>
+        <div style="font-size: 12px; color: #047857; margin-bottom: 12px;">Test full database booking fulfillment and dashboard syncing without waiting for PayU test servers:</div>
+        <a href="<?php echo htmlspecialchars('payu_response.php?' . http_build_query([
+          'simulate_success' => '1',
+          'txnid' => $txnid,
+          'service' => $serviceType,
+          'amt' => sprintf('%.2f', $amount)
+        ])); ?>" class="btn-action" style="background: #059669; padding: 10px 18px; font-size: 13px; width: auto; display: inline-block;">
+          ✓ Complete Test Booking (Sandbox Simulation)
+        </a>
       </div>
       <?php endif; ?>
 
