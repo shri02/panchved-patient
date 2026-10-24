@@ -229,11 +229,11 @@ if ($isSuccess && $connection1) {
 unset($_SESSION['payu_pending'][$txnid]);
 
 $baseUrl = getPayUBaseUrl();
-$dashboardUrl = $baseUrl . '/dashboard/';
+$dashboardUrl = $baseUrl . '/dashboard/dashboard.html';
 if ($serviceType === 'workshop') {
-    $redirectUrl = $baseUrl . '/courses/';
+    $redirectUrl = $baseUrl . '/courses/courses.html';
 } elseif ($serviceType === 'consultation') {
-    $redirectUrl = $baseUrl . '/consultation/';
+    $redirectUrl = $baseUrl . '/consultation/consultation.html';
 } else {
     $redirectUrl = $dashboardUrl;
 }
