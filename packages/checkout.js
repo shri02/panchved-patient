@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Helper: Get Selected Payment Method
   const getSelectedPaymentMethod = () => {
     const activeRadio = document.querySelector('input[name="paymentMethod"]:checked');
-    return activeRadio ? activeRadio.value : 'payu';
+    return activeRadio ? activeRadio.value : 'card';
   };
 
   // 5. Confirm Payment & Show Success Modal with MySQL DB Backend Sync
@@ -925,45 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast('You are already enrolled in this health package.', true);
           showAlreadyEnrolledCheckoutUI(currentPkgTitle);
           return;
-        }
-      }
-
-      // Check if PayU Payment Gateway is selected or available
-      if (window.PayUCheckout) {
-        try {
-          const payuPayload = {
-            service_type: 'package',
-            package_name: currentPkgTitle,
-            item_id: activeBookingData?.packageDbId || activeBookingData?.packageId || currentPkgTitle,
-            patient_name: pName,
-            patient_email: pEmail,
-            patient_phone: pPhone,
-            patient_id: activeBookingData?.patientId || '',
-            amount: finalAmount,
-            doctor_name: activeBookingData?.doctorName || checkoutDoctorName?.textContent.trim() || 'Dr. Nidhi Jha',
-            doctor_role: activeBookingData?.doctorRole || checkoutDoctorRole?.textContent.trim() || 'Ayurveda Physician',
-            appointment_date: new Date().toISOString().split('T')[0],
-            appointment_time: '07:00 - 07:45 PM',
-            agenda: `Package Enrollment for ${currentPkgTitle}`
-          };
-
-          const payuResult = await window.PayUCheckout.processPayment(payuPayload, async (unconfiguredNotice) => {
-            // PayU credentials pending in App Service settings - notify and proceed with test flow
-            showToast('PayU credentials pending in App Service settings. Processing test booking...');
-            return null;
-          });
-
-          if (payuResult && payuResult.redirected) {
-            return; // Browser has redirected to PayU payment gateway
-          }
-        } catch (payuErr) {
-          if (payuErr.data && payuErr.data.already_enrolled) {
-            showToast(payuErr.message, true);
-            showAlreadyEnrolledCheckoutUI(currentPkgTitle);
-            confirmPaymentBtn.disabled = true;
-            return;
-          }
-          console.warn('PayU payment gateway notice:', payuErr.message);
         }
       }
 

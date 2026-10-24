@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const successPaymentAmount = document.getElementById('successPaymentAmount');
 
   let activeWorkshopData = null;
-  let selectedPaymentMethod = 'PayU';
+  let selectedPaymentMethod = 'Card';
 
   // Helper: Toast Message
   const showToast = (message, isError = false) => {
@@ -433,7 +433,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const wsId = ws.workshopId || ws.workshop_id || ws.id;
     const wsTitle = ws.workshopTitle || ws.title;
 
-    // 1. Query backend API action=check_registration (Authoritative)
+    // 1. Check local storage
+    try {
+      const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
+      const matchInLocal = storedList.some(item => 
+        (wsId && (item.id == wsId || item.workshop_id == wsId)) ||
+        (wsTitle && item.title && item.title.trim().toLowerCase() === wsTitle.trim().toLowerCase())
+      );
+      if (matchInLocal) {
+        applyAlreadyRegisteredCheckoutUI();
+        return true;
+      }
+    } catch (e) {}
+
+    // 2. Query backend API action=check_registration
     try {
       const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
       const storedPat = JSON.parse((localStorage.getItem('ocayur_patient') || localStorage.getItem('panchved_patient')) || 'null');
@@ -453,41 +466,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`../api/workshops.php?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.success) {
-          if (data.is_registered) {
-            applyAlreadyRegisteredCheckoutUI(data.booking);
-            return true;
-          } else {
-            // DB confirms user is NOT registered: purge matching stale item from localStorage
-            try {
-              let storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
-              if (Array.isArray(storedList)) {
-                storedList = storedList.filter(item => 
-                  !(wsId && (item.id == wsId || item.workshop_id == wsId)) &&
-                  !(wsTitle && item.title && item.title.trim().toLowerCase() === wsTitle.trim().toLowerCase())
-                );
-                localStorage.setItem('ocayur_registered_workshops', JSON.stringify(storedList));
-                localStorage.setItem('panchved_registered_workshops', JSON.stringify(storedList));
-              }
-            } catch (e) {}
-            return false;
-          }
+        if (data.success && data.is_registered) {
+          applyAlreadyRegisteredCheckoutUI(data.booking);
+          return true;
         }
       }
     } catch (err) {}
-
-    // 2. Offline fallback to local storage only if network check failed
-    try {
-      const storedList = JSON.parse((localStorage.getItem('ocayur_registered_workshops') || localStorage.getItem('panchved_registered_workshops')) || '[]');
-      const matchInLocal = storedList.some(item => 
-        (wsId && (item.id == wsId || item.workshop_id == wsId)) ||
-        (wsTitle && item.title && item.title.trim().toLowerCase() === wsTitle.trim().toLowerCase())
-      );
-      if (matchInLocal) {
-        applyAlreadyRegisteredCheckoutUI();
-        return true;
-      }
-    } catch (e) {}
 
     return false;
   };
@@ -689,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const radio = item.querySelector('input[type="radio"]');
         if (radio) {
           radio.checked = true;
-          selectedPaymentMethod = 'PayU';
+          selectedPaymentMethod = item.querySelector('.payment-name')?.textContent.trim() || 'Card';
         }
       });
     });
@@ -749,42 +733,6 @@ document.addEventListener('DOMContentLoaded', () => {
         date: dateText,
         time: timeText
       };
-
-      // Process payment through PayU Gateway
-      if (window.PayUCheckout) {
-        try {
-          const payuPayload = {
-            service_type: 'workshop',
-            workshop_id: payload.workshop_id,
-            workshop_title: wsTitle,
-            item_id: payload.id,
-            patient_id: pId,
-            patient_name: patName,
-            patient_email: patEmail,
-            patient_phone: patPhone,
-            amount: numericAmount,
-            date: dateText,
-            time: timeText
-          };
-
-          const payuResult = await window.PayUCheckout.processPayment(payuPayload, async (unconfiguredNotice) => {
-            showToast('PayU credentials pending in App Service settings. Processing test registration...');
-            return null;
-          });
-
-          if (payuResult && payuResult.redirected) {
-            return; // Browser has redirected to PayU payment gateway
-          }
-        } catch (payuErr) {
-          if (payuErr.data && payuErr.data.already_registered) {
-            showToast(payuErr.message, true);
-            applyAlreadyRegisteredCheckoutUI(payuErr.data);
-            confirmPaymentBtn.disabled = true;
-            return;
-          }
-          console.warn('PayU Workshop gateway notice:', payuErr.message);
-        }
-      }
 
       let registrationError = null;
       try {

@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const getSelectedPaymentMethod = () => {
     const activeRadio = document.querySelector('input[name="paymentMethod"]:checked');
-    return activeRadio ? activeRadio.value : 'payu';
+    return activeRadio ? activeRadio.value : 'card';
   };
 
   // 4. Confirm Payment -> Backend API Sync & Success Modal
@@ -335,36 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const payMethod = getSelectedPaymentMethod();
 
       let bookingId = '#' + Math.floor(100000 + Math.random() * 900000);
-
-      // Process payment through PayU Gateway
-      if (window.PayUCheckout) {
-        try {
-          const payuPayload = {
-            service_type: 'consultation',
-            doctor_name: docName,
-            doctor_role: docRole,
-            patient_name: pName,
-            patient_email: pEmail,
-            patient_phone: pPhone,
-            patient_id: storedPat.patient_id || '',
-            appointment_date: dateText,
-            appointment_time: timeText,
-            agenda: activeBookingData?.complaint || activeBookingData?.agenda || `Online consultation with ${docName}`,
-            amount: 500.00
-          };
-
-          const payuResult = await window.PayUCheckout.processPayment(payuPayload, async (unconfiguredNotice) => {
-            showToast('PayU credentials pending in App Service settings. Processing test booking...');
-            return null;
-          });
-
-          if (payuResult && payuResult.redirected) {
-            return; // Browser has redirected to PayU payment gateway
-          }
-        } catch (payuErr) {
-          console.warn('PayU Consultation gateway notice:', payuErr.message);
-        }
-      }
 
       try {
         const payload = {
