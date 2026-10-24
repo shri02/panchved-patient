@@ -59,12 +59,13 @@ if (strlen($cleanPhone) === 12 && substr($cleanPhone, 0, 2) === '91') {
     $cleanPhone = substr($cleanPhone, 2);
 }
 
+$clientOrigin = trim((string)($input['origin_url'] ?? ($input['client_origin'] ?? '')));
+$config = getPayUConfig($clientOrigin);
+
 // Clean first name for PayU
 $nameParts = preg_split('/\s+/', trim($patientName));
 $firstName = !empty($nameParts[0]) ? preg_replace('/[^a-zA-Z]/', '', $nameParts[0]) : 'Patient';
 if (empty($firstName)) $firstName = 'Patient';
-
-$config = getPayUConfig();
 
 // Generate unique transaction ID: PAYU_<SERVICE_SHORT>_<TIMESTAMP>_<RAND>
 $servicePrefix = 'PKG';
@@ -242,6 +243,55 @@ $hashParams = [
 
 $payuHash = generatePayUHash($hashParams, $config['salt']);
 
+// Save pending transaction state in PHP session for reliable fulfillment
+$_SESSION['last_payu_txnid'] = $txnId;
+if (!isset($_SESSION['payu_pending']) || !is_array($_SESSION['payu_pending'])) {
+    $_SESSION['payu_pending'] = [];
+}
+$_SESSION['payu_pending'][$txnId] = [
+    'service_type' => $serviceType,
+    'item_id' => $itemId,
+    'item_title' => $productInfo,
+    'package_name' => $packageName ?? '',
+    'workshop_id' => $workshopId ?? '',
+    'patient_id' => $patientId,
+    'patient_name' => $patientName,
+    'patient_email' => $patientEmail,
+    'patient_phone' => $patientPhone,
+    'amount' => $amount,
+    'doctor_name' => $doctorName,
+    'doctor_role' => $doctorRole,
+    'appointment_date' => $appointmentDate,
+    'appointment_time' => $appointmentTime,
+    'agenda' => $agenda,
+    'created_at' => date('Y-m-d H:i:s')
+];
+
+// Pre-record pending transaction in database if table exists
+if ($connection1) {
+    $insTx = mysqli_prepare($connection1, "INSERT INTO `payu_transactions` 
+        (`txnid`, `service_type`, `item_id`, `item_title`, `patient_name`, `patient_email`, `patient_phone`, `amount`, `payment_method`, `payment_status`, `created_at`)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PayU', 'Pending', NOW())
+        ON DUPLICATE KEY UPDATE `payment_status` = 'Pending'");
+    if ($insTx) {
+        $amtVal = floatval($amount);
+        mysqli_stmt_bind_param($insTx, "sssssssd", 
+            $txnId, $serviceType, $itemId, $productInfo, $patientName, $patientEmail, $patientPhone, $amtVal
+        );
+        mysqli_stmt_execute($insTx);
+        mysqli_stmt_close($insTx);
+    }
+}
+
+// Append callback parameters to ensure txnid and serviceType are preserved across redirects
+$cbParams = http_build_query([
+    'txnid' => $txnId,
+    'service' => $serviceType,
+    'amt' => $formattedAmount
+]);
+$surlWithParams = $config['success_url'] . (strpos($config['success_url'], '?') === false ? '?' : '&') . $cbParams;
+$furlWithParams = $config['failure_url'] . (strpos($config['failure_url'], '?') === false ? '?' : '&') . $cbParams;
+
 // Build Form Fields for submission to PayU
 $payuPayload = [
     'key' => $config['merchant_key'],
@@ -251,8 +301,8 @@ $payuPayload = [
     'firstname' => $firstName,
     'email' => $patientEmail,
     'phone' => $patientPhone,
-    'surl' => $config['success_url'],
-    'furl' => $config['failure_url'],
+    'surl' => $surlWithParams,
+    'furl' => $furlWithParams,
     'hash' => $payuHash,
     'service_provider' => 'payu_paisa',
     'udf1' => $udf1,

@@ -16,6 +16,10 @@ window.PayUCheckout = {
       : '../api/payu_initiate.php';
 
     try {
+      // Pass client browser origin so backend configures exact callback URLs
+      payload.origin_url = window.location.origin;
+      payload.client_origin = window.location.origin;
+
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
