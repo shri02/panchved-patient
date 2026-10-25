@@ -138,7 +138,7 @@ function fetchMetricsAndGraphsData($connection, $patientId, $phone) {
             FROM health_metrics
             WHERE ((patient_id = ? AND ? > 0) OR (patient_phone = ? AND ? <> ''))
               AND recorded_date IS NOT NULL
-              AND recorded_date <> '0000-00-00'
+              AND recorded_date >= '1970-01-01'
             ORDER BY recorded_date ASC, id ASC";
 
     $stmt = mysqli_prepare($connection, $sql);
