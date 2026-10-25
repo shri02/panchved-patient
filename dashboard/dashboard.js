@@ -307,30 +307,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Step 2: Dynamically fetch fresh data from database via PHP (api/dashboard.php)
+  // Step 2: Dynamically fetch fresh data from database via split APIs
   const fetchDashboardData = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (cachedPhone) params.append('phone', cachedPhone);
-      if (cachedPatientId) params.append('patient_id', cachedPatientId);
+    const params = new URLSearchParams();
+    if (cachedPhone) params.append('phone', cachedPhone);
+    if (cachedPatientId) params.append('patient_id', cachedPatientId);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
 
-      const queryUrl = '../api/dashboard.php' + (params.toString() ? `?${params.toString()}` : '');
-      const res = await fetch(queryUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-
-      if (res.ok) {
+    // 1. Fetch Stats & Package Details
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`../api/dashboard_stats.php${queryString}`, { headers: { 'Accept': 'application/json' } });
+        console.log(`[API: Stats] HTTP ${res.status}`);
+        if (!res.ok) {
+          console.warn(`[API: Stats] Status ${res.status}:`, await res.text().catch(() => ''));
+          return;
+        }
         const data = await res.json();
+        console.log('[API: Stats] Payload:', data);
         if (data.success) {
-          cachedDashboardData = data;
-
-          // 1. Patient & Header
           if (data.patient) {
             applyDashboardPatient(null, data.patient);
             try { localStorage.setItem('ocayur_patient', JSON.stringify(data.patient)); } catch (e) {}
           }
-
-          // 2. Metric Statistics Cards
           if (data.stats) {
             const consultCard = document.getElementById('valConsultations');
             if (consultCard && data.stats.upcoming_consultations !== undefined) {
@@ -352,50 +351,103 @@ document.addEventListener('DOMContentLoaded', () => {
 
             animateDashboardMetrics();
           }
+          if (data.my_package) {
+            renderMyPackage(data.my_package);
+          }
+        }
+      } catch (err) {
+        console.error('[API: Stats] Error:', err);
+      }
+    };
 
-          // 2b. Daily Health Metric State
+    // 2. Fetch Health Metrics & Charts
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch(`../api/dashboard_metrics.php${queryString}`, { headers: { 'Accept': 'application/json' } });
+        console.log(`[API: Metrics] HTTP ${res.status}`);
+        if (!res.ok) {
+          console.warn(`[API: Metrics] Status ${res.status}:`, await res.text().catch(() => ''));
+          return;
+        }
+        const data = await res.json();
+        console.log('[API: Metrics] Payload:', data);
+        if (data.success) {
+          cachedDashboardData = { ...(cachedDashboardData || {}), ...data };
           if (data.has_recorded_today !== undefined) {
             updateAddReadingButtonState(Boolean(data.has_recorded_today));
           }
 
-          // 3. My Package Section
-          renderMyPackage(data.my_package);
-          if (data.diet_plan || data.my_package?.diet_plan) {
-            cachedDietPlan = data.diet_plan || data.my_package?.diet_plan;
-            populateDietUI(cachedDietPlan);
-          }
+          const metricFields = {
+            weight: 'weightMetricValue',
+            abdomen: 'abdomenMetricValue',
+            bp: 'bpMetricValue',
+            sugar: 'sugarMetricValue'
+          };
 
-         // 4. Latest Health Metric Badges — API data only
-const metricFields = {
-  weight: 'weightMetricValue',
-  abdomen: 'abdomenMetricValue',
-  bp: 'bpMetricValue',
-  sugar: 'sugarMetricValue'
-};
+          Object.entries(metricFields).forEach(([key, elementId]) => {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const val = data.metrics?.[key];
+            el.textContent = (val !== null && val !== undefined && val !== '') ? val : '--';
+          });
 
-Object.entries(metricFields).forEach(([key, elementId]) => {
-  const element = document.getElementById(elementId);
-  if (!element) return;
-
-  const value = data.metrics?.[key];
-
-  element.textContent =
-    value !== null && value !== undefined && value !== ''
-      ? value
-      : '--';
-});
-
-          // 5. Render Dynamic Graphs
           if (data.graphs) {
             renderAllCharts();
           }
+        }
+      } catch (err) {
+        console.error('[API: Metrics] Error:', err);
+      }
+    };
 
-          // 6. Notifications List
+    // 3. Fetch Diet Plan
+    const fetchDiet = async () => {
+      try {
+        const res = await fetch(`../api/dashboard_diet.php${queryString}`, { headers: { 'Accept': 'application/json' } });
+        console.log(`[API: Diet] HTTP ${res.status}`);
+        if (!res.ok) {
+          console.warn(`[API: Diet] Status ${res.status}:`, await res.text().catch(() => ''));
+          return;
+        }
+        const data = await res.json();
+        console.log('[API: Diet] Payload:', data);
+        if (data.success && data.diet_plan) {
+          cachedDietPlan = data.diet_plan;
+          populateDietUI(cachedDietPlan);
+        }
+      } catch (err) {
+        console.error('[API: Diet] Error:', err);
+      }
+    };
+
+    // 4. Fetch Notifications
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch(`../api/dashboard_notifications.php${queryString}`, { headers: { 'Accept': 'application/json' } });
+        console.log(`[API: Notifications] HTTP ${res.status}`);
+        if (!res.ok) {
+          console.warn(`[API: Notifications] Status ${res.status}:`, await res.text().catch(() => ''));
+          return;
+        }
+        const data = await res.json();
+        console.log('[API: Notifications] Payload:', data);
+        if (data.success && data.notifications) {
           renderNotifications(data.notifications);
         }
+      } catch (err) {
+        console.error('[API: Notifications] Error:', err);
       }
+    };
+
+    try {
+      await Promise.allSettled([
+        fetchStats(),
+        fetchMetrics(),
+        fetchDiet(),
+        fetchNotifications()
+      ]);
     } catch (e) {
-      console.warn('Dashboard dynamic fetch error:', e);
+      console.warn('Dashboard fetch general error:', e);
     } finally {
       hidePageLoader();
     }
@@ -741,7 +793,7 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
           sugar: sugarInput || null
         };
 
-        const res = await fetch('../api/dashboard.php', {
+        const res = await fetch('../api/dashboard_metrics.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -911,7 +963,7 @@ Object.entries(metricFields).forEach(([key, elementId]) => {
       if (cachedPhone) params.append('phone', cachedPhone);
       if (cachedPatientId) params.append('patient_id', cachedPatientId);
 
-      const res = await fetch(`../api/dashboard.php?${params.toString()}`);
+      const res = await fetch(`../api/dashboard_diet.php?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.diet_plan) {
