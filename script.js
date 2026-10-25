@@ -2015,7 +2015,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Action links feedback for footer links
-  const demoLinks = ['termsLink', 'privacyLink'];
+  const demoLinks = ['termsLink'];
   demoLinks.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
