@@ -58,9 +58,9 @@
 
         <!-- Dosha Scores Breakdown Badges -->
         <div class="profile-dosha-badges" id="profileDoshaBadges" style="display: none;">
-          <span class="dosha-badge-pill vata" id="vataBadgePill">💨 Vata: 0/8</span>
-          <span class="dosha-badge-pill pitta" id="pittaBadgePill">🔥 Pitta: 0/8</span>
-          <span class="dosha-badge-pill kapha" id="kaphaBadgePill">💧 Kapha: 0/8</span>
+          <span class="dosha-badge-pill vata" id="vataBadgePill">Vata: 0/8</span>
+          <span class="dosha-badge-pill pitta" id="pittaBadgePill">Pitta: 0/8</span>
+          <span class="dosha-badge-pill kapha" id="kaphaBadgePill">Kapha: 0/8</span>
         </div>
 
         <!-- Profile Description / Lifestyle Guidance -->
@@ -205,9 +205,9 @@
             const pitta = assessment.pitta_score || 0;
             const kapha = assessment.kapha_score || 0;
             const total = assessment.total_questions || 8;
-            if (vataBadgePill) vataBadgePill.textContent = `💨 Vata: ${vata}/${total}`;
-            if (pittaBadgePill) pittaBadgePill.textContent = `🔥 Pitta: ${pitta}/${total}`;
-            if (kaphaBadgePill) kaphaBadgePill.textContent = `💧 Kapha: ${kapha}/${total}`;
+            if (vataBadgePill) vataBadgePill.textContent = `Vata: ${vata}/${total}`;
+            if (pittaBadgePill) pittaBadgePill.textContent = `Pitta: ${pitta}/${total}`;
+            if (kaphaBadgePill) kaphaBadgePill.textContent = `Kapha: ${kapha}/${total}`;
             profileDoshaBadges.style.display = 'flex';
           }
 
