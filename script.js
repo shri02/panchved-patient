@@ -1158,6 +1158,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const agreeTermsCheckbox = document.getElementById('agreeTermsCheckbox');
+      if (agreeTermsCheckbox && !agreeTermsCheckbox.checked) {
+        showToast('Please agree to the Terms & Conditions and Disclaimer to proceed.', true);
+        const container = agreeTermsCheckbox.closest('.terms-agreement-container');
+        if (container) {
+          container.classList.add('has-error');
+          setTimeout(() => container.classList.remove('has-error'), 1800);
+        }
+        agreeTermsCheckbox.focus();
+        return;
+      }
+
       // Save into registration state
       registrationState.appetite = appetite;
       registrationState.sleepType = sleepType;
@@ -1165,6 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
       registrationState.skinType = skinType;
       registrationState.hairType = hairType;
       registrationState.bowelMovement = bowelMovement;
+      registrationState.termsAccepted = true;
 
       try {
         localStorage.setItem('ocayur_registration_data', JSON.stringify(registrationState));

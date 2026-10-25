@@ -136,7 +136,7 @@
 
       <!-- Legal / Disclaimer -->
       <footer class="legal-footer">
-        I agree to the <a href="#terms" id="termsLink">Terms & Conditions</a> and <a href="#privacy"
+        I agree to the <a href="terms-and-conditions.html" target="_blank" id="termsLink">Terms &amp; Conditions</a> and <a href="#privacy"
           id="privacyLink">Privacy Policy</a>
       </footer>
     </section>
@@ -494,9 +494,24 @@
           <input type="hidden" name="bowelMovement" id="bowelMovementInput" required />
         </div>
 
+        <!-- Terms and Conditions Agreement (Before Password State) -->
+        <div class="terms-agreement-container" id="prakrutiTermsAgreementGroup">
+          <label class="terms-agreement-label" for="agreeTermsCheckbox">
+            <input type="checkbox" id="agreeTermsCheckbox" name="agreeTerms" class="terms-checkbox-input" required />
+            <span class="custom-terms-checkbox" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </span>
+            <span class="terms-label-text">
+              I agree to the <a href="terms-and-conditions.html" target="_blank" class="terms-legal-link">Terms &amp; Conditions and Disclaimer</a><span class="required-star">*</span>
+            </span>
+          </label>
+        </div>
+
         <!-- Next Button -->
         <button type="submit" class="btn-primary btn-submit" id="submitPrakrutiBtn">
-          <span>Next</span>
+          <span>I Agree &amp; Continue</span>
         </button>
 
         <!-- Step Indicator & Back Option -->

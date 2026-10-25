@@ -3968,4 +3968,97 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
   color: #8e877b;
   pointer-events: none;
   text-decoration: none;
-}
+}
+
+/* ==========================================================================
+   Terms & Conditions Agreement Checkbox Component
+   ========================================================================== */
+.terms-agreement-container {
+  margin: 18px 0 20px;
+  padding: 13px 15px;
+  background: var(--brand-cream-soft, #fcf8f2);
+  border: 1px solid var(--border-color, #e8e1d5);
+  border-radius: var(--radius-input, 8px);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.terms-agreement-container:hover {
+  border-color: var(--brand-terracotta, #723f1e);
+}
+
+.terms-agreement-container.has-error {
+  border-color: var(--danger-color, #c53030) !important;
+  background: #fff5f5 !important;
+  box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.15);
+}
+
+.terms-agreement-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
+}
+
+.terms-checkbox-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.custom-terms-checkbox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  margin-top: 1px;
+  border: 1.8px solid #9c9589;
+  border-radius: 4px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.custom-terms-checkbox svg {
+  display: none;
+  stroke: #ffffff;
+}
+
+.terms-checkbox-input:checked + .custom-terms-checkbox {
+  background: var(--brand-terracotta, #723f1e);
+  border-color: var(--brand-terracotta, #723f1e);
+}
+
+.terms-checkbox-input:checked + .custom-terms-checkbox svg {
+  display: block;
+}
+
+.terms-checkbox-input:focus-visible + .custom-terms-checkbox {
+  outline: 2px solid var(--brand-terracotta, #723f1e);
+  outline-offset: 2px;
+}
+
+.terms-label-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-main, #25231f);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.terms-legal-link {
+  color: var(--brand-terracotta, #723f1e);
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.terms-legal-link:hover {
+  color: var(--brand-terracotta-hover, #5d3318);
+}
+
