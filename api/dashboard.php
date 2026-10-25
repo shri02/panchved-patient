@@ -45,18 +45,20 @@ function sendJsonResponse($success, $message, $data = [], $statusCode = 200)
 
 function tableExists($connection, $table)
 {
+    static $cache = [];
     if (!$connection || !preg_match('/^[A-Za-z0-9_]+$/', $table)) {
         return false;
     }
 
-    $tableEscaped = mysqli_real_escape_string($connection, $table);
-    $result = mysqli_query(
-        $connection,
-        "SELECT 1 FROM information_schema.tables
-         WHERE table_schema = DATABASE() AND table_name = '{$tableEscaped}' LIMIT 1"
-    );
+    if (isset($cache[$table])) {
+        return $cache[$table];
+    }
 
-    return $result && mysqli_num_rows($result) > 0;
+    $tableEscaped = mysqli_real_escape_string($connection, $table);
+    $result = mysqli_query($connection, "SHOW TABLES LIKE '{$tableEscaped}'");
+    $exists = ($result && mysqli_num_rows($result) > 0);
+    $cache[$table] = $exists;
+    return $exists;
 }
 
 function getMetricDateLabel($dateStr)
@@ -310,6 +312,8 @@ function resolvePatient($connection, $phone, $email, $patientId)
     if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
         $phoneDigits = substr($phoneDigits, 2);
     }
+    $phoneWith91 = '91' . $phoneDigits;
+    $phoneWithPlus91 = '+91' . $phoneDigits;
 
     $numericId = is_numeric($patientId) ? (int)$patientId : 0;
 
@@ -321,7 +325,7 @@ function resolvePatient($connection, $phone, $email, $patientId)
                    blood_group, emergency_contact, address, package_name,
                    total_appointments, status, created_at, updated_at
             FROM patients
-            WHERE (phone_number <> '' AND (phone_number = ? OR phone_number = ?))
+            WHERE (phone_number <> '' AND (phone_number = ? OR phone_number = ? OR phone_number = ? OR phone_number = ?))
                OR (email <> '' AND email = ?)
                OR (patient_id <> '' AND patient_id = ?)
                OR (? > 0 AND id = ?)
@@ -332,7 +336,7 @@ function resolvePatient($connection, $phone, $email, $patientId)
         return null;
     }
 
-    mysqli_stmt_bind_param($stmt, 'ssssii', $phone, $phoneDigits, $email, $patientId, $numericId, $numericId);
+    mysqli_stmt_bind_param($stmt, 'ssssssii', $phone, $phoneDigits, $phoneWith91, $phoneWithPlus91, $email, $patientId, $numericId, $numericId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $patient = mysqli_fetch_assoc($result) ?: null;
@@ -662,17 +666,11 @@ function getNotifications($connection, $patient)
     }
 
     $patientDbId = (int)$patient['id'];
-    $patientPhone = (string)($patient['phone_number'] ?? '');
-    $phoneDigits = preg_replace('/\D+/', '', $patientPhone);
-    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
-        $phoneDigits = substr($phoneDigits, 2);
-    }
 
     $sql = "SELECT id, appointment_id, doctor_name, appointment_date, appointment_time,
                    service_type, agenda, status, created_at
             FROM appointments
             WHERE patient_id = ?
-               OR (? <> '' AND patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?))
             ORDER BY id DESC
             LIMIT 10";
 
@@ -681,7 +679,7 @@ function getNotifications($connection, $patient)
         return [];
     }
 
-    mysqli_stmt_bind_param($stmt, 'isss', $patientDbId, $patientPhone, $patientPhone, $phoneDigits);
+    mysqli_stmt_bind_param($stmt, 'i', $patientDbId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
@@ -731,34 +729,12 @@ function getUnreadMessagesCount($connection, $patient)
         return 0;
     }
 
-    // Use a notifications/messages table only when it exists.
-    foreach (['notifications', 'messages'] as $table) {
-        if (!tableExists($connection, $table)) {
-            continue;
-        }
+    $patientId = (int)$patient['id'];
 
-        $patientId = (int)$patient['id'];
-
-        $columnsResult = mysqli_query($connection, "SHOW COLUMNS FROM `{$table}`");
-        if (!$columnsResult) {
-            continue;
-        }
-
-        $columns = [];
-        while ($column = mysqli_fetch_assoc($columnsResult)) {
-            $columns[] = $column['Field'];
-        }
-
-        $patientColumn = in_array('patient_id', $columns, true) ? 'patient_id' : null;
-        $readColumn = in_array('is_read', $columns, true) ? 'is_read' : (in_array('read_status', $columns, true) ? 'read_status' : null);
-
-        if (!$patientColumn || !$readColumn) {
-            continue;
-        }
-
-        $sql = "SELECT COUNT(*) AS count FROM `{$table}` WHERE `{$patientColumn}` = ? AND (`{$readColumn}` = 0 OR `{$readColumn}` = '0')";
+    // Check chat_messages table (standard Ocayur chat system)
+    if (tableExists($connection, 'chat_messages')) {
+        $sql = "SELECT COUNT(*) AS count FROM `chat_messages` WHERE `patient_id` = ? AND `sender_type` = 'doctor' AND `is_seen` = 0";
         $stmt = mysqli_prepare($connection, $sql);
-
         if ($stmt) {
             mysqli_stmt_bind_param($stmt, 'i', $patientId);
             mysqli_stmt_execute($stmt);
@@ -831,7 +807,7 @@ if (!$patient) {
         ],
         'graphs' => [],
         'notifications' => []
-    ], 404);
+    ], 200);
 }
 
 /* --------------------------------------------------------------------------
@@ -1023,19 +999,14 @@ $packageProgress = calculatePackageProgress($patient, $package);
 /* Upcoming consultations are patient-specific. */
 $upcomingCount = 0;
 if (tableExists($connection1, 'appointments')) {
-    $phoneDigits = preg_replace('/\D+/', '', $patientPhone);
-    if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
-        $phoneDigits = substr($phoneDigits, 2);
-    }
-
     $sql = "SELECT COUNT(*) AS count
             FROM appointments
-            WHERE (patient_id = ? OR (? <> '' AND patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
+            WHERE patient_id = ?
               AND status IN ('Scheduled', 'Upcoming')";
 
     $stmt = mysqli_prepare($connection1, $sql);
     if ($stmt) {
-        mysqli_stmt_bind_param($stmt, 'isss', $patientDbId, $patientPhone, $patientPhone, $phoneDigits);
+        mysqli_stmt_bind_param($stmt, 'i', $patientDbId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         $row = mysqli_fetch_assoc($result);
