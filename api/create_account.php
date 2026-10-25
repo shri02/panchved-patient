@@ -95,12 +95,15 @@ $phone = isset($data['phone']) ? trim($data['phone']) : (isset($data['phoneNumbe
 $email = isset($data['email']) ? trim($data['email']) : '';
 
 // Step 2: Prakruti Parikshan
-$appetite = isset($data['appetite']) ? trim($data['appetite']) : 'normal';
-$sleepType = isset($data['sleepType']) ? trim($data['sleepType']) : 'normal';
+$appetite = isset($data['appetite']) ? trim($data['appetite']) : 'irregular';
+$sleepType = isset($data['sleepType']) ? trim($data['sleepType']) : 'moderate';
+$skinType = isset($data['skinType']) ? trim($data['skinType']) : 'warm_sensitive';
+$hairType = isset($data['hairType']) ? trim($data['hairType']) : 'fine_soft';
+$bowelMovement = isset($data['bowelMovement']) ? trim($data['bowelMovement']) : (isset($data['bowel_movement']) ? trim($data['bowel_movement']) : 'regular_frequent');
+$stressResponse = isset($data['stressResponse']) ? trim($data['stressResponse']) : (isset($data['stress_response']) ? trim($data['stress_response']) : 'irritability_anger');
+$bodyTemperature = isset($data['bodyTemperature']) ? trim($data['bodyTemperature']) : (isset($data['body_temperature']) ? trim($data['body_temperature']) : 'feels_hot');
+$physicalActivity = isset($data['physicalActivity']) ? trim($data['physicalActivity']) : (isset($data['physical_activity']) ? trim($data['physical_activity']) : 'active_intense');
 $dream1 = isset($data['dream1']) ? trim($data['dream1']) : 'water';
-$skinType = isset($data['skinType']) ? trim($data['skinType']) : 'normal';
-$hairType = isset($data['hairType']) ? trim($data['hairType']) : 'normal';
-$bowelMovement = isset($data['bowelMovement']) ? trim($data['bowelMovement']) : (isset($data['bowel_movement']) ? trim($data['bowel_movement']) : 'once_comfortable');
 
 // Step 3: Security Credentials
 $password = isset($data['password']) ? $data['password'] : (isset($data['newPassword']) ? $data['newPassword'] : '');
@@ -196,51 +199,206 @@ if (empty($email)) {
 // Username
 $username = $phoneDigits;
 
-// Compute Prakruti Profile Assessment
+// Compute Prakruti Profile Assessment based on 8 Clinical Charting Parameters
 $vataScore = 0;
 $pittaScore = 0;
 $kaphaScore = 0;
 
-if ($appetite === 'irregular') $vataScore += 2;
-elseif ($appetite === 'very_good') $pittaScore += 2;
-elseif ($appetite === 'poor') $kaphaScore += 2;
-else { $pittaScore += 1; }
-
-if ($sleepType === 'light' || $sleepType === 'disturbed') $vataScore += 2;
-elseif ($sleepType === 'owl') $pittaScore += 2;
-elseif ($sleepType === 'deep') $kaphaScore += 2;
-else { $pittaScore += 1; }
-
-if ($dream1 === 'flying') $vataScore += 2;
-elseif ($dream1 === 'fire') $pittaScore += 2;
-elseif ($dream1 === 'water') $kaphaScore += 2;
-elseif ($dream1 === 'vivid') { $vataScore += 1; $pittaScore += 1; }
-
-if ($skinType === 'dry_rough') $vataScore += 2;
-elseif ($skinType === 'sensitive') $pittaScore += 2;
-elseif ($skinType === 'oily' || $skinType === 'soft_moist') $kaphaScore += 2;
-
-if ($hairType === 'dry_frizzy') $vataScore += 2;
-elseif ($hairType === 'thinning') $pittaScore += 2;
-elseif ($hairType === 'thick_wavy' || $hairType === 'oily_fine') $kaphaScore += 2;
-
-if ($bowelMovement === 'hard_dry' || $bowelMovement === 'less_than_once') $vataScore += 2;
-elseif ($bowelMovement === 'loose_urgent' || $bowelMovement === 'more_than_once') $pittaScore += 2;
-elseif ($bowelMovement === 'once_comfortable') { $pittaScore += 1; $kaphaScore += 1; }
-
-$profileType = 'Agni';
-$profileDescription = 'Your assessment indicates Agni. Your responses suggest that digestion, sleep and stress management may be important areas to focus on.';
-
-if ($pittaScore >= $vataScore && $pittaScore >= $kaphaScore && $pittaScore >= 4) {
-    $profileType = 'Agni / Pitta';
-    $profileDescription = 'Your assessment indicates strong metabolic Agni with Pitta characteristics. Your responses suggest focusing on cooling dinacharya, liver vitality, and balanced nutrition.';
-} elseif ($vataScore > $pittaScore && $vataScore >= $kaphaScore) {
-    $profileType = 'Vata-Agni';
-    $profileDescription = 'Your assessment indicates Vata variability in Agni. Focus on warm nourishing meals, regular sleep routine, and nervous system relaxation.';
-} elseif ($kaphaScore > $pittaScore && $kaphaScore > $vataScore) {
-    $profileType = 'Kapha-Agni';
-    $profileDescription = 'Your assessment indicates steady Kapha constitution. Focus on metabolic boosting herbs, active physical exercise, and light digestive spices.';
+// 1. Appetite
+if (in_array($appetite, ['irregular', 'vata'])) {
+    $vataScore++;
+} elseif (in_array($appetite, ['strong', 'very_good', 'pitta'])) {
+    $pittaScore++;
+} elseif (in_array($appetite, ['mild', 'poor', 'kapha'])) {
+    $kaphaScore++;
+} else {
+    $pittaScore++;
 }
+
+// 2. Sleep Type
+if (in_array($sleepType, ['light', 'disturbed', 'vata'])) {
+    $vataScore++;
+} elseif (in_array($sleepType, ['moderate', 'owl', 'pitta'])) {
+    $pittaScore++;
+} elseif (in_array($sleepType, ['deep', 'kapha'])) {
+    $kaphaScore++;
+} else {
+    $pittaScore++;
+}
+
+// 3. Skin Type
+if (in_array($skinType, ['dry_rough', 'vata'])) {
+    $vataScore++;
+} elseif (in_array($skinType, ['warm_sensitive', 'sensitive', 'pitta'])) {
+    $pittaScore++;
+} elseif (in_array($skinType, ['soft_smooth', 'soft_moist', 'oily', 'kapha'])) {
+    $kaphaScore++;
+} else {
+    $pittaScore++;
+}
+
+// 4. Hair Type
+if (in_array($hairType, ['dry_frizzy', 'vata'])) {
+    $vataScore++;
+} elseif (in_array($hairType, ['fine_soft', 'thinning', 'pitta'])) {
+    $pittaScore++;
+} elseif (in_array($hairType, ['thick_dense', 'thick_wavy', 'oily_fine', 'kapha'])) {
+    $kaphaScore++;
+} else {
+    $pittaScore++;
+}
+
+// 5. Bowel Movement
+if (in_array($bowelMovement, ['irregular_constipation', 'hard_dry', 'less_than_once', 'vata'])) {
+    $vataScore++;
+} elseif (in_array($bowelMovement, ['regular_frequent', 'loose_urgent', 'more_than_once', 'pitta'])) {
+    $pittaScore++;
+} elseif (in_array($bowelMovement, ['slow_heavy', 'once_comfortable', 'kapha'])) {
+    $kaphaScore++;
+} else {
+    $pittaScore++;
+}
+
+// 6. Stress Response
+if (in_array($stressResponse, ['worry_anxiety', 'vata'])) {
+    $vataScore++;
+} elseif (in_array($stressResponse, ['irritability_anger', 'pitta'])) {
+    $pittaScore++;
+} elseif (in_array($stressResponse, ['withdrawal_sluggish', 'kapha'])) {
+    $kaphaScore++;
+} else {
+    $pittaScore++;
+}
+
+// 7. Body Temperature
+if (in_array($bodyTemperature, ['feels_cold', 'vata'])) {
+    $vataScore++;
+} elseif (in_array($bodyTemperature, ['feels_hot', 'pitta'])) {
+    $pittaScore++;
+} elseif (in_array($bodyTemperature, ['cool_stable', 'kapha'])) {
+    $kaphaScore++;
+} else {
+    $pittaScore++;
+}
+
+// 8. Physical Activity
+if (in_array($physicalActivity, ['quick_irregular', 'vata'])) {
+    $vataScore++;
+} elseif (in_array($physicalActivity, ['active_intense', 'pitta'])) {
+    $pittaScore++;
+} elseif (in_array($physicalActivity, ['slow_steady', 'kapha'])) {
+    $kaphaScore++;
+} else {
+    $pittaScore++;
+}
+
+// Rule from Prakruti charting.docx: Any Dosha having more than 4 ticks falls under that category
+$profileType = 'Tridoshic (Sama)';
+$profileDescription = '';
+$healthTendencies = [];
+
+if ($vataScore > 4) {
+    $profileType = 'Vataj Prakruti';
+    $profileDescription = 'Vata individuals should follow a regular routine, consume warm and nourishing food, avoid excessive fasting and over-exercise, and practice calming yoga and meditation.';
+    $healthTendencies = [
+        'Joint pain and arthritis',
+        'Constipation',
+        'Insomnia',
+        'Nervous system disorders'
+    ];
+} elseif ($pittaScore > 4) {
+    $profileType = 'Pittaj Prakruti';
+    $profileDescription = 'Pitta individuals benefit from cooling food, moderation in work, avoidance of excessive heat, and practices like pranayama, yoga, and meditation.';
+    $healthTendencies = [
+        'Acidity and ulcers',
+        'Skin disorders',
+        'Inflammatory conditions',
+        'Hormonal imbalances'
+    ];
+} elseif ($kaphaScore > 4) {
+    $profileType = 'Kaphaj Prakruti';
+    $profileDescription = 'Kaphaj individuals should consume light and warm food, avoid day sleep, follow regular physical activity, and maintain an active lifestyle.';
+    $healthTendencies = [
+        'Obesity',
+        'Diabetes',
+        'Respiratory disorders',
+        'Lethargy and depression'
+    ];
+} else {
+    // Determine dominant or dual dosha constitution
+    $maxScore = max($vataScore, $pittaScore, $kaphaScore);
+    if ($vataScore === $maxScore && $pittaScore === $maxScore) {
+        $profileType = 'Vata-Pitta Prakruti';
+        $profileDescription = 'Your assessment shows a dual Vata-Pitta constitution. Balance warmth with moderation, nourish your nervous system, and maintain regular meal schedules while avoiding excess heat.';
+        $healthTendencies = [
+            'Joint sensitivity & acidity',
+            'Irregular digestion & insomnia',
+            'Skin sensitivity & inflammation',
+            'Stress-induced fatigue'
+        ];
+    } elseif ($pittaScore === $maxScore && $kaphaScore === $maxScore) {
+        $profileType = 'Pitta-Kapha Prakruti';
+        $profileDescription = 'Your assessment indicates a balanced Pitta-Kapha constitution. Focus on light, cooling foods, regular physical exercise, and mindful stress relief to support metabolism.';
+        $healthTendencies = [
+            'Sluggish metabolism & acidity',
+            'Hormonal imbalances',
+            'Inflammatory skin conditions',
+            'Weight management challenges'
+        ];
+    } elseif ($vataScore === $maxScore && $kaphaScore === $maxScore) {
+        $profileType = 'Vata-Kapha Prakruti';
+        $profileDescription = 'Your assessment indicates a dual Vata-Kapha constitution. Favor warm, light, and spiced meals, maintain active daily routines, and protect yourself against cold weather.';
+        $healthTendencies = [
+            'Cold sensitivity & joint stiffness',
+            'Variable digestion & respiratory congestion',
+            'Circulation sluggishness',
+            'Seasonal lethargy'
+        ];
+    } elseif ($vataScore === $maxScore) {
+        $profileType = 'Vataj Prakruti';
+        $profileDescription = 'Vata individuals should follow a regular routine, consume warm and nourishing food, avoid excessive fasting and over-exercise, and practice calming yoga and meditation.';
+        $healthTendencies = [
+            'Joint pain and arthritis',
+            'Constipation',
+            'Insomnia',
+            'Nervous system disorders'
+        ];
+    } elseif ($pittaScore === $maxScore) {
+        $profileType = 'Pittaj Prakruti';
+        $profileDescription = 'Pitta individuals benefit from cooling food, moderation in work, avoidance of excessive heat, and practices like pranayama, yoga, and meditation.';
+        $healthTendencies = [
+            'Acidity and ulcers',
+            'Skin disorders',
+            'Inflammatory conditions',
+            'Hormonal imbalances'
+        ];
+    } else {
+        $profileType = 'Kaphaj Prakruti';
+        $profileDescription = 'Kaphaj individuals should consume light and warm food, avoid day sleep, follow regular physical activity, and maintain an active lifestyle.';
+        $healthTendencies = [
+            'Obesity',
+            'Diabetes',
+            'Respiratory disorders',
+            'Lethargy and depression'
+        ];
+    }
+}
+
+// Show to all - Prakruti & Preventive Healthcare
+$preventiveCare = [
+    [
+        'title' => '1. Early Risk Awareness',
+        'description' => 'Prakruti assessment helps identify individual tendencies such as digestive problems, stress sensitivity, sleep disturbances, or seasonal imbalances before they become persistent concerns.'
+    ],
+    [
+        'title' => '2. Personalized Prevention',
+        'description' => 'Dosha-specific diet, daily routine, seasonal care, sleep, and exercise can help maintain digestion, energy, sleep quality, and overall balance.'
+    ],
+    [
+        'title' => '3. Long-Term Health Protection',
+        'description' => 'Living according to Prakruti may help reduce lifestyle-related imbalances, support immunity and healthy metabolism, and promote sustained physical and mental well-being.'
+    ]
+];
 
 /**
  * Generate Next Unique Patient ID (OCA001, OCA002, OCA003...)
@@ -469,8 +627,11 @@ sendJsonResponse(true, 'Account created successfully! Welcome to Ocayur.', [
         'type' => $profileType,
         'title' => $profileType,
         'description' => $profileDescription,
+        'health_tendencies' => $healthTendencies,
+        'preventive_care' => $preventiveCare,
         'vata_score' => $vataScore,
         'pitta_score' => $pittaScore,
-        'kapha_score' => $kaphaScore
+        'kapha_score' => $kaphaScore,
+        'total_questions' => 8
     ]
 ], 201);

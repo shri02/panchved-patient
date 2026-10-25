@@ -356,9 +356,9 @@
       <form class="auth-form prakruti-form" id="prakrutiForm" novalidate>
         <!-- 1. Appetite -->
         <div class="form-group custom-select-group" data-select-id="appetite">
-          <label class="form-label">Appetite<span class="required-star">*</span></label>
+          <label class="form-label">🍽️ Appetite<span class="required-star">*</span></label>
           <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select</span>
+            <span class="selected-value placeholder">Select appetite pattern</span>
             <span class="chevron-icon" aria-hidden="true">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -367,20 +367,18 @@
             </span>
           </div>
           <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="very_good">Very good &mdash; I get hungry strongly and on time</li>
-            <li class="select-option" data-value="normal">Normal &mdash; hunger is comfortable and regular</li>
-            <li class="select-option" data-value="poor">Poor &mdash; I often don't feel hungry</li>
-            <li class="select-option" data-value="irregular">Irregular &mdash; sometimes very hungry, sometimes no
-              appetite</li>
+            <li class="select-option" data-value="irregular" data-dosha="vata">Irregular; sometimes hungry, sometimes not</li>
+            <li class="select-option" data-value="strong" data-dosha="pitta">Strong &amp; regular; gets hungry on time</li>
+            <li class="select-option" data-value="mild" data-dosha="kapha">Mild/moderate; can skip meals</li>
           </ul>
           <input type="hidden" name="appetite" id="appetiteInput" required />
         </div>
 
         <!-- 2. Sleep Type -->
         <div class="form-group custom-select-group" data-select-id="sleepType">
-          <label class="form-label">Sleep Type<span class="required-star">*</span></label>
+          <label class="form-label">😴 Sleep Type<span class="required-star">*</span></label>
           <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select</span>
+            <span class="selected-value placeholder">Select sleep pattern</span>
             <span class="chevron-icon" aria-hidden="true">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -389,44 +387,18 @@
             </span>
           </div>
           <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="normal">Normal &mdash; 7-8 hours, refreshing</li>
-            <li class="select-option" data-value="owl">I am an "owl" &mdash; I sleep late / feel more active at night
-            </li>
-            <li class="select-option" data-value="light">Light sleep &mdash; I wake easily</li>
-            <li class="select-option" data-value="deep">Deep sleep &mdash; I sleep heavily and find it difficult to wake
-            </li>
-            <li class="select-option" data-value="disturbed">Disturbed sleep / frequent waking</li>
+            <li class="select-option" data-value="light" data-dosha="vata">Light, interrupted, difficulty falling asleep</li>
+            <li class="select-option" data-value="moderate" data-dosha="pitta">Moderate; may wake due to heat/thoughts</li>
+            <li class="select-option" data-value="deep" data-dosha="kapha">Deep, long; difficulty waking</li>
           </ul>
           <input type="hidden" name="sleepType" id="sleepTypeInput" required />
         </div>
 
-        <!-- 3. Dream -->
-        <div class="form-group custom-select-group" data-select-id="dream1">
-          <label class="form-label">Dream<span class="required-star">*</span></label>
-          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select</span>
-            <span class="chevron-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          </div>
-          <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="barely">Barely remember dreams</li>
-            <li class="select-option" data-value="flying">Flying / running / fear / movement</li>
-            <li class="select-option" data-value="fire">Fire / sun / arguments / intense situation</li>
-            <li class="select-option" data-value="water">Water / nature / peaceful or pleasant dreams</li>
-            <li class="select-option" data-value="vivid">Frequent vivid dreams</li>
-          </ul>
-          <input type="hidden" name="dream1" id="dream1Input" required />
-        </div>
-
-        <!-- 4. Skin Type & Hair Type (2 Columns) -->
+        <!-- 3. Skin Type & Hair Type (2 Columns) -->
         <div class="form-row-grid">
           <!-- Skin Type -->
           <div class="form-group custom-select-group" data-select-id="skinType">
-            <label class="form-label">Skin Type<span class="required-star">*</span></label>
+            <label class="form-label">✨ Skin Type<span class="required-star">*</span></label>
             <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false"
               aria-haspopup="listbox">
               <span class="selected-value placeholder">Select skin type</span>
@@ -438,18 +410,16 @@
               </span>
             </div>
             <ul class="custom-select-options" role="listbox">
-              <li class="select-option" data-value="dry_rough">Dry / rough</li>
-              <li class="select-option" data-value="oily">Oily</li>
-              <li class="select-option" data-value="normal">Normal</li>
-              <li class="select-option" data-value="sensitive">Sensitive / redness / burning</li>
-              <li class="select-option" data-value="soft_moist">Soft, smooth and moist</li>
+              <li class="select-option" data-value="dry_rough" data-dosha="vata">Dry, rough, thin</li>
+              <li class="select-option" data-value="warm_sensitive" data-dosha="pitta">Warm, sensitive, reddish; may be oily</li>
+              <li class="select-option" data-value="soft_smooth" data-dosha="kapha">Soft, smooth, thick, oily/moist</li>
             </ul>
             <input type="hidden" name="skinType" id="skinTypeInput" required />
           </div>
 
           <!-- Hair Type -->
           <div class="form-group custom-select-group" data-select-id="hairType">
-            <label class="form-label">Hair Type<span class="required-star">*</span></label>
+            <label class="form-label">💇 Hair Type<span class="required-star">*</span></label>
             <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false"
               aria-haspopup="listbox">
               <span class="selected-value placeholder">Select hair type</span>
@@ -461,21 +431,19 @@
               </span>
             </div>
             <ul class="custom-select-options" role="listbox">
-              <li class="select-option" data-value="dry_frizzy">Dry / frizzy / split ends</li>
-              <li class="select-option" data-value="oily_fine">Oily / soft / fine</li>
-              <li class="select-option" data-value="thick_wavy">Thick / dark / wavy</li>
-              <li class="select-option" data-value="thinning">Premature graying / thinning</li>
-              <li class="select-option" data-value="normal">Normal / lustrous</li>
+              <li class="select-option" data-value="dry_frizzy" data-dosha="vata">Dry, rough, frizzy</li>
+              <li class="select-option" data-value="fine_soft" data-dosha="pitta">Fine/soft; tendency to early greying/hair fall</li>
+              <li class="select-option" data-value="thick_dense" data-dosha="kapha">Thick, dense, smooth &amp; oily</li>
             </ul>
             <input type="hidden" name="hairType" id="hairTypeInput" required />
           </div>
         </div>
 
-        <!-- 5. Bowel Movement -->
+        <!-- 4. Bowel Movement -->
         <div class="form-group custom-select-group" data-select-id="bowelMovement">
-          <label class="form-label">Bowel Movement<span class="required-star">*</span></label>
+          <label class="form-label">🚽 Bowel Movement<span class="required-star">*</span></label>
           <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select</span>
+            <span class="selected-value placeholder">Select bowel movement</span>
             <span class="chevron-icon" aria-hidden="true">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -484,13 +452,71 @@
             </span>
           </div>
           <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="once_comfortable">Once a day, comfortable</li>
-            <li class="select-option" data-value="more_than_once">More than once a day</li>
-            <li class="select-option" data-value="less_than_once">Less than once a day</li>
-            <li class="select-option" data-value="hard_dry">Hard / dry stool</li>
-            <li class="select-option" data-value="loose_urgent">Loose / urgent stool</li>
+            <li class="select-option" data-value="irregular_constipation" data-dosha="vata">Irregular, constipation, hard/dry stool</li>
+            <li class="select-option" data-value="regular_frequent" data-dosha="pitta">Regular/frequent, soft or loose, urgency</li>
+            <li class="select-option" data-value="slow_heavy" data-dosha="kapha">Slow/regular, heavy or sticky</li>
           </ul>
           <input type="hidden" name="bowelMovement" id="bowelMovementInput" required />
+        </div>
+
+        <!-- 5. Stress Response -->
+        <div class="form-group custom-select-group" data-select-id="stressResponse">
+          <label class="form-label">🧠 Stress Response<span class="required-star">*</span></label>
+          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <span class="selected-value placeholder">Select stress response</span>
+            <span class="chevron-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
+          </div>
+          <ul class="custom-select-options" role="listbox">
+            <li class="select-option" data-value="worry_anxiety" data-dosha="vata">Worry, anxiety, overthinking</li>
+            <li class="select-option" data-value="irritability_anger" data-dosha="pitta">Irritability, anger, impatience</li>
+            <li class="select-option" data-value="withdrawal_sluggish" data-dosha="kapha">Withdrawal, emotional heaviness, sluggishness</li>
+          </ul>
+          <input type="hidden" name="stressResponse" id="stressResponseInput" required />
+        </div>
+
+        <!-- 6. Body Temperature -->
+        <div class="form-group custom-select-group" data-select-id="bodyTemperature">
+          <label class="form-label">🌡️ Body Temperature<span class="required-star">*</span></label>
+          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <span class="selected-value placeholder">Select temperature tendency</span>
+            <span class="chevron-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
+          </div>
+          <ul class="custom-select-options" role="listbox">
+            <li class="select-option" data-value="feels_cold" data-dosha="vata">Often feels cold; cold hands/feet</li>
+            <li class="select-option" data-value="feels_hot" data-dosha="pitta">Feels hot easily; dislikes heat</li>
+            <li class="select-option" data-value="cool_stable" data-dosha="kapha">Generally cool/stable; tolerates cold better</li>
+          </ul>
+          <input type="hidden" name="bodyTemperature" id="bodyTemperatureInput" required />
+        </div>
+
+        <!-- 7. Physical Activity -->
+        <div class="form-group custom-select-group" data-select-id="physicalActivity">
+          <label class="form-label">🏃 Physical Activity<span class="required-star">*</span></label>
+          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <span class="selected-value placeholder">Select physical activity style</span>
+            <span class="chevron-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
+          </div>
+          <ul class="custom-select-options" role="listbox">
+            <li class="select-option" data-value="quick_irregular" data-dosha="vata">Quick, irregular, likes variety; tires easily</li>
+            <li class="select-option" data-value="active_intense" data-dosha="pitta">Active, intense, competitive</li>
+            <li class="select-option" data-value="slow_steady" data-dosha="kapha">Slow to start but good stamina; prefers steady activity</li>
+          </ul>
+          <input type="hidden" name="physicalActivity" id="physicalActivityInput" required />
         </div>
 
         <!-- Terms and Conditions Agreement (Before Password State) -->
@@ -630,13 +656,56 @@
         </div>
 
         <!-- Profile Type Name -->
-        <h2 class="profile-type-title" id="profileTypeName">Agni</h2>
+        <h2 class="profile-type-title" id="profileTypeName">--</h2>
+
+        <!-- Dosha Scores Breakdown Badges -->
+        <div class="profile-dosha-badges" id="profileDoshaBadges" style="display: none;">
+          <span class="dosha-badge-pill vata" id="vataBadgePill">💨 Vata: 0/8</span>
+          <span class="dosha-badge-pill pitta" id="pittaBadgePill">🔥 Pitta: 0/8</span>
+          <span class="dosha-badge-pill kapha" id="kaphaBadgePill">💧 Kapha: 0/8</span>
+        </div>
 
         <!-- Profile Description -->
         <p class="profile-description" id="profileDescription">
-          Your assessment indicates Agni. Your responses suggest that digestion, sleep and stress management may be
-          important areas to focus on.
+          Loading your Ayurveda profile...
         </p>
+
+        <!-- Health Tendencies Block -->
+        <div class="profile-info-block" id="healthTendenciesBlock" style="display: none;">
+          <div class="profile-info-block-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            <span>Health Tendencies to Watch</span>
+          </div>
+          <div class="profile-tendency-grid" id="healthTendencyGrid">
+            <!-- Dynamic Tendencies List -->
+          </div>
+        </div>
+
+        <!-- Preventive Healthcare Block (Show to all) -->
+        <div class="profile-info-block" id="preventiveCareBlock">
+          <div class="profile-info-block-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-teal, #146e66)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>Prakruti &amp; Preventive Healthcare</span>
+          </div>
+          <div class="profile-preventive-list">
+            <div class="preventive-care-item">
+              <div class="preventive-care-item-title">1. Early Risk Awareness</div>
+              <p class="preventive-care-item-desc">Prakruti assessment helps identify individual tendencies such as digestive problems, stress sensitivity, sleep disturbances, or seasonal imbalances before they become persistent concerns.</p>
+            </div>
+            <div class="preventive-care-item">
+              <div class="preventive-care-item-title">2. Personalized Prevention</div>
+              <p class="preventive-care-item-desc">Dosha-specific diet, daily routine, seasonal care, sleep, and exercise can help maintain digestion, energy, sleep quality, and overall balance.</p>
+            </div>
+            <div class="preventive-care-item">
+              <div class="preventive-care-item-title">3. Long-Term Health Protection</div>
+              <p class="preventive-care-item-desc">Living according to Prakruti may help reduce lifestyle-related imbalances, support immunity and healthy metabolism, and promote sustained physical and mental well-being.</p>
+            </div>
+          </div>
+        </div>
 
         <!-- Action Button (Switches to Dashboard View) -->
         <a href="dashboard/dashboard.html" class="btn-primary btn-explore" id="explorePackagesBtn">

@@ -4061,4 +4061,165 @@ body:not(.is-dashboard-active) .dashboard-view-wrapper {
 .terms-legal-link:hover {
   color: var(--brand-terracotta-hover, #5d3318);
 }
+
+/* ========================================================
+   Ayurveda Prakruti Profile Result & Clinical Charting Styles
+   ======================================================== */
+.login-page-container:has(#prakrutiCard:not([style*="display: none"])),
+.login-page-container:has(#profileCard) {
+  max-width: 580px;
+}
+
+.profile-card {
+  max-width: 580px;
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.profile-icon-wrapper {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(20, 110, 102, 0.12), rgba(20, 110, 102, 0.04));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-teal, #146e66);
+  box-shadow: 0 4px 14px rgba(20, 110, 102, 0.1);
+}
+
+.profile-type-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.profile-dosha-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.dosha-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.dosha-badge-pill.vata {
+  background: #f0f9ff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.dosha-badge-pill.pitta {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #ffedd5;
+}
+
+.dosha-badge-pill.kapha {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.profile-description {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #374151;
+  background: #f8fafc;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border-left: 3.5px solid var(--primary-teal, #146e66);
+  text-align: left;
+  margin: 0;
+  width: 100%;
+}
+
+.profile-info-block {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: left;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.profile-info-block-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.profile-tendency-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.profile-tendency-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: #4b5563;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.profile-preventive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preventive-care-item {
+  background: #f0fdfa;
+  border: 1px solid #ccfbf1;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.preventive-care-item-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f766e;
+  margin-bottom: 4px;
+}
+
+.preventive-care-item-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334155;
+  margin: 0;
+}
+
 

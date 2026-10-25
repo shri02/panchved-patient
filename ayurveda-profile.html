@@ -56,10 +56,54 @@
         <!-- Profile Type Name -->
         <h2 class="profile-type-title" id="profileTypeName">--</h2>
 
-        <!-- Profile Description -->
+        <!-- Dosha Scores Breakdown Badges -->
+        <div class="profile-dosha-badges" id="profileDoshaBadges" style="display: none;">
+          <span class="dosha-badge-pill vata" id="vataBadgePill">💨 Vata: 0/8</span>
+          <span class="dosha-badge-pill pitta" id="pittaBadgePill">🔥 Pitta: 0/8</span>
+          <span class="dosha-badge-pill kapha" id="kaphaBadgePill">💧 Kapha: 0/8</span>
+        </div>
+
+        <!-- Profile Description / Lifestyle Guidance -->
         <p class="profile-description" id="profileDescription">
           Loading your Ayurveda profile...
         </p>
+
+        <!-- Health Tendencies Block -->
+        <div class="profile-info-block" id="healthTendenciesBlock" style="display: none;">
+          <div class="profile-info-block-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            <span>Health Tendencies to Watch</span>
+          </div>
+          <div class="profile-tendency-grid" id="healthTendencyGrid">
+            <!-- Dynamic Tendencies List -->
+          </div>
+        </div>
+
+        <!-- Preventive Healthcare Block (Show to all) -->
+        <div class="profile-info-block" id="preventiveCareBlock">
+          <div class="profile-info-block-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-teal, #146e66)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>Prakruti &amp; Preventive Healthcare</span>
+          </div>
+          <div class="profile-preventive-list">
+            <div class="preventive-care-item">
+              <div class="preventive-care-item-title">1. Early Risk Awareness</div>
+              <p class="preventive-care-item-desc">Prakruti assessment helps identify individual tendencies such as digestive problems, stress sensitivity, sleep disturbances, or seasonal imbalances before they become persistent concerns.</p>
+            </div>
+            <div class="preventive-care-item">
+              <div class="preventive-care-item-title">2. Personalized Prevention</div>
+              <p class="preventive-care-item-desc">Dosha-specific diet, daily routine, seasonal care, sleep, and exercise can help maintain digestion, energy, sleep quality, and overall balance.</p>
+            </div>
+            <div class="preventive-care-item">
+              <div class="preventive-care-item-title">3. Long-Term Health Protection</div>
+              <p class="preventive-care-item-desc">Living according to Prakruti may help reduce lifestyle-related imbalances, support immunity and healthy metabolism, and promote sustained physical and mental well-being.</p>
+            </div>
+          </div>
+        </div>
 
         <!-- Action Button (Navigates to Dashboard) -->
         <a href="dashboard/dashboard.html" class="btn-primary btn-explore" id="explorePackagesBtn">
@@ -95,6 +139,12 @@
       const explorePackagesBtn = document.getElementById('explorePackagesBtn');
       const profileTypeName = document.getElementById('profileTypeName');
       const profileDescription = document.getElementById('profileDescription');
+      const profileDoshaBadges = document.getElementById('profileDoshaBadges');
+      const vataBadgePill = document.getElementById('vataBadgePill');
+      const pittaBadgePill = document.getElementById('pittaBadgePill');
+      const kaphaBadgePill = document.getElementById('kaphaBadgePill');
+      const healthTendenciesBlock = document.getElementById('healthTendenciesBlock');
+      const healthTendencyGrid = document.getElementById('healthTendencyGrid');
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toastMsg');
 
@@ -109,6 +159,33 @@
         }, 3200);
       };
 
+      // Helper to render health tendencies
+      const renderTendencies = (tendencies) => {
+        if (!healthTendenciesBlock || !healthTendencyGrid) return;
+        if (Array.isArray(tendencies) && tendencies.length > 0) {
+          healthTendencyGrid.innerHTML = tendencies.map(t => `
+            <div class="profile-tendency-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>${t}</span>
+            </div>
+          `).join('');
+          healthTendenciesBlock.style.display = 'block';
+        } else {
+          healthTendenciesBlock.style.display = 'none';
+        }
+      };
+
+      // Default tendencies map fallback
+      const defaultTendenciesMap = {
+        'Vataj Prakruti': ['Joint pain and arthritis', 'Constipation', 'Insomnia', 'Nervous system disorders'],
+        'Pittaj Prakruti': ['Acidity and ulcers', 'Skin disorders', 'Inflammatory conditions', 'Hormonal imbalances'],
+        'Kaphaj Prakruti': ['Obesity', 'Diabetes', 'Respiratory disorders', 'Lethargy and depression']
+      };
+
       // Load dynamic assessment result if stored
       try {
         const storedUser = JSON.parse((localStorage.getItem('ocayur_user') || localStorage.getItem('panchved_user')) || 'null');
@@ -116,15 +193,38 @@
         const assessment = JSON.parse((localStorage.getItem('ocayur_prakruti_result') || localStorage.getItem('panchved_prakruti_result')) || 'null');
 
         if (assessment && (assessment.title || assessment.type)) {
-          if (profileTypeName) profileTypeName.textContent = assessment.title || assessment.type;
+          const title = assessment.title || assessment.type;
+          if (profileTypeName) profileTypeName.textContent = title;
           if (profileDescription && assessment.description) {
             profileDescription.textContent = assessment.description;
+          }
+
+          // Show dosha scores if available
+          if (profileDoshaBadges && (assessment.vata_score !== undefined || assessment.pitta_score !== undefined)) {
+            const vata = assessment.vata_score || 0;
+            const pitta = assessment.pitta_score || 0;
+            const kapha = assessment.kapha_score || 0;
+            const total = assessment.total_questions || 8;
+            if (vataBadgePill) vataBadgePill.textContent = `💨 Vata: ${vata}/${total}`;
+            if (pittaBadgePill) pittaBadgePill.textContent = `🔥 Pitta: ${pitta}/${total}`;
+            if (kaphaBadgePill) kaphaBadgePill.textContent = `💧 Kapha: ${kapha}/${total}`;
+            profileDoshaBadges.style.display = 'flex';
+          }
+
+          // Health tendencies
+          if (assessment.health_tendencies && assessment.health_tendencies.length > 0) {
+            renderTendencies(assessment.health_tendencies);
+          } else if (defaultTendenciesMap[title]) {
+            renderTendencies(defaultTendenciesMap[title]);
           }
         } else if (storedPatient?.prakruti || storedUser?.prakruti) {
           const dosha = storedPatient?.prakruti || storedUser?.prakruti;
           if (profileTypeName) profileTypeName.textContent = dosha;
           if (profileDescription) {
             profileDescription.textContent = `Your Ayurvedic constitutional profile reflects ${dosha}. Follow your customized dietary, herbal, and daily lifestyle routines recommended by your doctor.`;
+          }
+          if (defaultTendenciesMap[dosha]) {
+            renderTendencies(defaultTendenciesMap[dosha]);
           }
         } else {
           // Informative fallback

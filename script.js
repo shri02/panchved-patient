@@ -787,6 +787,9 @@ document.addEventListener('DOMContentLoaded', () => {
     skinType: '',
     hairType: '',
     bowelMovement: '',
+    stressResponse: '',
+    bodyTemperature: '',
+    physicalActivity: '',
     password: '',
     confirmPassword: ''
   };
@@ -1117,12 +1120,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const appetite = document.getElementById('appetiteInput')?.value;
       const sleepType = document.getElementById('sleepTypeInput')?.value;
-      const dream1 = document.getElementById('dream1Input')?.value;
       const skinType = document.getElementById('skinTypeInput')?.value;
       const hairType = document.getElementById('hairTypeInput')?.value;
+      const bowelMovement = document.getElementById('bowelMovementInput')?.value;
+      const stressResponse = document.getElementById('stressResponseInput')?.value;
+      const bodyTemperature = document.getElementById('bodyTemperatureInput')?.value;
+      const physicalActivity = document.getElementById('physicalActivityInput')?.value;
 
       if (!appetite) {
-        showToast('Please select your Appetite type.', true);
+        showToast('Please select your Appetite pattern.', true);
         document.querySelector('[data-select-id="appetite"] .custom-select-trigger')?.focus();
         return;
       }
@@ -1130,12 +1136,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!sleepType) {
         showToast('Please select your Sleep Type.', true);
         document.querySelector('[data-select-id="sleepType"] .custom-select-trigger')?.focus();
-        return;
-      }
-
-      if (!dream1) {
-        showToast('Please select your Dream pattern.', true);
-        document.querySelector('[data-select-id="dream1"] .custom-select-trigger')?.focus();
         return;
       }
 
@@ -1151,10 +1151,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const bowelMovement = document.getElementById('bowelMovementInput')?.value;
       if (!bowelMovement) {
         showToast('Please select your Bowel Movement.', true);
         document.querySelector('[data-select-id="bowelMovement"] .custom-select-trigger')?.focus();
+        return;
+      }
+
+      if (!stressResponse) {
+        showToast('Please select your Stress Response.', true);
+        document.querySelector('[data-select-id="stressResponse"] .custom-select-trigger')?.focus();
+        return;
+      }
+
+      if (!bodyTemperature) {
+        showToast('Please select your Body Temperature tendency.', true);
+        document.querySelector('[data-select-id="bodyTemperature"] .custom-select-trigger')?.focus();
+        return;
+      }
+
+      if (!physicalActivity) {
+        showToast('Please select your Physical Activity style.', true);
+        document.querySelector('[data-select-id="physicalActivity"] .custom-select-trigger')?.focus();
         return;
       }
 
@@ -1173,10 +1190,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // Save into registration state
       registrationState.appetite = appetite;
       registrationState.sleepType = sleepType;
-      registrationState.dream1 = dream1;
       registrationState.skinType = skinType;
       registrationState.hairType = hairType;
       registrationState.bowelMovement = bowelMovement;
+      registrationState.stressResponse = stressResponse;
+      registrationState.bodyTemperature = bodyTemperature;
+      registrationState.physicalActivity = physicalActivity;
       registrationState.termsAccepted = true;
 
       try {
