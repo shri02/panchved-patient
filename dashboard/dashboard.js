@@ -17,6 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fallback safety timeout for page loader
   setTimeout(hidePageLoader, 2500);
 
+  const escapeHtml = (str) => {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
   // Navigation & DOM Elements
   const mobileMenuToggle = document.getElementById('mobileMenuToggle');
   const dashboardSidebar = document.getElementById('dashboardSidebar');
