@@ -1082,4 +1082,583 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 350);
     });
   }
+
+  // ========================================================
+  // Direct Book Consultation Modal & Dynamic Doctor Engine
+  // ========================================================
+  const btnBookConsultCTA = document.getElementById('btnBookConsultCTA');
+  const cardBookConsultBtn = document.getElementById('cardBookConsultBtn');
+  const consultationModal = document.getElementById('consultationModal');
+  const closeConsultationModalBtn = document.getElementById('closeConsultationModalBtn');
+  const consultationBookingForm = document.getElementById('consultationBookingForm');
+  const submitConsultationBtn = document.getElementById('submitConsultationBtn');
+  const consultName = document.getElementById('consultName');
+  const consultMobile = document.getElementById('consultMobile');
+  const consultEmail = document.getElementById('consultEmail');
+  const consultDate = document.getElementById('consultDate');
+  const btnDateCalendar = document.getElementById('btnDateCalendar');
+  const nativeDatePicker = document.getElementById('nativeDatePicker');
+  const consultStartTime = document.getElementById('consultStartTime');
+  const btnStartTimeClock = document.getElementById('btnStartTimeClock');
+  const startTimeDropdown = document.getElementById('startTimeDropdown');
+  const consultDoctor = document.getElementById('consultDoctor');
+  const consultAgenda = document.getElementById('consultAgenda');
+
+  const parseTimeToMinutes = (tStr) => {
+    if (!tStr) return null;
+    const trimmed = tStr.trim();
+    const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([APap][Mm])?$/i);
+    if (!match) return null;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const meridian = (match[3] || '').toUpperCase();
+    if (meridian === 'PM' && hours < 12) hours += 12;
+    if (meridian === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  };
+
+  const minutesToFormattedTime = (totalMinutes) => {
+    if (totalMinutes === null || totalMinutes === undefined || isNaN(totalMinutes)) return '';
+    const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+    let h = Math.floor(normalized / 60);
+    const m = normalized % 60;
+    const meridian = h >= 12 ? 'PM' : 'AM';
+    let displayH = h % 12;
+    if (displayH === 0) displayH = 12;
+    const hh = String(displayH).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    return `${hh}:${mm} ${meridian}`;
+  };
+
+  const doctorSchedules = {
+    1: [ // Dr. Nidhi Jha: 08:00 AM - 01:00 PM, 05:00 PM - 09:00 PM
+      { start: 480, end: 780, text: '08:00 AM - 01:00 PM' },
+      { start: 1020, end: 1260, text: '05:00 PM - 09:00 PM' }
+    ],
+    2: [ // Dr. Rohit Mehra: 10:00 AM - 02:00 PM, 04:00 PM - 08:00 PM
+      { start: 600, end: 840, text: '10:00 AM - 02:00 PM' },
+      { start: 960, end: 1200, text: '04:00 PM - 08:00 PM' }
+    ],
+    3: [ // Dr. Priya Patel: 08:00 AM - 02:00 PM, 06:00 PM - 09:00 PM
+      { start: 480, end: 840, text: '08:00 AM - 02:00 PM' },
+      { start: 1080, end: 1260, text: '06:00 PM - 09:00 PM' }
+    ],
+    4: [ // Dr. Ankit Verma: 12:00 PM - 06:00 PM
+      { start: 720, end: 1080, text: '12:00 PM - 06:00 PM' }
+    ],
+    5: [ // Dr. Sneha Kulkarni: 03:00 PM - 09:00 PM
+      { start: 900, end: 1260, text: '03:00 PM - 09:00 PM' }
+    ]
+  };
+
+  const isDoctorAvailableAt = (doc, timeStr) => {
+    if (!timeStr) return true;
+    const timeMins = parseTimeToMinutes(timeStr);
+    if (timeMins === null) return true;
+    const docId = parseInt(doc.id, 10);
+    const schedule = doc.schedule || doctorSchedules[docId] || [
+      { start: 540, end: 1140, text: '09:00 AM - 07:00 PM' }
+    ];
+    return schedule.some(slot => {
+      const s = slot.start_min !== undefined ? slot.start_min : slot.start;
+      const e = slot.end_min !== undefined ? slot.end_min : slot.end;
+      return timeMins >= s && timeMins < e;
+    });
+  };
+
+  let activeDoctorsList = [];
+
+  const renderDoctorSelectOptions = (doctors, preservedDoctor = '', placeholderText = 'Select Doctor') => {
+    if (!consultDoctor) return;
+    let hasPreservedMatch = false;
+    const optionsHtml = doctors.map(doc => {
+      const isSelected = preservedDoctor && doc.name === preservedDoctor;
+      if (isSelected) hasPreservedMatch = true;
+      return `<option value="${escapeHtml(doc.name)}" data-id="${doc.id}" data-role="${escapeHtml(doc.role || doc.expertise || 'Ayurveda Physician')}" data-initials="${escapeHtml(doc.initials || 'DR')}" ${isSelected ? 'selected' : ''}>${escapeHtml(doc.name)}${doc.role ? (' - ' + escapeHtml(doc.role)) : ''}</option>`;
+    }).join('');
+
+    consultDoctor.innerHTML = `<option value="" disabled ${!hasPreservedMatch ? 'selected' : ''}>${placeholderText}</option>` + optionsHtml;
+    if (hasPreservedMatch) {
+      consultDoctor.value = preservedDoctor;
+    } else {
+      consultDoctor.selectedIndex = 0;
+    }
+  };
+
+  const updateDoctorsForStartTime = (selectedTime) => {
+    if (!consultDoctor) return;
+    const time = selectedTime !== undefined ? selectedTime : (consultStartTime?.value.trim() || '');
+    const currentSelected = consultDoctor.value;
+
+    if (!time) {
+      renderDoctorSelectOptions(activeDoctorsList, currentSelected, 'Select Doctor');
+      return;
+    }
+
+    const availableDocs = activeDoctorsList.filter(doc => isDoctorAvailableAt(doc, time));
+    if (availableDocs.length === 0) {
+      consultDoctor.innerHTML = `<option value="" disabled selected>No doctors available at ${escapeHtml(time)}</option>`;
+      consultDoctor.selectedIndex = 0;
+    } else {
+      renderDoctorSelectOptions(availableDocs, currentSelected, `Select Doctor (${availableDocs.length} available)`);
+    }
+  };
+
+  const fetchDoctorsFromDB = async () => {
+    try {
+      const res = await fetch('../api/doctors.php');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.doctors) && data.doctors.length > 0) {
+          activeDoctorsList = data.doctors;
+          updateDoctorsForStartTime(consultStartTime?.value.trim() || '');
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Notice: Backend fetch doctors error:', e);
+    }
+    activeDoctorsList = [
+      { id: 1, name: 'Dr. Nidhi Jha', role: 'Ayurveda Physician (Pediatrics & Gynecology)', initials: 'NJ' },
+      { id: 2, name: 'Dr. Rohit Mehra', role: 'Physiotherapist (Pune)', initials: 'RM' },
+      { id: 3, name: 'Dr. Priya Patel', role: 'Panchakarma Specialist', initials: 'PP' },
+      { id: 4, name: 'Dr. Ankit Verma', role: 'Ayurvedic Consultant (Chronic Disease Management)', initials: 'AV' },
+      { id: 5, name: 'Dr. Sneha Kulkarni', role: 'Neuro-Physiotherapist (Neurological Rehab)', initials: 'SK' }
+    ];
+    updateDoctorsForStartTime(consultStartTime?.value.trim() || '');
+  };
+
+  fetchDoctorsFromDB();
+
+  if (consultName) {
+    consultName.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/[0-9]/g, '');
+    });
+  }
+
+  if (consultMobile) {
+    consultMobile.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    });
+  }
+
+  if (nativeDatePicker) {
+    const todayISO = new Date().toISOString().split('T')[0];
+    nativeDatePicker.setAttribute('min', todayISO);
+  }
+
+  if (btnDateCalendar && nativeDatePicker && consultDate) {
+    btnDateCalendar.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        if (nativeDatePicker.showPicker) {
+          nativeDatePicker.showPicker();
+        } else {
+          nativeDatePicker.focus();
+        }
+      } catch (err) {
+        nativeDatePicker.focus();
+      }
+    });
+
+    consultDate.addEventListener('click', () => {
+      if (!consultDate.value) {
+        try {
+          if (nativeDatePicker.showPicker) nativeDatePicker.showPicker();
+        } catch (err) {}
+      }
+    });
+
+    nativeDatePicker.addEventListener('change', () => {
+      if (nativeDatePicker.value) {
+        const parts = nativeDatePicker.value.split('-');
+        if (parts.length === 3) {
+          const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          const formatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          consultDate.value = formatted;
+        } else {
+          consultDate.value = nativeDatePicker.value;
+        }
+      }
+    });
+  }
+
+  const parseTimeComponents = (tStr, defaultHour = '07', defaultMin = '00', defaultPeriod = 'PM') => {
+    if (!tStr) return { hour: defaultHour, minute: defaultMin, period: defaultPeriod };
+    const match = tStr.trim().match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])?$/i);
+    if (!match) return { hour: defaultHour, minute: defaultMin, period: defaultPeriod };
+    let h = parseInt(match[1], 10);
+    if (h === 0) h = 12;
+    const hourStr = String(h).padStart(2, '0');
+    const minStr = String(parseInt(match[2], 10)).padStart(2, '0');
+    const perStr = (match[3] || 'AM').toUpperCase();
+    return { hour: hourStr, minute: minStr, period: perStr };
+  };
+
+  const clockHoursList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+  const clockMinutesList = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+  const clockPeriodsList = ['AM', 'PM'];
+
+  const renderCompleteClockPicker = (dropdownEl, inputEl) => {
+    if (!dropdownEl || !inputEl) return;
+    let { hour, minute, period } = parseTimeComponents(inputEl.value, '07', '00', 'PM');
+    if (!clockMinutesList.includes(minute)) {
+      const minNum = parseInt(minute, 10);
+      const rounded = Math.round(minNum / 5) * 5 % 60;
+      minute = String(rounded).padStart(2, '0');
+    }
+
+    dropdownEl.innerHTML = `
+      <div class="clock-picker-header">
+        <span class="clock-header-title">Start Time</span>
+        <div class="clock-digital-display">
+          <span class="clock-digit-box clock-hour-disp">${hour}</span>
+          <span class="clock-colon">:</span>
+          <span class="clock-digit-box clock-min-disp">${minute}</span>
+          <span class="clock-period-badge clock-period-disp">${period}</span>
+        </div>
+      </div>
+      <div class="clock-picker-body">
+        <div class="clock-col">
+          <div class="clock-col-header">Hour</div>
+          <div class="clock-col-scroll clock-hours-scroll">
+            ${clockHoursList.map(h => `<button type="button" class="clock-unit-btn ${h === hour ? 'active' : ''}" data-unit="hour" data-val="${h}">${h}</button>`).join('')}
+          </div>
+        </div>
+        <div class="clock-col">
+          <div class="clock-col-header">Min</div>
+          <div class="clock-col-scroll clock-mins-scroll">
+            ${clockMinutesList.map(m => `<button type="button" class="clock-unit-btn ${m === minute ? 'active' : ''}" data-unit="minute" data-val="${m}">${m}</button>`).join('')}
+          </div>
+        </div>
+        <div class="clock-col">
+          <div class="clock-col-header">Period</div>
+          <div class="clock-col-scroll clock-period-scroll">
+            ${clockPeriodsList.map(p => `<button type="button" class="clock-unit-btn ${p === period ? 'active' : ''}" data-unit="period" data-val="${p}">${p}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="clock-picker-footer">
+        <div class="clock-hint-wrap">Standard session: 45 min</div>
+        <button type="button" class="clock-btn-apply">Set Time</button>
+      </div>
+    `;
+
+    setTimeout(() => {
+      const activeHour = dropdownEl.querySelector('.clock-hours-scroll .clock-unit-btn.active');
+      const activeMin = dropdownEl.querySelector('.clock-mins-scroll .clock-unit-btn.active');
+      if (activeHour) activeHour.scrollIntoView({ block: 'nearest' });
+      if (activeMin) activeMin.scrollIntoView({ block: 'nearest' });
+    }, 10);
+  };
+
+  const setupTimePicker = (inputEl, btnEl, dropdownEl) => {
+    if (!inputEl || !btnEl || !dropdownEl) return;
+
+    const toggleDropdown = (show) => {
+      const willShow = show !== undefined ? show : !dropdownEl.classList.contains('active');
+      if (willShow) {
+        document.querySelectorAll('.time-picker-dropdown.active').forEach(d => {
+          if (d !== dropdownEl) d.classList.remove('active');
+        });
+        renderCompleteClockPicker(dropdownEl, inputEl);
+        dropdownEl.classList.add('active');
+      } else {
+        dropdownEl.classList.remove('active');
+      }
+    };
+
+    btnEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleDropdown();
+    });
+
+    inputEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown(true);
+    });
+
+    inputEl.addEventListener('focus', () => {
+      toggleDropdown(true);
+    });
+
+    dropdownEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const unitBtn = e.target.closest('.clock-unit-btn');
+      if (unitBtn) {
+        const unit = unitBtn.getAttribute('data-unit');
+        const val = unitBtn.getAttribute('data-val');
+        const colScroll = unitBtn.closest('.clock-col-scroll');
+        if (colScroll) {
+          colScroll.querySelectorAll('.clock-unit-btn').forEach(b => b.classList.remove('active'));
+          unitBtn.classList.add('active');
+        }
+
+        if (unit === 'hour') {
+          const hDisp = dropdownEl.querySelector('.clock-hour-disp');
+          if (hDisp) hDisp.textContent = val;
+        } else if (unit === 'minute') {
+          const mDisp = dropdownEl.querySelector('.clock-min-disp');
+          if (mDisp) mDisp.textContent = val;
+        } else if (unit === 'period') {
+          const pDisp = dropdownEl.querySelector('.clock-period-disp');
+          if (pDisp) pDisp.textContent = val;
+        }
+        return;
+      }
+
+      const applyBtn = e.target.closest('.clock-btn-apply');
+      if (applyBtn) {
+        const h = dropdownEl.querySelector('.clock-hour-disp')?.textContent || '07';
+        const m = dropdownEl.querySelector('.clock-min-disp')?.textContent || '00';
+        const p = dropdownEl.querySelector('.clock-period-disp')?.textContent || 'PM';
+        const formatted = `${h}:${m} ${p}`;
+        inputEl.value = formatted;
+        dropdownEl.classList.remove('active');
+        updateDoctorsForStartTime(formatted);
+      }
+    });
+  };
+
+  setupTimePicker(consultStartTime, btnStartTimeClock, startTimeDropdown);
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.time-picker-container')) {
+      document.querySelectorAll('.time-picker-dropdown.active').forEach(d => d.classList.remove('active'));
+    }
+  });
+
+  const getLoggedInUserData = () => {
+    let name = '';
+    let phone = '';
+
+    const storages = [localStorage, sessionStorage];
+    for (const storage of storages) {
+      if (!storage) continue;
+
+      if (!name || !phone) {
+        try {
+          const pat = JSON.parse(storage.getItem('ocayur_patient') || storage.getItem('panchved_patient') || 'null');
+          if (pat && typeof pat === 'object') {
+            if (!name) name = pat.full_name || pat.fullName || pat.name || '';
+            if (!phone) phone = pat.phone_number || pat.phoneNumber || pat.phone || pat.mobile || '';
+          }
+        } catch (e) {}
+      }
+
+      if (!name || !phone) {
+        try {
+          const usr = JSON.parse(storage.getItem('ocayur_user') || storage.getItem('panchved_user') || storage.getItem('ocayur_patient_user') || 'null');
+          if (usr && typeof usr === 'object') {
+            if (!name) name = usr.full_name || usr.fullName || usr.name || usr.username || '';
+            if (!phone) phone = usr.phone_number || usr.phoneNumber || usr.phone || usr.mobile || '';
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (!phone && cachedPhone) phone = cachedPhone;
+    if (!name) {
+      const headerName = document.getElementById('userName')?.textContent?.trim();
+      if (headerName) name = headerName;
+    }
+
+    let cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+      cleanPhone = cleanPhone.slice(2);
+    } else if (cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.slice(-10);
+    }
+
+    return { name: name.trim(), phone: cleanPhone };
+  };
+
+  const openBookingModal = () => {
+    if (!consultationModal) return;
+
+    if (consultationBookingForm) consultationBookingForm.reset();
+
+    const userData = getLoggedInUserData();
+    if (consultName) {
+      consultName.value = userData.name;
+      consultName.readOnly = false;
+      consultName.disabled = false;
+    }
+    if (consultMobile) {
+      consultMobile.value = userData.phone;
+      consultMobile.readOnly = false;
+      consultMobile.disabled = false;
+    }
+
+    if (consultEmail) consultEmail.value = '';
+    if (consultDate) consultDate.value = '';
+    if (consultStartTime) consultStartTime.value = '';
+    if (consultAgenda) consultAgenda.value = '';
+    if (nativeDatePicker) nativeDatePicker.value = '';
+
+    updateDoctorsForStartTime('');
+    document.querySelectorAll('.time-picker-dropdown.active').forEach(d => d.classList.remove('active'));
+
+    consultationModal.classList.add('active');
+    consultationModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => (consultDate || consultName)?.focus(), 80);
+  };
+
+  const closeBookingModal = () => {
+    if (!consultationModal) return;
+    consultationModal.classList.remove('active');
+    consultationModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    document.querySelectorAll('.time-picker-dropdown.active').forEach(d => d.classList.remove('active'));
+  };
+
+  if (btnBookConsultCTA) {
+    btnBookConsultCTA.addEventListener('click', (e) => {
+      e.preventDefault();
+      openBookingModal();
+    });
+  }
+
+  if (cardBookConsultBtn) {
+    cardBookConsultBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openBookingModal();
+    });
+  }
+
+  if (closeConsultationModalBtn) {
+    closeConsultationModalBtn.addEventListener('click', () => closeBookingModal());
+  }
+
+  if (consultationBookingForm && submitConsultationBtn) {
+    consultationBookingForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const docVal = consultDoctor?.value.trim();
+      const name = consultName?.value.trim();
+      const mobile = consultMobile?.value.trim();
+      const email = consultEmail?.value.trim();
+      const date = consultDate?.value.trim();
+      const startTime = consultStartTime?.value.trim();
+      const agenda = consultAgenda?.value.trim();
+
+      if (!name) {
+        showToast('Please enter your full name.', true);
+        consultName?.focus();
+        return;
+      }
+      if (/\d/.test(name)) {
+        showToast('Full name should not contain numbers.', true);
+        consultName?.focus();
+        return;
+      }
+      if (!mobile || mobile.length !== 10) {
+        showToast('Please enter a valid 10-digit mobile number.', true);
+        consultMobile?.focus();
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        showToast('Please enter a valid email address.', true);
+        consultEmail?.focus();
+        return;
+      }
+      if (!date) {
+        showToast('Please select a date for consultation.', true);
+        consultDate?.focus();
+        return;
+      }
+      if (!startTime) {
+        showToast('Please select a start time.', true);
+        consultStartTime?.focus();
+        return;
+      }
+      if (!docVal) {
+        const availDocs = activeDoctorsList.filter(d => isDoctorAvailableAt(d, startTime));
+        if (availDocs.length === 0) {
+          showToast('No doctors are available at the selected start time. Please choose another time.', true);
+        } else {
+          showToast('Please select a doctor.', true);
+        }
+        consultDoctor?.focus();
+        return;
+      }
+      if (!agenda) {
+        showToast('Please enter your complaint for the consultation.', true);
+        consultAgenda?.focus();
+        return;
+      }
+
+      const selectedDocOption = consultDoctor.options[consultDoctor.selectedIndex];
+      const doctorName = docVal || 'Dr. Nidhi Jha';
+      const doctorRole = selectedDocOption?.getAttribute('data-role') || 'Ayurveda Physician';
+      const doctorInitials = selectedDocOption?.getAttribute('data-initials') || 'DR';
+      const doctorId = selectedDocOption?.getAttribute('data-id') || '1';
+
+      const startMins = parseTimeToMinutes(startTime);
+      const computedEndTime = startMins !== null ? minutesToFormattedTime(startMins + 45) : '';
+      const timeFormatted = computedEndTime ? `${startTime} - ${computedEndTime}` : startTime;
+
+      const bookingData = {
+        isConsultationCheckout: true,
+        doctorName: doctorName,
+        doctorRole: doctorRole,
+        doctorInitials: doctorInitials,
+        doctorId: doctorId,
+        patientName: name,
+        patientEmail: email,
+        patientPhone: mobile,
+        date: date,
+        startTime: startTime,
+        endTime: computedEndTime,
+        time: timeFormatted,
+        slot: timeFormatted,
+        complaint: agenda,
+        agenda: agenda || `Ayurvedic consultation with ${doctorName}`,
+        fee: '₹500.00'
+      };
+
+      try {
+        localStorage.setItem('ocayur_consultation_booking', JSON.stringify(bookingData));
+        localStorage.setItem('ocayur_checkout_type', 'consultation');
+      } catch (err) {
+        console.warn('localStorage error', err);
+      }
+
+      const originalHtml = submitConsultationBtn.innerHTML;
+      submitConsultationBtn.disabled = true;
+      submitConsultationBtn.style.opacity = '0.85';
+      submitConsultationBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation: spin 0.8s linear infinite;">
+          <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="#ffffff"></path>
+        </svg>
+        <span>Redirecting to Checkout...</span>
+      `;
+
+      setTimeout(() => {
+        submitConsultationBtn.disabled = false;
+        submitConsultationBtn.style.opacity = '1';
+        submitConsultationBtn.innerHTML = originalHtml;
+        closeBookingModal();
+        window.location.href = '../consultation/consultation-checkout.html';
+      }, 500);
+    });
+  }
+
+  // Backdrop click & ESC key handler for consultation modal
+  if (consultationModal) {
+    consultationModal.addEventListener('click', (e) => {
+      if (e.target === consultationModal) closeBookingModal();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && consultationModal && consultationModal.classList.contains('active')) {
+      closeBookingModal();
+    }
+  });
 });
