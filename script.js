@@ -884,6 +884,80 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Developer Console Login Bypass: bypass(number)
+  window.bypass = async function (number) {
+    if (!number) {
+      console.warn('Please provide a phone number. Example: bypass("9876543210")');
+      return 'Please provide a phone number. Example: bypass("9876543210")';
+    }
+
+    const phone = String(number).trim().replace(/[^\d+]/g, '');
+    console.log(`[Bypass] Initiating login bypass for phone: ${phone}...`);
+
+    let user = {
+      id: 1,
+      username: phone,
+      full_name: 'Patient User',
+      email: 'patient@ocayur.com',
+      phone_number: phone,
+      role: 'Patient'
+    };
+
+    let patient = {
+      id: 1,
+      patient_id: 'P001',
+      full_name: 'Patient User',
+      phone_number: phone,
+      email: 'patient@ocayur.com',
+      dob: '1995-01-01',
+      age: 30,
+      gender: 'Male',
+      package_name: 'Ayurveda Holistic Care',
+      status: 'Ongoing'
+    };
+
+    // Attempt to fetch matching patient profile from backend
+    try {
+      const res = await fetch(`api/dashboard_stats.php?phone=${encodeURIComponent(phone)}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.patient) {
+          patient = { ...patient, ...data.patient };
+          if (data.patient.full_name) user.full_name = data.patient.full_name;
+          if (data.patient.id) user.id = data.patient.id;
+        }
+      }
+    } catch (e) {
+      console.log('[Bypass] Using default patient fallback session.');
+    }
+
+    // Set localStorage credentials
+    try {
+      localStorage.removeItem('ocayur_booked_packages');
+      localStorage.removeItem('panchved_booked_packages');
+
+      localStorage.setItem('ocayur_patient_user', JSON.stringify(user));
+      localStorage.setItem('panchved_patient_user', JSON.stringify(user));
+      localStorage.setItem('ocayur_user', JSON.stringify(user));
+
+      localStorage.setItem('ocayur_patient', JSON.stringify(patient));
+      localStorage.setItem('panchved_patient', JSON.stringify(patient));
+    } catch (err) {
+      console.error('[Bypass] Error saving session to localStorage:', err);
+    }
+
+    console.log(`[Bypass] Authenticated as ${patient.full_name} (${phone}). Redirecting to dashboard...`);
+    showToast(`Bypass login successful for ${phone}! Redirecting...`);
+
+    setTimeout(() => {
+      window.location.href = 'dashboard/dashboard.html';
+    }, 350);
+
+    return `Bypassing login for ${phone}... Redirecting to dashboard...`;
+  };
+
   // 8. Form 2: Personal Details Submission (Step 1/3 -> Step 2/3)
   const personalDetailsForm = document.getElementById('personalDetailsForm');
   const continueBtn = document.getElementById('continueBtn');
