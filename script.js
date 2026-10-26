@@ -1058,84 +1058,113 @@ document.addEventListener("DOMContentLoaded", () => {
   // Developer Console Login Bypass: bypass(number)
   window.bypass = async function (number) {
     if (!number) {
+      const phoneInput = document.getElementById("phoneNumberInput");
+      if (phoneInput && phoneInput.value.trim()) {
+        number = phoneInput.value.trim();
+      }
+    }
+
+    if (!number) {
       console.warn(
-        'Please provide a phone number. Example: bypass("9876543210")',
+        'Please provide a phone number. Example: bypass("9876543210") or enter phone number in the field',
       );
+      if (typeof showToast === "function") {
+        showToast("Please provide or enter a phone number to bypass login", true);
+      }
       return 'Please provide a phone number. Example: bypass("9876543210")';
     }
+
+    const countryCodeElem = document.getElementById("selectedCountryCode");
+    const countryCode = countryCodeElem
+      ? countryCodeElem.textContent.trim()
+      : "+91";
 
     const phone = String(number)
       .trim()
       .replace(/[^\d+]/g, "");
-    console.log(`[Bypass] Initiating login bypass for phone: ${phone}...`);
+    console.log(`[Bypass] Initiating login bypass via login.php for phone: ${phone}...`);
 
-    let user = {
-      id: 1,
-      username: phone,
-      full_name: "Patient User",
-      email: "patient@ocayur.com",
-      phone_number: phone,
-      role: "Patient",
-    };
+    if (typeof showToast === "function") {
+      showToast(`Logging in as ${phone}...`);
+    }
 
-    let patient = {
-      id: 1,
-      patient_id: "P001",
-      full_name: "Patient User",
-      phone_number: phone,
-      email: "patient@ocayur.com",
-      dob: "1995-01-01",
-      age: 30,
-      gender: "Male",
-      package_name: "",
-      status: "Ongoing",
-    };
-
-    // Attempt to fetch matching patient profile from backend
     try {
-      const res = await fetch(
-        `api/dashboard_stats.php?phone=${encodeURIComponent(phone)}`,
-        {
-          headers: { Accept: "application/json" },
+      const response = await fetch("api/login.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.success && data.patient) {
-          patient = { ...patient, ...data.patient };
-          if (data.patient.full_name) user.full_name = data.patient.full_name;
-          if (data.patient.id) user.id = data.patient.id;
+        body: JSON.stringify({
+          phone: phone,
+          bypass: true,
+          country_code: countryCode,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        try {
+          localStorage.removeItem("ocayur_booked_packages");
+          localStorage.removeItem("panchved_booked_packages");
+        } catch (e) {}
+
+        if (result.user) {
+          try {
+            localStorage.setItem(
+              "ocayur_patient_user",
+              JSON.stringify(result.user),
+            );
+            localStorage.setItem(
+              "panchved_patient_user",
+              JSON.stringify(result.user),
+            );
+            localStorage.setItem("ocayur_user", JSON.stringify(result.user));
+          } catch (e) {}
         }
+        if (result.patient) {
+          try {
+            localStorage.setItem(
+              "ocayur_patient",
+              JSON.stringify(result.patient),
+            );
+            localStorage.setItem(
+              "panchved_patient",
+              JSON.stringify(result.patient),
+            );
+          } catch (e) {}
+        }
+
+        console.log(
+          `[Bypass] Authenticated as ${result.patient?.full_name || result.user?.full_name || phone}. Redirecting to dashboard...`,
+        );
+        if (typeof showToast === "function") {
+          showToast(
+            result.message || `Login successful for ${phone}! Redirecting...`,
+          );
+        }
+
+        setTimeout(() => {
+          window.location.href = "dashboard/dashboard.html";
+        }, 350);
+
+        return `Bypassing login for ${phone}... Redirecting to dashboard...`;
+      } else {
+        const errMsg = result.message || "Bypass login failed.";
+        console.error("[Bypass] Failed:", errMsg);
+        if (typeof showToast === "function") {
+          showToast(errMsg, true);
+        }
+        return `Bypass failed: ${errMsg}`;
       }
-    } catch (e) {
-      console.log("[Bypass] Using default patient fallback session.");
-    }
-
-    // Set localStorage credentials
-    try {
-      localStorage.removeItem("ocayur_booked_packages");
-      localStorage.removeItem("panchved_booked_packages");
-
-      localStorage.setItem("ocayur_patient_user", JSON.stringify(user));
-      localStorage.setItem("panchved_patient_user", JSON.stringify(user));
-      localStorage.setItem("ocayur_user", JSON.stringify(user));
-
-      localStorage.setItem("ocayur_patient", JSON.stringify(patient));
-      localStorage.setItem("panchved_patient", JSON.stringify(patient));
     } catch (err) {
-      console.error("[Bypass] Error saving session to localStorage:", err);
+      console.error("[Bypass] Error communicating with api/login.php:", err);
+      if (typeof showToast === "function") {
+        showToast("Connection error during bypass login.", true);
+      }
+      return `Bypass network error: ${err.message}`;
     }
-
-    console.log(
-      `[Bypass] Authenticated as ${patient.full_name} (${phone}). Redirecting to dashboard...`,
-    );
-    showToast(`Bypass login successful for ${phone}! Redirecting...`);
-
-    setTimeout(() => {
-      window.location.href = "dashboard/dashboard.html";
-    }, 350);
-
-    return `Bypassing login for ${phone}... Redirecting to dashboard...`;
   };
 
   // 8. Form 2: Personal Details Submission (Step 1/3 -> Step 2/3)
