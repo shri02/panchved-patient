@@ -466,7 +466,7 @@ if ($uInStmt) {
 $bloodGroup = isset($data['bloodGroup']) ? trim($data['bloodGroup']) : (isset($data['blood_group']) ? trim($data['blood_group']) : 'O+');
 $emergencyContact = isset($data['emergencyContact']) ? trim($data['emergencyContact']) : (isset($data['emergency_contact']) ? trim($data['emergency_contact']) : '');
 $address = isset($data['address']) ? trim($data['address']) : '';
-$packageName = isset($data['packageName']) ? trim($data['packageName']) : (isset($data['package_name']) ? trim($data['package_name']) : 'Ayurveda Holistic Care');
+$packageName = isset($data['packageName']) ? trim($data['packageName']) : (isset($data['package_name']) ? trim($data['package_name']) : '');
 $referralCode = isset($data['referralCode']) ? strtoupper(trim((string)$data['referralCode'])) : (isset($data['referral_code']) ? strtoupper(trim((string)$data['referral_code'])) : null);
 if ($referralCode === '') {
     $referralCode = null;

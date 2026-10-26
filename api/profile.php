@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || (isset($_GET['action']) && $_GET['ac
         'blood_group' => $patient['blood_group'] ?? 'O+',
         'emergency_contact' => $patient['emergency_contact'] ?? '',
         'address' => $patient['address'] ?? '',
-        'package_name' => $patient['package_name'] ?? 'Ayurveda Holistic Care',
+        'package_name' => $patient['package_name'] ?? '',
         'total_appointments' => (int)($patient['total_appointments'] ?? 0),
         'status' => $patient['status'] ?? 'Ongoing',
         'created_at' => $patient['created_at'] ?? '',

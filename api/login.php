@@ -189,7 +189,7 @@ if (!$patient) {
         'dob_formatted' => '01/01/2000',
         'age' => 25,
         'gender' => 'Male',
-        'package_name' => 'Ayurveda Holistic Care',
+        'package_name' => '',
         'status' => 'Ongoing'
     ];
 } else {
