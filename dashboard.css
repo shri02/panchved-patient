@@ -1,5 +1,5 @@
 /* Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap");
 
 :root {
   /* ========================================================
@@ -53,9 +53,14 @@
   --border-card: #ece5d9;
 
   /* Shadows & Radii */
-  --card-shadow: 0 1px 3px 0 rgba(72, 72, 49, 0.05), 0 1px 2px -1px rgba(114, 63, 30, 0.04);
-  --card-shadow-hover: 0 6px 16px -2px rgba(72, 72, 49, 0.08), 0 3px 6px -2px rgba(114, 63, 30, 0.05);
-  --dropdown-shadow: 0 10px 25px -5px rgba(72, 72, 49, 0.12), 0 8px 10px -6px rgba(114, 63, 30, 0.06);
+  --card-shadow:
+    0 1px 3px 0 rgba(72, 72, 49, 0.05), 0 1px 2px -1px rgba(114, 63, 30, 0.04);
+  --card-shadow-hover:
+    0 6px 16px -2px rgba(72, 72, 49, 0.08),
+    0 3px 6px -2px rgba(114, 63, 30, 0.05);
+  --dropdown-shadow:
+    0 10px 25px -5px rgba(72, 72, 49, 0.12),
+    0 8px 10px -6px rgba(114, 63, 30, 0.06);
 
   --radius-card: 14px;
   --radius-btn: 8px;
@@ -75,7 +80,15 @@
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', 'Outfit', 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    "Plus Jakarta Sans",
+    "Outfit",
+    "Montserrat",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   background-color: var(--bg-page);
   color: var(--text-main);
   min-height: 100vh;
@@ -308,7 +321,7 @@ body {
 }
 
 .dashboard-heading {
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: "Outfit", "Inter", sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: #111827;
@@ -430,7 +443,7 @@ body {
 }
 
 .stat-card-value {
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
   font-size: 34px;
   font-weight: 700;
   color: var(--text-main);
@@ -439,7 +452,7 @@ body {
 
 /* Common Section Card Titles */
 .section-card-title {
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: #111827;
@@ -727,7 +740,7 @@ body {
 }
 
 .metric-value {
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: #111827;
@@ -855,7 +868,6 @@ body {
   color: #94a3b8;
 }
 
-
 .chart-col {
   flex: 1;
   display: flex;
@@ -886,7 +898,10 @@ body {
 .bar-fill {
   width: 100%;
   border-radius: 3px 3px 0 0;
-  transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.2s ease,
+    transform 0.2s ease;
   cursor: pointer;
 }
 
@@ -1032,8 +1047,12 @@ body {
 }
 
 @keyframes fadeInModal {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-card {
@@ -1041,14 +1060,24 @@ body {
   border-radius: 14px;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-height: 90vh;
+  overflow: auto;
 }
 
 @keyframes slideUpModal {
-  from { transform: translateY(12px) scale(0.98); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
+  from {
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 .modal-header {
@@ -1060,7 +1089,7 @@ body {
 }
 
 .modal-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
@@ -1145,7 +1174,9 @@ body {
   width: 100%;
   max-width: 600px;
   padding: 28px 32px 32px 32px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   position: relative;
   animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -1164,7 +1195,7 @@ body {
 }
 
 .reading-modal-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: var(--brand-olive);
@@ -1239,7 +1270,9 @@ body {
   font-size: 14px;
   color: #1e293b;
   background-color: #ffffff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
   outline: none;
   font-family: inherit;
 }
@@ -1294,7 +1327,9 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
   z-index: 2;
 }
 
@@ -1318,7 +1353,9 @@ body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1381,7 +1418,9 @@ body {
   width: 100%;
   max-width: 580px;
   padding: 24px 28px 28px 28px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   position: relative;
   animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -1418,7 +1457,7 @@ body {
 }
 
 .view-diet-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 19px;
   font-weight: 700;
   color: #1e293b;
@@ -1553,17 +1592,19 @@ body {
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  background-color: #723F1E;
+  background-color: #723f1e;
   color: #ffffff;
   border-radius: 6px;
   font-size: 12.5px;
   font-weight: 600;
   text-decoration: none;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .btn-diet-pdf-view:hover {
-  background-color: #5D3318;
+  background-color: #5d3318;
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -1604,7 +1645,7 @@ body {
 }
 
 .analytics-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-main);
@@ -1688,7 +1729,7 @@ body {
 }
 
 .axis-label {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 11.5px;
   fill: #94a3b8;
   font-weight: 500;
@@ -1720,7 +1761,10 @@ body {
 /* Chart Data Points */
 .chart-data-dot {
   cursor: pointer;
-  transition: transform 0.2s ease, r 0.2s ease, fill 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    r 0.2s ease,
+    fill 0.2s ease;
 }
 
 .chart-data-dot.outer {
@@ -1749,7 +1793,10 @@ body {
   text-align: center;
   white-space: nowrap;
   opacity: 1;
-  transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1), top 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  transition:
+    left 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    top 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.2s ease;
   z-index: 20;
 }
 
@@ -1762,7 +1809,7 @@ body {
 }
 
 .tooltip-val {
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
   font-size: 14.5px;
   font-weight: 700;
   color: #111827;
@@ -2138,7 +2185,7 @@ body {
 }
 
 .profile-type-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 21px;
   font-weight: 700;
   color: #111827;
@@ -2174,7 +2221,9 @@ body {
   justify-content: center;
   padding: 4px;
   border-radius: 4px;
-  transition: color 0.2s ease, transform 0.15s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.15s ease;
   flex-shrink: 0;
   margin-left: 6px;
 }
@@ -2209,7 +2258,7 @@ body {
 }
 
 .profile-section-heading {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-main);
@@ -2289,7 +2338,9 @@ body {
   height: 100%;
   width: 0%;
   border-radius: 4px;
-  transition: width 0.3s ease, background-color 0.3s ease;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
 }
 
 .strength-label {
@@ -2380,7 +2431,9 @@ body {
   justify-content: center;
   padding: 4px;
   border-radius: 4px;
-  transition: color 0.2s ease, transform 0.15s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.15s ease;
   margin-left: 0;
 }
 
@@ -2445,7 +2498,7 @@ body {
 }
 
 .package-title {
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
   font-size: 16.5px;
   font-weight: 700;
   color: var(--text-main);
@@ -2801,7 +2854,7 @@ body {
 }
 
 .package-detail-title {
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--text-main);
@@ -2882,7 +2935,7 @@ body {
 }
 
 .package-section-heading {
-  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
   font-size: 13.5px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -2911,7 +2964,7 @@ body {
   border-radius: 50%;
   background-color: #f1f3ea;
   color: var(--brand-olive);
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-weight: 700;
   font-size: 15px;
   display: flex;
@@ -3014,7 +3067,7 @@ body {
 }
 
 .modal-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 21px;
   font-weight: 700;
   color: var(--primary-teal);
@@ -3305,7 +3358,9 @@ body {
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 0 14px 35px -6px rgba(0, 0, 0, 0.18), 0 6px 12px -4px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 14px 35px -6px rgba(0, 0, 0, 0.18),
+    0 6px 12px -4px rgba(0, 0, 0, 0.08);
   z-index: 200;
   display: none;
   overflow: hidden;
@@ -3344,7 +3399,7 @@ body {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 16px;
   font-weight: 700;
 }
@@ -3555,7 +3610,7 @@ body {
 }
 
 .checkout-card-title {
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: "Outfit", "Inter", sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
@@ -3575,7 +3630,7 @@ body {
   border-radius: 50%;
   background-color: var(--brand-olive);
   color: #ffffff;
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-weight: 700;
   font-size: 16px;
   display: flex;
@@ -3610,7 +3665,7 @@ body {
 }
 
 .checkout-workshop-title {
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: "Outfit", "Inter", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: #111827;
@@ -3689,7 +3744,8 @@ body {
   margin: 0;
 }
 
-.detail-email, .detail-phone {
+.detail-email,
+.detail-phone {
   font-size: 13.5px;
   color: #4b5563;
   margin: 0;
@@ -3753,7 +3809,9 @@ body {
   padding: 14px 18px;
   cursor: pointer;
   background-color: #ffffff;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
   user-select: none;
 }
 
@@ -3795,7 +3853,7 @@ body {
 }
 
 .payment-method-item.active .custom-radio::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 3px;
   left: 3px;
@@ -3852,7 +3910,7 @@ body {
 }
 
 .summary-card-title {
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: "Outfit", "Inter", sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
@@ -3894,14 +3952,14 @@ body {
 }
 
 .total-label {
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: "Outfit", "Inter", sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
 }
 
 .total-amount {
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: "Outfit", "Inter", sans-serif;
   font-size: 17px;
   font-weight: 800;
   color: #111827;
@@ -3917,7 +3975,9 @@ body {
   font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3970,7 +4030,7 @@ body {
 }
 
 .success-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: var(--text-main);
@@ -4087,7 +4147,7 @@ body {
 }
 
 .logout-modal-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: #0f172a;
@@ -4553,7 +4613,7 @@ body {
 }
 
 .view-modal-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: #0f172a;
@@ -4635,7 +4695,7 @@ body {
 }
 
 .rx-document-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 20px;
   font-weight: 800;
   letter-spacing: 1.5px;
@@ -4868,7 +4928,7 @@ body {
 }
 
 .workshop-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: var(--text-main);
@@ -5021,7 +5081,7 @@ body {
 }
 
 .workshop-detail-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--text-main);
@@ -5262,7 +5322,7 @@ body {
 
 .courses-empty-title,
 .packages-empty-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: var(--text-main);
@@ -5287,7 +5347,7 @@ body {
   color: #ffffff;
   padding: 11px 22px;
   border-radius: var(--radius-btn);
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -5325,7 +5385,9 @@ body {
   z-index: 99999;
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s ease;
+  transition:
+    opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.35s ease;
 }
 
 .page-loader-overlay.hidden {
@@ -5343,7 +5405,9 @@ body {
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 18px;
-  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1), 0 8px 15px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 35px -10px rgba(0, 0, 0, 0.1),
+    0 8px 15px -5px rgba(0, 0, 0, 0.04);
   transform: scale(1);
   transition: transform 0.3s ease;
 }
@@ -5362,12 +5426,16 @@ body {
 }
 
 @keyframes pageLoaderSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .page-loader-text {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 15px;
   font-weight: 600;
   color: var(--text-main);
@@ -5406,7 +5474,7 @@ body {
 }
 
 .active-package-heading {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-main);
@@ -5439,7 +5507,7 @@ body {
 }
 
 .active-package-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: #0f172a;
@@ -5490,7 +5558,7 @@ body {
 }
 
 .payment-history-heading {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--text-main);
@@ -5658,7 +5726,7 @@ body {
 }
 
 .receipt-main-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: 1px;
@@ -6011,7 +6079,8 @@ body {
 
 @media print {
   /* 1. Global Reset for Print */
-  html, body {
+  html,
+  body {
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
