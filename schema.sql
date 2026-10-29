@@ -318,6 +318,38 @@ CREATE TABLE IF NOT EXISTS `patient_diets` (
   KEY `idx_diet_patient_id` (`patient_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ----------------------------------------------------------------------------
+-- Table: prescriptions
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `prescriptions` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `prescription_code` VARCHAR(50) DEFAULT NULL,
+  `patient_id` INT(11) NOT NULL,
+  `patient_name` VARCHAR(150) NOT NULL,
+  `doctor_id` INT(11) DEFAULT 1,
+  `doctor_name` VARCHAR(150) NOT NULL DEFAULT 'Doctor',
+  `doctor_specialty` VARCHAR(150) NOT NULL DEFAULT 'Ayurvedic Medicine',
+  `doctor_phone` VARCHAR(50) NOT NULL DEFAULT '+91 7896543210',
+  `doctor_email` VARCHAR(150) NOT NULL DEFAULT 'care@ocayur.com',
+  `appointment_id` INT(11) DEFAULT NULL,
+  `prescription_date` DATE NOT NULL,
+  `prescription_time` VARCHAR(30) NOT NULL DEFAULT '11:20 AM',
+  `medical_history` TEXT DEFAULT NULL,
+  `symptoms` TEXT DEFAULT NULL,
+  `diagnosis` VARCHAR(255) NOT NULL DEFAULT 'General Assessment',
+  `diagnosis_duration` VARCHAR(100) NOT NULL DEFAULT '',
+  `medications` LONGTEXT DEFAULT NULL,
+  `examination_findings` TEXT DEFAULT NULL,
+  `notes` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_rx_code` (`prescription_code`),
+  KEY `fk_rx_patient` (`patient_id`),
+  KEY `fk_rx_doctor` (`doctor_id`),
+  KEY `fk_rx_appointment` (`appointment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 COMMIT;
 
 

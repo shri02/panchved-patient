@@ -16,6 +16,34 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <style>
+      @media print {
+        body * {
+          visibility: hidden !important;
+        }
+        #prescriptionModal, #prescriptionModal * {
+          visibility: visible !important;
+        }
+        #prescriptionModal {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+          display: block !important;
+        }
+        .modal-card.prescription-card {
+          box-shadow: none !important;
+          border: 1px solid #cbd5e1 !important;
+          max-width: 100% !important;
+        }
+        .modal-close-btn, .modal-backdrop, .mobile-nav-bar, .patient-sidebar, .page-header {
+          display: none !important;
+        }
+      }
+    </style>
   </head>
   <body>
     <!-- Page Loader Overlay -->
