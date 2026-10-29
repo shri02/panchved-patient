@@ -23,6 +23,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/activity_logger.php';
 
 // Helper function to return standardized JSON response
 function sendJsonResponse($success, $message, $data = [], $statusCode = 200) {
@@ -611,6 +612,30 @@ $_SESSION['phone_number'] = $phoneDigits;
 $_SESSION['email'] = $email;
 $_SESSION['role'] = 'Patient';
 $_SESSION['patient_id'] = $finalPatientId;
+
+// Audit log
+recordActivity(
+    $connection1,
+    'Patient',
+    'patient.registered',
+    "Patient {$fullName} ({$finalPatientId}) registered an account",
+    'Patient',
+    (int)$patientRecordId,
+    $fullName,
+    [
+        'patient_id' => $finalPatientId,
+        'user_id' => (int)$userId,
+        'phone_number' => $phoneDigits,
+        'email' => $email,
+        'gender' => $gender,
+        'age' => $age,
+        'profile_type' => $profileType,
+        'referral_code' => $referralCode
+    ],
+    'Patient',
+    (int)$userId,
+    $fullName
+);
 
 // Send Success Response
 sendJsonResponse(true, 'Account created successfully! Welcome to Ocayur.', [

@@ -19,6 +19,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/activity_logger.php';
 
 function sendJsonResponse($success, $message, $data = [], $statusCode = 200) {
     http_response_code($statusCode);
@@ -484,6 +485,35 @@ if ($inStmt = mysqli_prepare($connection1, $insertQuery)) {
     mysqli_stmt_execute($inStmt);
     mysqli_stmt_close($inStmt);
 }
+
+$actor = getCurrentActor('Patient');
+$patId = $actor['user_id'] ?: ($patientDbId ?: null);
+$patName = $actor['user_name'] ?: ($patientName ?: 'Patient');
+
+recordActivity(
+    $connection1,
+    'Consultation',
+    'consultation.requested',
+    "Patient {$patName} requested consultation with Dr. {$doctorName} on {$appointmentDate} at {$appointmentTime}",
+    'Consultation',
+    $patientDbId ?: null,
+    $appointmentCode,
+    [
+        'appointment_id' => $appointmentCode,
+        'patient_id' => $patientDbId,
+        'patient_name' => $patName,
+        'doctor_id' => $doctorDbId,
+        'doctor_name' => $doctorName,
+        'appointment_date' => $appointmentDate,
+        'appointment_time' => $appointmentTime,
+        'duration' => $duration,
+        'complaint' => $agenda,
+        'amount' => $amount
+    ],
+    'Patient',
+    $patId,
+    $patName
+);
 
 sendJsonResponse(true, 'Consultation appointment booked successfully!', [
     'booking_id' => '#' . $bookingIdNumber,

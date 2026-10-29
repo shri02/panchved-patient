@@ -22,6 +22,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/activity_logger.php';
 
 // Helper function to return standardized JSON response
 function sendJsonResponse($success, $message, $data = [], $statusCode = 200) {
@@ -282,6 +283,23 @@ if ($action === 'change_password') {
     mysqli_stmt_close($upStmt);
 
     if ($success) {
+        recordActivity(
+            $connection1,
+            'Auth',
+            'auth.password_changed',
+            "Patient " . ($userRow['username'] ?? 'Patient') . " changed their password",
+            'User',
+            (int)$userRow['id'],
+            $userRow['username'] ?? 'Patient',
+            [
+                'user_id' => (int)$userRow['id'],
+                'username' => $userRow['username'] ?? null
+            ],
+            'Patient',
+            (int)$userRow['id'],
+            $userRow['username'] ?? 'Patient'
+        );
+
         sendJsonResponse(true, 'Password changed successfully!');
     } else {
         sendJsonResponse(false, 'Failed to update password in database: ' . mysqli_error($connection1), [], 500);
@@ -535,6 +553,31 @@ $savedPatientId = $existingPatient['patient_id']
     ?? ($newPatientId ?? '');
 
 $_SESSION['patient_id'] = $savedPatientId;
+
+$actor = getCurrentActor('Patient');
+$patId = $actor['user_id'] ?: ($existingPatient['id'] ?? null);
+$patName = $fullName ?: ($actor['user_name'] ?: 'Patient');
+
+recordActivity(
+    $connection1,
+    'Profile',
+    'profile.updated',
+    "Patient {$patName} updated their profile",
+    'Patient',
+    $existingPatient['id'] ?? null,
+    $patName,
+    [
+        'patient_id' => $savedPatientId,
+        'full_name' => $fullName,
+        'email' => $email,
+        'phone_number' => $phoneDigits,
+        'gender' => $gender,
+        'age' => $age
+    ],
+    'Patient',
+    $patId,
+    $patName
+);
 
 // Return the updated profile, including Patient ID
 sendJsonResponse(true, 'Profile updated successfully!', [

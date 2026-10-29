@@ -12,6 +12,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/payu_config.php';
+require_once __DIR__ . '/activity_logger.php';
 
 $postData = $_POST;
 if (empty($postData)) {
@@ -116,6 +117,29 @@ if ($connection1 && !empty($txnid)) {
             @mysqli_stmt_execute($insTx);
             @mysqli_stmt_close($insTx);
         }
+        recordActivity(
+            $connection1,
+            'Billing',
+            $isSuccess ? 'payment.success' : 'payment.failed',
+            ($isSuccess ? 'Payment received' : 'Payment failed') . " for {$productInfo} (Amount: ₹" . number_format($amount, 2) . ", Txn: {$txnid})",
+            ucfirst($serviceType),
+            intval($udf2) ?: null,
+            $productInfo,
+            [
+                'txnid' => $txnid,
+                'mihpayid' => $mihpayid,
+                'amount' => $amount,
+                'status' => $pStatus,
+                'service_type' => $serviceType,
+                'product' => $productInfo,
+                'patient_name' => $firstName,
+                'email' => $email,
+                'phone' => $phone
+            ],
+            'Patient',
+            intval($udf3) ?: null,
+            $firstName
+        );
     } catch (Throwable $txErr) {
         error_log('PayU Txn Log Error: ' . $txErr->getMessage());
     }
@@ -184,11 +208,56 @@ if ($isSuccess && $connection1) {
                 @mysqli_stmt_bind_param($insAppt, "sisisssss", $appointmentCode, $patientDbId, $firstName, $doctorDbId, $doctorName, $cleanPkgName, $apptDate, $apptTime, $agendaTxt);
                 @mysqli_stmt_execute($insAppt);
                 @mysqli_stmt_close($insAppt);
+
+                recordActivity(
+                    $connection1,
+                    'Consultation',
+                    'consultation.booked',
+                    "Patient {$firstName} booked consultation {$appointmentCode} with Dr. {$doctorName} on {$apptDate} at {$apptTime}",
+                    'Consultation',
+                    $patientDbId ?: null,
+                    $appointmentCode,
+                    [
+                        'appointment_id' => $appointmentCode,
+                        'patient_id' => $patientDbId,
+                        'patient_name' => $firstName,
+                        'doctor_name' => $doctorName,
+                        'appointment_date' => $apptDate,
+                        'appointment_time' => $apptTime,
+                        'amount' => $amount,
+                        'txnid' => $txnid
+                    ],
+                    'Patient',
+                    $patientDbId,
+                    $firstName
+                );
             }
 
             if ($patientDbId > 0) {
                 @mysqli_query($connection1, "UPDATE patients SET package_name = '" . mysqli_real_escape_string($connection1, $cleanPkgName) . "', total_appointments = total_appointments + 1, status = 'Ongoing' WHERE id = $patientDbId");
             }
+
+            recordActivity(
+                $connection1,
+                'Package',
+                'package.purchased',
+                "Patient {$firstName} purchased package: {$cleanPkgName} (Booking: {$bookingId}, Fee: ₹" . number_format($amount, 2) . ")",
+                'Package',
+                intval($udf2) ?: null,
+                $cleanPkgName,
+                [
+                    'booking_id' => $bookingId,
+                    'package_name' => $cleanPkgName,
+                    'patient_id' => $patientDbId,
+                    'patient_name' => $firstName,
+                    'doctor_name' => $doctorName,
+                    'amount' => $amount,
+                    'txnid' => $txnid
+                ],
+                'Patient',
+                $patientDbId,
+                $firstName
+            );
 
         // B. Workshop Fulfillment
         } elseif ($serviceType === 'workshop') {
@@ -208,6 +277,28 @@ if ($isSuccess && $connection1) {
                 @mysqli_query($connection1, "UPDATE workshops SET registrations = registrations + 1, enrolled = enrolled + 1 WHERE id = $wsId");
             }
 
+            recordActivity(
+                $connection1,
+                'Workshop',
+                'workshop.booked',
+                "Patient {$firstName} registered for workshop: {$cleanWsTitle} (Booking: {$bookingId}, Fee: ₹" . number_format($amount, 2) . ")",
+                'Workshop',
+                $wsId,
+                $cleanWsTitle,
+                [
+                    'booking_id' => $bookingId,
+                    'workshop_id' => $wsId,
+                    'workshop_title' => $cleanWsTitle,
+                    'patient_id' => $patientDbId,
+                    'patient_name' => $firstName,
+                    'amount' => $amount,
+                    'txnid' => $txnid
+                ],
+                'Patient',
+                $patientDbId,
+                $firstName
+            );
+
         // C. Consultation Fulfillment
         } elseif ($serviceType === 'consultation') {
             $insAppt = @mysqli_prepare($connection1, "INSERT INTO appointments 
@@ -218,6 +309,29 @@ if ($isSuccess && $connection1) {
                 @mysqli_stmt_bind_param($insAppt, "sisissss", $appointmentCode, $patientDbId, $firstName, $doctorDbId, $doctorName, $apptDate, $apptTime, $agendaTxt);
                 @mysqli_stmt_execute($insAppt);
                 @mysqli_stmt_close($insAppt);
+
+                recordActivity(
+                    $connection1,
+                    'Consultation',
+                    'consultation.booked',
+                    "Patient {$firstName} booked consultation {$appointmentCode} with Dr. {$doctorName} on {$apptDate} at {$apptTime}",
+                    'Consultation',
+                    $patientDbId ?: null,
+                    $appointmentCode,
+                    [
+                        'appointment_id' => $appointmentCode,
+                        'patient_id' => $patientDbId,
+                        'patient_name' => $firstName,
+                        'doctor_name' => $doctorName,
+                        'appointment_date' => $apptDate,
+                        'appointment_time' => $apptTime,
+                        'amount' => $amount,
+                        'txnid' => $txnid
+                    ],
+                    'Patient',
+                    $patientDbId,
+                    $firstName
+                );
             }
         }
     } catch (Throwable $fulfillErr) {

@@ -26,6 +26,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/activity_logger.php';
 
 // Helper function to return standardized JSON response
 function sendJsonResponse($success, $message, $data = [], $statusCode = 200) {
@@ -899,6 +900,54 @@ if ($requestMethod === 'POST') {
         if (!empty($finalPatientCode)) {
             $_SESSION['patient_id'] = $finalPatientCode;
         }
+
+        $actor = getCurrentActor('Patient');
+        $patId = $actor['user_id'] ?: ($patientDbId ?: null);
+        $patName = $actor['user_name'] ?: ($patientName ?: 'Patient');
+
+        recordActivity(
+            $connection1,
+            'Package',
+            'package.purchased',
+            "Patient {$patName} enrolled in package: {$packageName} (Price: ₹" . number_format($amount, 2) . ")",
+            'Package',
+            $pkgDbId ?: null,
+            $packageName,
+            [
+                'package_id' => $pkgDbId,
+                'package_name' => $packageName,
+                'booking_id' => $bookingCode,
+                'patient_id' => $patientDbId,
+                'patient_name' => $patName,
+                'doctor_id' => $doctorDbId,
+                'doctor_name' => $doctorName,
+                'amount' => $amount
+            ],
+            'Patient',
+            $patId,
+            $patName
+        );
+
+        recordActivity(
+            $connection1,
+            'Consultation',
+            'consultation.booked',
+            "Scheduled package consultation {$appointmentCode} for {$patName} with Dr. {$doctorName} ({$packageName})",
+            'Consultation',
+            $patientDbId ?: null,
+            $appointmentCode,
+            [
+                'appointment_id' => $appointmentCode,
+                'package_name' => $packageName,
+                'patient_name' => $patName,
+                'doctor_name' => $doctorName,
+                'appointment_date' => $appointmentDate,
+                'appointment_time' => $appointmentTime
+            ],
+            'Patient',
+            $patId,
+            $patName
+        );
 
         sendJsonResponse(true, 'Package consultation booked and package enrolled successfully!', [
             'booking_id' => '#' . $bookingIdNumber,
