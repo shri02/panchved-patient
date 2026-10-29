@@ -20,6 +20,36 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/database.php';
 
+// Helper: detect client IP address
+function getClientIpAddress() {
+    $ipKeys = ['HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR'];
+    foreach ($ipKeys as $key) {
+        if (!empty($_SERVER[$key])) {
+            $ipList = explode(',', $_SERVER[$key]);
+            $ip = trim($ipList[0]);
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+}
+
+// Helper: record login timing into login_logs
+function recordLoginLog($conn, $userType, $userId, $identifier, $name, $phone, $email, $status = 'Success') {
+    if (!$conn) return false;
+    $clientIp = getClientIpAddress();
+    $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500);
+    $query = "INSERT INTO `login_logs` (`user_type`, `user_id`, `identifier`, `name`, `phone`, `email`, `ip_address`, `user_agent`, `status`, `login_time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    if ($stmt = @mysqli_prepare($conn, $query)) {
+        mysqli_stmt_bind_param($stmt, "sisssssss", $userType, $userId, $identifier, $name, $phone, $email, $clientIp, $userAgent, $status);
+        @mysqli_stmt_execute($stmt);
+        @mysqli_stmt_close($stmt);
+        return true;
+    }
+    return false;
+}
+
 // Helper function to return standardized JSON response
 function sendJsonResponse($success, $message, $data = [], $statusCode = 200) {
     http_response_code($statusCode);
@@ -247,6 +277,19 @@ $_SESSION['phone_number'] = $foundUser['phone_number'];
 $_SESSION['email'] = $foundUser['email'];
 $_SESSION['role'] = $foundUser['role'] ?? 'Patient';
 $_SESSION['patient_id'] = $patient['patient_id'] ?? ('P' . str_pad($foundUser['id'], 3, '0', STR_PAD_LEFT));
+
+// 6. Log login timing into `login_logs`
+$patCode = $patient['patient_id'] ?? ('P' . str_pad($foundUser['id'], 3, '0', STR_PAD_LEFT));
+$patName = $foundUser['full_name'] ?? ($patient['full_name'] ?? 'Patient');
+$patPhone = $foundUser['phone_number'] ?? ($patient['phone_number'] ?? '');
+$patEmail = $foundUser['email'] ?? ($patient['email'] ?? '');
+$patId = isset($patient['id']) ? (int)$patient['id'] : (int)$foundUser['id'];
+recordLoginLog($connection1, 'Patient', $patId, $patCode, $patName, $patPhone, $patEmail, 'Success');
+
+// Update last_login if column exists in patients table
+if (!empty($patient['id'])) {
+    @mysqli_query($connection1, "UPDATE `patients` SET `last_login` = NOW() WHERE `id` = " . (int)$patient['id']);
+}
 
 // Return successful response
 sendJsonResponse(true, 'Login successful! Welcome back.', [
