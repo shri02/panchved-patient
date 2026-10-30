@@ -618,6 +618,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (viewDetailDuration) viewDetailDuration.textContent = duration;
         if (viewDetailAgenda) viewDetailAgenda.textContent = complaint;
 
+        const hasRx = Boolean(
+          (activeSelectedAppt.has_prescription && activeSelectedAppt.prescription_data) ||
+          (activeSelectedAppt.prescription && typeof activeSelectedAppt.prescription === 'string' && activeSelectedAppt.prescription.trim().startsWith('{'))
+        );
+        if (btnOpenPrescriptionModal) {
+          if (hasRx) {
+            btnOpenPrescriptionModal.textContent = 'View Prescription';
+            btnOpenPrescriptionModal.style.color = '#723F1E';
+          } else {
+            btnOpenPrescriptionModal.textContent = 'View Prescription (Not Issued)';
+            btnOpenPrescriptionModal.style.color = '#94a3b8';
+          }
+        }
+
         if (viewAppointmentModal) {
           viewAppointmentModal.classList.add('active');
           viewAppointmentModal.setAttribute('aria-hidden', 'false');
@@ -956,10 +970,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return String(symptomsData);
     };
 
-    if (rxMedHistory) rxMedHistory.textContent = rx.medical_history || 'No Known Significant Medical History';
+    if (rxMedHistory) rxMedHistory.textContent = rx.medical_history || 'None recorded';
     if (rxSymptoms) rxSymptoms.textContent = formatClinicalSymptoms(rx.symptoms);
     if (rxDiagnosis) rxDiagnosis.textContent = rx.diagnosis || '--';
-    if (rxFindings) rxFindings.textContent = rx.examination_findings || '--';
+    if (rxFindings) rxFindings.textContent = rx.examination_findings || 'None recorded';
     if (rxNotes) rxNotes.textContent = rx.notes || '--';
 
     if (rxReferralDoctor) rxReferralDoctor.textContent = rx.referred_doctor || rx.doctor_name || '--';
@@ -973,127 +987,106 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render Medication Columns/Grid dynamically from database
     const rxMedGrid = document.getElementById('rxMedicationGrid');
     if (rxMedGrid) {
-      const meds = Array.isArray(rx.medications) && rx.medications.length > 0 ? rx.medications : [
-        {
-          medication: 'NULL',
-          dose: '1 TABLET',
-          frequency: '1-0-1 BEFORE MEAL',
-          duration: '10 DAYS',
-          remarks: 'TAKE 1 TABLET - TWICE A DAY, BEFORE BREAKFAST AND BEFORE DINNER FOR 10 DAYS'
-        }
-      ];
+      const meds = (Array.isArray(rx.medications) ? rx.medications : []).filter(m => {
+        const name = m && (m.medication || m.name);
+        return name && name !== 'NULL' && String(name).trim() !== '';
+      });
 
-      rxMedGrid.innerHTML = meds.map(med => {
-        const medNameHtml = escapeHtml(med.medication || 'NULL').replace(/\((.*?)\)/, '<br>($1)');
-        const freqHtml = escapeHtml(med.frequency || '1-0-1 BEFORE MEAL').replace('BEFORE', '<br>BEFORE');
-        return `
-          <div class="rx-med-col">
-            <p class="rx-med-col-header">Medication:</p>
-            <p class="rx-med-col-val">${medNameHtml}</p>
-          </div>
-          <div class="rx-med-col">
-            <p class="rx-med-col-header">Dose:</p>
-            <p class="rx-med-col-val">${escapeHtml(med.dose || '1 TABLET')}</p>
-          </div>
-          <div class="rx-med-col">
-            <p class="rx-med-col-header">Frequency:</p>
-            <p class="rx-med-col-val">${freqHtml}</p>
-          </div>
-          <div class="rx-med-col">
-            <p class="rx-med-col-header">Duration:</p>
-            <p class="rx-med-col-val">${escapeHtml(med.duration || '10 DAYS')}</p>
-          </div>
-          <div class="rx-med-col">
-            <p class="rx-med-col-header">Remarks:</p>
-            <p class="rx-med-col-val">${escapeHtml(med.remarks || 'TAKE 1 TABLET - TWICE A DAY, BEFORE BREAKFAST AND BEFORE DINNER FOR 10 DAYS')}</p>
-          </div>
-        `;
-      }).join('');
+      if (meds.length > 0) {
+        rxMedGrid.innerHTML = meds.map(med => {
+          const medNameHtml = escapeHtml(med.medication || med.name || '--').replace(/\((.*?)\)/, '<br>($1)');
+          const freqHtml = escapeHtml(med.frequency || '--').replace('BEFORE', '<br>BEFORE');
+          return `
+            <div class="rx-med-col">
+              <p class="rx-med-col-header">Medication:</p>
+              <p class="rx-med-col-val">${medNameHtml}</p>
+            </div>
+            <div class="rx-med-col">
+              <p class="rx-med-col-header">Dose:</p>
+              <p class="rx-med-col-val">${escapeHtml(med.dose || '--')}</p>
+            </div>
+            <div class="rx-med-col">
+              <p class="rx-med-col-header">Frequency:</p>
+              <p class="rx-med-col-val">${freqHtml}</p>
+            </div>
+            <div class="rx-med-col">
+              <p class="rx-med-col-header">Duration:</p>
+              <p class="rx-med-col-val">${escapeHtml(med.duration || '--')}</p>
+            </div>
+            <div class="rx-med-col">
+              <p class="rx-med-col-header">Remarks:</p>
+              <p class="rx-med-col-val">${escapeHtml(med.remarks || '--')}</p>
+            </div>
+          `;
+        }).join('');
+      } else {
+        rxMedGrid.innerHTML = '<div style="grid-column: 1 / -1; width: 100%; text-align: center; padding: 22px 14px; color: #64748b; font-style: italic;">No medications prescribed for this consultation.</div>';
+      }
     }
   };
 
   if (btnOpenPrescriptionModal) {
     btnOpenPrescriptionModal.addEventListener('click', async (e) => {
       e.preventDefault();
-      // Hide view modal & show prescription modal
-      if (viewAppointmentModal) {
-        viewAppointmentModal.classList.remove('active');
-        viewAppointmentModal.setAttribute('aria-hidden', 'true');
+      if (!activeSelectedAppt) return;
+
+      const appt = activeSelectedAppt;
+      let rxData = appt.prescription_data || null;
+
+      // Check if raw prescription is valid JSON
+      if (!rxData && appt.prescription) {
+        try {
+          if (typeof appt.prescription === 'object' && appt.prescription !== null) {
+            rxData = appt.prescription;
+          } else if (typeof appt.prescription === 'string') {
+            const trimmed = appt.prescription.trim();
+            if (trimmed.startsWith('{')) {
+              rxData = JSON.parse(trimmed);
+            }
+          }
+        } catch (_) {}
       }
 
-      if (activeSelectedAppt) {
-        const appt = activeSelectedAppt;
-
-        // If active appointment already has full preloaded prescription_data from DB
-        if (appt.prescription_data) {
-          renderDynamicPrescriptionModal(appt.prescription_data);
-        } else {
-          // Parse embedded JSON prescription or fallback
-          let parsedRx = null;
-          try {
-            if (appt.prescription && typeof appt.prescription === 'object') {
-              parsedRx = appt.prescription;
-            } else if (appt.prescription && typeof appt.prescription === 'string' && appt.prescription.startsWith('{')) {
-              parsedRx = JSON.parse(appt.prescription);
+      // If still not resolved and appointment has an ID, fetch dynamically from backend
+      if (!rxData && appt.id) {
+        const originalText = btnOpenPrescriptionModal.textContent;
+        try {
+          btnOpenPrescriptionModal.textContent = 'Loading...';
+          const rxRes = await fetch(`../api/consultations.php?action=prescription&appointment_id=${encodeURIComponent(appt.id)}`);
+          if (rxRes.ok) {
+            const rxJson = await rxRes.json();
+            if (rxJson.success && rxJson.has_prescription && rxJson.prescription) {
+              rxData = rxJson.prescription;
+              appt.prescription_data = rxData;
             }
-          } catch (err) {}
-
-          if (parsedRx) {
-            renderDynamicPrescriptionModal(parsedRx);
-          } else {
-            // Render baseline from appointment object
-            renderDynamicPrescriptionModal({
-              date: appt.appointment_date || appt.date,
-              time: appt.appointment_time || appt.time,
-              patient_name: appt.patient_name || appt.patient,
-              gender: appt.gender || 'Male',
-              age: appt.age || 34,
-              medical_history: 'No Known Significant Medical History',
-              symptoms: 'Constipation (Severity : Moderate)',
-              diagnosis: 'Migraine (Duration : 3 months)',
-              examination_findings: 'Abdomen Feels Distended',
-              notes: appt.notes || 'Gandhush ( Cow Ghee + Triphala Powder )',
-              referred_doctor: appt.doctor_name || appt.doctor || 'Dr. Ananya Prasad',
-              referred_specialty: 'Ayurvedic Medicine',
-              medications: [
-                {
-                  medication: appt.prescription && !appt.prescription.startsWith('{') ? appt.prescription : 'NULL',
-                  dose: '1 TABLET',
-                  frequency: '1-0-1 BEFORE MEAL',
-                  duration: '10 DAYS',
-                  remarks: 'TAKE 1 TABLET - TWICE A DAY, BEFORE BREAKFAST AND BEFORE DINNER FOR 10 DAYS'
-                }
-              ]
-            });
           }
-        }
-
-        // Also asynchronously fetch from DB endpoint for live verification
-        if (appt.id) {
-          try {
-            const rxRes = await fetch(`../api/consultations.php?action=prescription&appointment_id=${appt.id}`);
-            if (rxRes.ok) {
-              const rxJson = await rxRes.json();
-              if (rxJson.success && rxJson.prescription) {
-                appt.prescription_data = rxJson.prescription;
-                renderDynamicPrescriptionModal(rxJson.prescription);
-              }
-            }
-          } catch (fetchErr) {
-            console.warn('Notice: Background prescription fetch err:', fetchErr);
-          }
+        } catch (fetchErr) {
+          console.warn('Notice: Background prescription fetch err:', fetchErr);
+        } finally {
+          btnOpenPrescriptionModal.textContent = originalText;
         }
       }
 
-      if (prescriptionModal) {
-        prescriptionModal.classList.add('active');
-        prescriptionModal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
+      if (rxData) {
+        // Hide view modal & show prescription modal with real dynamic data
+        if (viewAppointmentModal) {
+          viewAppointmentModal.classList.remove('active');
+          viewAppointmentModal.setAttribute('aria-hidden', 'true');
+        }
+        renderDynamicPrescriptionModal(rxData);
+        if (prescriptionModal) {
+          prescriptionModal.classList.add('active');
+          prescriptionModal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+        }
+      } else {
+        // Truly no prescription exists for this consultation
+        showToast('No prescription has been issued for this consultation yet.', true);
       }
     });
   }
 
-  if (closePrescriptionModalBtn) {
+    if (closePrescriptionModalBtn) {
     closePrescriptionModalBtn.addEventListener('click', () => {
       if (prescriptionModal) {
         prescriptionModal.classList.remove('active');

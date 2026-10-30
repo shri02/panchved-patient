@@ -57,11 +57,20 @@ function parseAppointmentTimestamp($dateStr, $timeStr) {
     return $ts;
 }
 
-function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient, $defaultPrescription) {
-    $patientId = (int)($appt['patient_id'] ?? 0);
+/**
+ * Resolve prescription for a specific appointment.
+ *
+ * $prescByAppt     = [ appointment_db_id => prescription_row ]  (keyed by numeric appointments.id)
+ * $prescByPatient  = [ patient_id => [ prescription_row, ... ] ]  (array of ALL prescriptions per patient)
+ *
+ * Returns null if no prescription belongs to this specific appointment.
+ */
+function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient) {
+    $patientId  = (int)($appt['patient_id'] ?? 0);
     $patientName = trim($appt['patient_name'] ?? '');
-    $doctorId = (int)($appt['doctor_id'] ?? 0);
+    $doctorId   = (int)($appt['doctor_id'] ?? 0);
     $doctorName = trim($appt['doctor_name'] ?? '');
+    $apptDbId   = (int)($appt['id'] ?? 0);
 
     $pRow = $patientsMap[$patientId] ?? null;
     if (!$pRow && !empty($patientName)) {
@@ -84,13 +93,28 @@ function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAp
         }
     }
 
-    $prescRow = $prescByAppt[(int)($appt['id'] ?? 0)] ?? null;
-    if (!$prescRow && $patientId > 0) {
-        $prescRow = $prescByPatient[$patientId] ?? null;
+    // --- Strict prescription resolution ---
+    // 1. Try exact appointment match first (prescriptions.appointment_id = appointments.id)
+    $prescRow = $prescByAppt[$apptDbId] ?? null;
+
+    // 2. If no direct match, try patient-level but ONLY if that patient has exactly 1 prescription
+    //    (meaning no ambiguity — every appointment is "the" appointment for that prescription).
+    if (!$prescRow && $patientId > 0 && isset($prescByPatient[$patientId])) {
+        $patientPrescs = $prescByPatient[$patientId];
+        if (count($patientPrescs) === 1) {
+            // Only one prescription ever issued — safe to show it on the matching appointment
+            $prescRow = $patientPrescs[0];
+        }
+        // If multiple prescriptions exist for this patient and none maps directly to this
+        // appointment, return null so we don't show the wrong prescription.
     }
-    // Strict prescription resolution: NEVER fall back to another patient's prescription or match by patient name.
 
+    // If still no prescription for this appointment, return null
+    if (!$prescRow) {
+        return null;
+    }
 
+    // --- Build payload from resolved prescription row ---
     $rawApptPresc = trim($appt['prescription'] ?? '');
     $parsedApptPresc = null;
     if (!empty($rawApptPresc) && $rawApptPresc[0] === '{') {
@@ -102,11 +126,11 @@ function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAp
     $resolvedAge = !empty($pRow['age']) ? (int)$pRow['age'] : (!empty($parsedApptPresc['age']) ? (int)$parsedApptPresc['age'] : '--');
 
     $resolvedDate = !empty($appt['appointment_date']) ? $appt['appointment_date'] : ($prescRow['prescription_date'] ?? date('Y-m-d'));
-    $resolvedTime = !empty($appt['appointment_time']) ? $appt['appointment_time'] : ($prescRow['prescription_time'] ?? '11:20 AM');
+    $resolvedTime = !empty($appt['appointment_time']) ? $appt['appointment_time'] : ($prescRow['prescription_time'] ?? '');
 
-    $resolvedMedHistory = $prescRow['medical_history'] ?? ($parsedApptPresc['medical_history'] ?? 'No Known Significant Medical History');
+    $resolvedMedHistory = $prescRow['medical_history'] ?? ($parsedApptPresc['medical_history'] ?? '');
 
-    $resolvedSymptoms = $prescRow['symptoms'] ?? ($parsedApptPresc['symptoms'] ?? 'Constipation (Severity : Moderate)');
+    $resolvedSymptoms = $prescRow['symptoms'] ?? ($parsedApptPresc['symptoms'] ?? '');
     if (is_array($resolvedSymptoms)) {
         $sympStr = '';
         foreach ($resolvedSymptoms as $s) {
@@ -124,60 +148,47 @@ function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAp
         }
     }
 
-    $diagVal = $prescRow['diagnosis'] ?? ($parsedApptPresc['diagnosis'] ?? 'Migraine');
-    $diagDur = $prescRow['diagnosis_duration'] ?? ($parsedApptPresc['diagnosis_duration'] ?? '3 months');
+    $diagVal = $prescRow['diagnosis'] ?? ($parsedApptPresc['diagnosis'] ?? '');
+    $diagDur = $prescRow['diagnosis_duration'] ?? ($parsedApptPresc['diagnosis_duration'] ?? '');
     $resolvedDiagnosis = !empty($diagDur) ? "{$diagVal} (Duration : {$diagDur})" : $diagVal;
 
     $rawMeds = $prescRow['medications'] ?? ($parsedApptPresc['medications'] ?? null);
     $medicationsList = [];
     if (is_string($rawMeds) && $rawMeds !== '' && ($rawMeds[0] === '[' || $rawMeds[0] === '{')) {
-        $medicationsList = json_decode($rawMeds, true);
+        $medicationsList = json_decode($rawMeds, true) ?: [];
     } elseif (is_array($rawMeds)) {
         $medicationsList = $rawMeds;
     }
 
-    if (empty($medicationsList)) {
-        $medName = !empty($rawApptPresc) && $rawApptPresc[0] !== '{' ? $rawApptPresc : 'NULL';
-        $medicationsList = [
-            [
-                'medication' => $medName,
-                'dose' => '1 TABLET',
-                'frequency' => '1-0-1 BEFORE MEAL',
-                'duration' => '10 DAYS',
-                'remarks' => 'TAKE 1 TABLET - TWICE A DAY, BEFORE BREAKFAST AND BEFORE DINNER FOR 10 DAYS'
-            ]
-        ];
-    }
+    $resolvedFindings = $prescRow['examination_findings'] ?? ($parsedApptPresc['examination_findings'] ?? '');
+    $resolvedNotes = !empty($appt['notes']) ? $appt['notes'] : ($prescRow['notes'] ?? ($parsedApptPresc['notes'] ?? ''));
 
-    $resolvedFindings = $prescRow['examination_findings'] ?? ($parsedApptPresc['examination_findings'] ?? 'Abdomen Feels Distended');
-    $resolvedNotes = !empty($appt['notes']) ? $appt['notes'] : ($prescRow['notes'] ?? ($parsedApptPresc['notes'] ?? 'Gandhush ( Cow Ghee + Triphala Powder )'));
-
-    $referralDoc = $prescRow['doctor_name'] ?? ($parsedApptPresc['doctor_name'] ?? (!empty($doctorName) ? $doctorName : 'Dr. Ananya Prasad'));
+    $referralDoc  = $prescRow['doctor_name'] ?? ($parsedApptPresc['doctor_name'] ?? (!empty($doctorName) ? $doctorName : 'Doctor'));
     $referralSpec = $prescRow['doctor_specialty'] ?? ($parsedApptPresc['doctor_specialty'] ?? ($dRow['expertise'] ?? 'Ayurvedic Medicine'));
-    $referralPhone = $prescRow['doctor_phone'] ?? ($dRow['phone_number'] ?? '+91 7896543210');
-    $referralEmail = $prescRow['doctor_email'] ?? ($dRow['email'] ?? 'care@ocayur.com');
+    $referralPhone = $prescRow['doctor_phone'] ?? ($dRow['phone_number'] ?? '');
+    $referralEmail = $prescRow['doctor_email'] ?? ($dRow['email'] ?? '');
 
     return [
-        'appointment_id' => $appt['appointment_id'] ?? ('APT-' . ($appt['id'] ?? 1)),
-        'appointment_db_id' => (int)($appt['id'] ?? 0),
-        'date' => $resolvedDate,
-        'time' => $resolvedTime,
-        'patient_name' => $resolvedPatientName,
-        'gender' => $resolvedGender,
-        'age' => $resolvedAge,
-        'medical_history' => $resolvedMedHistory,
-        'symptoms' => $resolvedSymptoms,
-        'diagnosis' => $resolvedDiagnosis,
-        'diagnosis_name' => $diagVal,
+        'appointment_id'    => $appt['appointment_id'] ?? ('APT-' . ($appt['id'] ?? 1)),
+        'appointment_db_id' => $apptDbId,
+        'date'              => $resolvedDate,
+        'time'              => $resolvedTime,
+        'patient_name'      => $resolvedPatientName,
+        'gender'            => $resolvedGender,
+        'age'               => $resolvedAge,
+        'medical_history'   => $resolvedMedHistory,
+        'symptoms'          => $resolvedSymptoms,
+        'diagnosis'         => $resolvedDiagnosis,
+        'diagnosis_name'    => $diagVal,
         'diagnosis_duration' => $diagDur,
-        'medications' => $medicationsList,
+        'medications'       => $medicationsList,
         'examination_findings' => $resolvedFindings,
-        'notes' => $resolvedNotes,
-        'referred_doctor' => $referralDoc,
+        'notes'             => $resolvedNotes,
+        'referred_doctor'   => $referralDoc,
         'referred_specialty' => $referralSpec,
-        'support_phone' => $referralPhone,
-        'support_email' => $referralEmail,
-        'prescription_code' => $prescRow['prescription_code'] ?? 'RX-001'
+        'support_phone'     => $referralPhone,
+        'support_email'     => $referralEmail,
+        'prescription_code' => $prescRow['prescription_code'] ?? ('RX-' . str_pad($prescRow['id'] ?? 0, 3, '0', STR_PAD_LEFT))
     ];
 }
 
@@ -193,10 +204,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
                 $doctors[] = [
-                    'id' => (int)$row['id'],
+                    'id'      => (int)$row['id'],
                     'doctorid' => $row['doctorid'],
-                    'name' => $row['full_name'],
-                    'role' => !empty($row['area']) ? "{$row['expertise']} ({$row['area']})" : $row['expertise']
+                    'name'    => $row['full_name'],
+                    'role'    => !empty($row['area']) ? "{$row['expertise']} ({$row['area']})" : $row['expertise']
                 ];
             }
         }
@@ -220,27 +231,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
 
-    $prescByAppt = [];
+    // Build prescription lookup maps:
+    //   $prescByAppt[appointment_db_id]       = single prescription row (latest)
+    //   $prescByPatient[patient_id]            = array of all prescription rows for that patient
+    $prescByAppt    = [];
     $prescByPatient = [];
-    $defaultPrescription = null;
     $prRes = mysqli_query($connection1, "SELECT * FROM prescriptions ORDER BY id ASC");
     if ($prRes) {
         while ($pr = mysqli_fetch_assoc($prRes)) {
-            if (!$defaultPrescription) {
-                $defaultPrescription = $pr;
+            $apptDbIdKey = (int)($pr['appointment_id'] ?? 0);
+            if ($apptDbIdKey > 0) {
+                // Latest wins for appointment-level lookup (ORDER BY id ASC => later row overwrites)
+                $prescByAppt[$apptDbIdKey] = $pr;
             }
-            if (!empty($pr['appointment_id'])) {
-                $prescByAppt[(int)$pr['appointment_id']] = $pr;
-            }
-            if (!empty($pr['patient_id'])) {
-                $prescByPatient[(int)$pr['patient_id']] = $pr;
+            $patIdKey = (int)($pr['patient_id'] ?? 0);
+            if ($patIdKey > 0) {
+                // Collect ALL prescriptions per patient
+                $prescByPatient[$patIdKey][] = $pr;
             }
         }
     }
 
     // 1.2 Action: Single Prescription Fetch
     if ($action === 'prescription') {
-        $targetId = isset($_GET['appointment_id']) ? (int)$_GET['appointment_id'] : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
+        $targetId   = isset($_GET['appointment_id']) ? (int)$_GET['appointment_id'] : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
         $targetCode = isset($_GET['code']) ? trim($_GET['code']) : '';
         $targetAppt = null;
 
@@ -261,16 +275,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $targetAppt = ['id' => $targetId];
         }
 
-        $prescData = resolvePrescriptionPayload($targetAppt, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient, $defaultPrescription);
-        sendJsonResponse(true, 'Prescription loaded successfully', ['prescription' => $prescData]);
+        $prescData = resolvePrescriptionPayload($targetAppt, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient);
+        $hasPrescription = ($prescData !== null);
+        sendJsonResponse(true, 'Prescription loaded successfully', [
+            'has_prescription' => $hasPrescription,
+            'prescription'     => $prescData
+        ]);
     }
 
     // 1.3 Action: List Appointments (My Appointments & History)
     // Resolve current authenticated patient from session or query params
-    $phone = isset($_GET['phone']) ? trim($_GET['phone']) : ($_SESSION['phone_number'] ?? '');
+    $phone    = isset($_GET['phone'])      ? trim($_GET['phone'])      : ($_SESSION['phone_number'] ?? '');
     $patientId = isset($_GET['patient_id']) ? trim($_GET['patient_id']) : ($_SESSION['patient_id'] ?? '');
-    $email = isset($_GET['email']) ? trim($_GET['email']) : ($_SESSION['email'] ?? '');
-    $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : ($_SESSION['user_id'] ?? 0);
+    $email    = isset($_GET['email'])      ? trim($_GET['email'])      : ($_SESSION['email'] ?? '');
+    $userId   = isset($_GET['user_id'])    ? intval($_GET['user_id'])  : ($_SESSION['user_id'] ?? 0);
 
     $phoneDigits = preg_replace('/[^\d]/', '', $phone);
     if (strlen($phoneDigits) === 12 && substr($phoneDigits, 0, 2) === '91') {
@@ -316,23 +334,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
 
-    $myAppointments = [];
+    $myAppointments      = [];
     $historyAppointments = [];
-    $allAppointments = [];
+    $allAppointments     = [];
     $now = time();
 
-    // If no patient is authenticated or found, strictly return empty appointment arrays (prevent viewing other patients' data)
+    // If no patient is authenticated or found, strictly return empty appointment arrays
     if (!$patient) {
         sendJsonResponse(true, 'No appointments found for patient.', [
-            'my_appointments' => [],
+            'my_appointments'      => [],
             'history_appointments' => [],
-            'appointments' => [],
-            'all_appointments' => []
+            'appointments'         => [],
+            'all_appointments'     => []
         ]);
     }
 
-    $patDbId = (int)$patient['id'];
-    $patPhone = trim((string)$patient['phone_number']);
+    $patDbId       = (int)$patient['id'];
+    $patPhone      = trim((string)$patient['phone_number']);
     $patPhoneDigits = preg_replace('/[^\d]/', '', $patPhone);
     if (strlen($patPhoneDigits) === 12 && substr($patPhoneDigits, 0, 2) === '91') {
         $patPhoneDigits = substr($patPhoneDigits, 2);
@@ -355,42 +373,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $rawDate = $r['appointment_date'];
                 $rawTime = $r['appointment_time'];
 
-                $ts = parseAppointmentTimestamp($rawDate, $rawTime);
+                $ts        = parseAppointmentTimestamp($rawDate, $rawTime);
                 $isUpcoming = ($ts !== false && $ts > $now);
 
-                $apptId = !empty($r['appointment_id']) ? $r['appointment_id'] : ('APT-' . $r['id']);
-                $docName = !empty($r['doctor_name']) ? $r['doctor_name'] : 'Dr. Nidhi Jha';
+                $apptId   = !empty($r['appointment_id']) ? $r['appointment_id'] : ('APT-' . $r['id']);
+                $docName  = !empty($r['doctor_name']) ? $r['doctor_name'] : 'Doctor';
                 $cleanDoc = strtolower(preg_replace('/[^a-z0-9]/i', '', str_replace(['Dr.', 'Dr '], '', $docName)));
                 $meetLink = "https://meet.google.com/abc-{$cleanDoc}-ocayur";
 
-                $prescPayload = resolvePrescriptionPayload($r, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient, $defaultPrescription);
+                // Resolve prescription strictly per appointment
+                $prescPayload = resolvePrescriptionPayload($r, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient);
+                $hasPrescription = ($prescPayload !== null);
 
                 $item = [
-                    'id' => (int)$r['id'],
-                    'appointment_id' => $apptId,
-                    'patient_id' => $r['patient_id'],
-                    'patient_name' => $r['patient_name'],
-                    'gender' => $r['gender'] ?? ($prescPayload['gender'] ?? 'Male'),
-                    'age' => $r['age'] ?? ($prescPayload['age'] ?? 34),
-                    'doctor_id' => $r['doctor_id'],
-                    'doctor_name' => $docName,
-                    'package_name' => $r['package_name'],
+                    'id'               => (int)$r['id'],
+                    'appointment_id'   => $apptId,
+                    'patient_id'       => $r['patient_id'],
+                    'patient_name'     => $r['patient_name'],
+                    'gender'           => $r['gender'] ?? '--',
+                    'age'              => $r['age'] ?? '--',
+                    'doctor_id'        => $r['doctor_id'],
+                    'doctor_name'      => $docName,
+                    'package_name'     => $r['package_name'],
                     'appointment_date' => $r['appointment_date'],
                     'appointment_time' => $r['appointment_time'],
-                    'duration' => !empty($r['duration']) ? $r['duration'] : '45 min',
-                    'service_type' => $r['service_type'],
-                    'complaint' => !empty($r['complaint']) ? $r['complaint'] : (!empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation and pulse diagnostics review'),
-                    'agenda' => !empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation and pulse diagnostics review',
-                    'prescription' => $r['prescription'],
+                    'duration'         => !empty($r['duration']) ? $r['duration'] : '45 min',
+                    'service_type'     => $r['service_type'],
+                    'complaint'        => !empty($r['complaint']) ? $r['complaint'] : (!empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation'),
+                    'agenda'           => !empty($r['agenda']) ? $r['agenda'] : 'Ayurvedic consultation',
+                    'prescription'     => $r['prescription'],
+                    'has_prescription' => $hasPrescription,
                     'prescription_data' => $prescPayload,
-                    'status' => $r['status'],
-                    'notes' => $r['notes'],
-                    'expertise' => $r['expertise'],
-                    'area' => $r['area'],
-                    'role' => !empty($r['area']) ? "{$r['expertise']} ({$r['area']})" : $r['expertise'],
-                    'meet_link' => $meetLink,
-                    'is_upcoming' => $isUpcoming,
-                    'timestamp' => $ts
+                    'status'           => $r['status'],
+                    'notes'            => $r['notes'],
+                    'expertise'        => $r['expertise'],
+                    'area'             => $r['area'],
+                    'role'             => !empty($r['area']) ? "{$r['expertise']} ({$r['area']})" : $r['expertise'],
+                    'meet_link'        => $meetLink,
+                    'is_upcoming'      => $isUpcoming,
+                    'timestamp'        => $ts
                 ];
 
                 $allAppointments[] = $item;
@@ -406,10 +427,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     sendJsonResponse(true, 'Appointments retrieved successfully', [
-        'my_appointments' => $myAppointments,
+        'my_appointments'      => $myAppointments,
         'history_appointments' => $historyAppointments,
-        'appointments' => ($action === 'history' ? $historyAppointments : $myAppointments),
-        'all_appointments' => $allAppointments
+        'appointments'         => ($action === 'history' ? $historyAppointments : $myAppointments),
+        'all_appointments'     => $allAppointments
     ]);
 }
 
@@ -420,16 +441,16 @@ if (!$data || !is_array($data)) {
     $data = $_POST;
 }
 
-$doctorName = isset($data['doctor_name']) ? trim($data['doctor_name']) : (isset($data['doctorName']) ? trim($data['doctorName']) : 'Dr. Nidhi Jha');
-$doctorRole = isset($data['doctor_role']) ? trim($data['doctor_role']) : (isset($data['doctorRole']) ? trim($data['doctorRole']) : 'Ayurveda Physician');
-$patientName = !empty($data['patient_name']) ? trim($data['patient_name']) : (!empty($data['patientName']) ? trim($data['patientName']) : ($_SESSION['full_name'] ?? 'Patient'));
-$patientEmail = !empty($data['patient_email']) ? trim($data['patient_email']) : (!empty($data['patientEmail']) ? trim($data['patientEmail']) : ($_SESSION['email'] ?? ''));
-$patientPhone = !empty($data['patient_phone']) ? trim($data['patient_phone']) : (!empty($data['patientPhone']) ? trim($data['patientPhone']) : ($_SESSION['phone_number'] ?? ''));
+$doctorName    = isset($data['doctor_name']) ? trim($data['doctor_name']) : (isset($data['doctorName']) ? trim($data['doctorName']) : 'Doctor');
+$doctorRole    = isset($data['doctor_role']) ? trim($data['doctor_role']) : (isset($data['doctorRole']) ? trim($data['doctorRole']) : 'Ayurveda Physician');
+$patientName   = !empty($data['patient_name']) ? trim($data['patient_name']) : (!empty($data['patientName']) ? trim($data['patientName']) : ($_SESSION['full_name'] ?? 'Patient'));
+$patientEmail  = !empty($data['patient_email']) ? trim($data['patient_email']) : (!empty($data['patientEmail']) ? trim($data['patientEmail']) : ($_SESSION['email'] ?? ''));
+$patientPhone  = !empty($data['patient_phone']) ? trim($data['patient_phone']) : (!empty($data['patientPhone']) ? trim($data['patientPhone']) : ($_SESSION['phone_number'] ?? ''));
 $appointmentDateRaw = isset($data['appointment_date']) ? trim($data['appointment_date']) : (isset($data['date']) ? trim($data['date']) : date('Y-m-d'));
 $appointmentTime = isset($data['appointment_time']) ? trim($data['appointment_time']) : (isset($data['time']) ? trim($data['time']) : '07:00 - 07:45 PM');
-$duration = isset($data['duration']) ? trim($data['duration']) : '45 min';
-$agenda = isset($data['complaint']) && !empty(trim($data['complaint'])) ? trim($data['complaint']) : (isset($data['agenda']) ? trim($data['agenda']) : "Ayurvedic consultation with {$doctorName}");
-$amount = isset($data['amount']) ? (float)$data['amount'] : 500.00;
+$duration      = isset($data['duration']) ? trim($data['duration']) : '45 min';
+$agenda        = isset($data['complaint']) && !empty(trim($data['complaint'])) ? trim($data['complaint']) : (isset($data['agenda']) ? trim($data['agenda']) : "Ayurvedic consultation with {$doctorName}");
+$amount        = isset($data['amount']) ? (float)$data['amount'] : 500.00;
 
 // Resolve Date
 $appointmentDate = date('Y-m-d');
@@ -460,7 +481,7 @@ if (strlen($patientPhoneDigits) === 12 && substr($patientPhoneDigits, 0, 2) === 
     $patientPhoneDigits = substr($patientPhoneDigits, 2);
 }
 $patientDbId = 0;
-$sessPatId = $_SESSION['patient_id'] ?? '';
+$sessPatId   = $_SESSION['patient_id'] ?? '';
 
 $pStmt = mysqli_prepare($connection1, "SELECT id, patient_id FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) OR (patient_id != '' AND patient_id = ?) LIMIT 1");
 if ($pStmt) {
@@ -476,8 +497,8 @@ if ($pStmt) {
 
 
 // Generate unique Appointment ID
-$appointmentCode = 'APT-' . date('Ymd') . '-' . rand(100, 999);
-$bookingIdNumber = rand(100000, 999999);
+$appointmentCode  = 'APT-' . date('Ymd') . '-' . rand(100, 999);
+$bookingIdNumber  = rand(100000, 999999);
 
 $insertQuery = "INSERT INTO appointments (appointment_id, patient_id, patient_name, doctor_id, doctor_name, package_name, appointment_date, appointment_time, duration, service_type, agenda, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'General Consultation', ?, ?, ?, 'Online Ayurved Consultation', ?, 'Scheduled', NOW(), NOW())";
 if ($inStmt = mysqli_prepare($connection1, $insertQuery)) {
@@ -486,8 +507,8 @@ if ($inStmt = mysqli_prepare($connection1, $insertQuery)) {
     mysqli_stmt_close($inStmt);
 }
 
-$actor = getCurrentActor('Patient');
-$patId = $actor['user_id'] ?: ($patientDbId ?: null);
+$actor   = getCurrentActor('Patient');
+$patId   = $actor['user_id'] ?: ($patientDbId ?: null);
 $patName = $actor['user_name'] ?: ($patientName ?: 'Patient');
 
 recordActivity(
@@ -499,16 +520,16 @@ recordActivity(
     $patientDbId ?: null,
     $appointmentCode,
     [
-        'appointment_id' => $appointmentCode,
-        'patient_id' => $patientDbId,
-        'patient_name' => $patName,
-        'doctor_id' => $doctorDbId,
-        'doctor_name' => $doctorName,
+        'appointment_id'   => $appointmentCode,
+        'patient_id'       => $patientDbId,
+        'patient_name'     => $patName,
+        'doctor_id'        => $doctorDbId,
+        'doctor_name'      => $doctorName,
         'appointment_date' => $appointmentDate,
         'appointment_time' => $appointmentTime,
-        'duration' => $duration,
-        'complaint' => $agenda,
-        'amount' => $amount
+        'duration'         => $duration,
+        'complaint'        => $agenda,
+        'amount'           => $amount
     ],
     'Patient',
     $patId,
@@ -516,13 +537,13 @@ recordActivity(
 );
 
 sendJsonResponse(true, 'Consultation appointment booked successfully!', [
-    'booking_id' => '#' . $bookingIdNumber,
+    'booking_id'  => '#' . $bookingIdNumber,
     'appointment_id' => $appointmentCode,
     'doctor_name' => $doctorName,
     'doctor_role' => $doctorRole,
     'patient_name' => $patientName,
-    'date' => $appointmentDateRaw,
-    'time' => $appointmentTime,
-    'amount' => '₹' . number_format($amount, 2),
-    'status' => 'Scheduled'
+    'date'        => $appointmentDateRaw,
+    'time'        => $appointmentTime,
+    'amount'      => '₹' . number_format($amount, 2),
+    'status'      => 'Scheduled'
 ]);
