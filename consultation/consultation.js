@@ -178,6 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
           applyUserHeader(data.user, data.patient);
           if (!prevPhone && cachedPhone) {
             loadAppointmentsFromDB();
+
+  // Check initial hash on load (after applySearchFilter & render tables are initialized)
+  if (window.location.hash === '#history' || window.location.hash === '#appointment-history') {
+    switchTab('history');
+  }
           }
         }
       }
@@ -306,201 +311,11 @@ document.addEventListener('DOMContentLoaded', () => {
     tabAppointmentHistory.addEventListener('click', () => switchTab('history'));
   }
 
-  // Check initial hash on load
-  if (window.location.hash === '#history' || window.location.hash === '#appointment-history') {
-    switchTab('history');
-  }
+  // (Initial tab check performed after appointment & search handlers are defined)
 
   // ========================================================
   // 2. SEARCH FILTERING (Shows "No records found" on 0 matches)
   // ========================================================
-  const applySearchFilter = () => {
-    const term = consultSearchInput ? consultSearchInput.value.toLowerCase().trim() : '';
-    const isHistoryTab = (appointmentHistoryContent && appointmentHistoryContent.style.display !== 'none');
-
-    if (isHistoryTab) {
-      const tableBody = document.getElementById('appointmentHistoryTableBody');
-      if (!tableBody) return;
-
-      if (!term) {
-        renderAppointmentHistoryTable();
-        return;
-      }
-
-      const filtered = (loadedHistoryAppts || []).filter(appt => {
-        const apptId = (appt.appointment_id || ('ABC-' + String(appt.id).padStart(3, '0'))).toLowerCase();
-        const dateFormatted = formatDate(appt.appointment_date).toLowerCase();
-        const timeVal = (appt.appointment_time || '').toLowerCase();
-        const doctorName = (appt.doctor_name || '').toLowerCase();
-        const complaintText = (appt.complaint || appt.agenda || appt.service_type || '').toLowerCase();
-        const durationVal = formatDuration(appt.duration).toLowerCase();
-
-        return apptId.includes(term) ||
-               dateFormatted.includes(term) ||
-               timeVal.includes(term) ||
-               doctorName.includes(term) ||
-               complaintText.includes(term) ||
-               durationVal.includes(term);
-      });
-
-      if (filtered.length === 0) {
-        tableBody.innerHTML = `
-          <tr class="no-records-row">
-            <td colspan="7" style="text-align: center; padding: 36px 20px; color: #64748b; font-size: 14px; font-weight: 500;">
-              No records found
-            </td>
-          </tr>
-        `;
-        if (historyCountText) historyCountText.textContent = 'Showing 0 items';
-        if (historyPageLabel) historyPageLabel.textContent = '1 of 1';
-        if (btnHistoryPrev) btnHistoryPrev.disabled = true;
-        if (btnHistoryNext) btnHistoryNext.disabled = true;
-      } else {
-        tableBody.innerHTML = filtered.map(appt => {
-          const apptId = appt.appointment_id || ('ABC-' + String(appt.id).padStart(3, '0'));
-          const dateFormatted = formatDate(appt.appointment_date);
-          const timeVal = appt.appointment_time || '3:00 PM';
-          const doctorName = appt.doctor_name || 'Dr. Rohit Mehra';
-          const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics review';
-          const durationVal = formatDuration(appt.duration);
-          const prescriptionData = typeof appt.prescription === 'object' ? JSON.stringify(appt.prescription) : (appt.prescription || '');
-
-          return `
-            <tr>
-              <td class="table-id-cell">${escapeHtml(apptId)}</td>
-              <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
-              <td class="table-time-cell">${escapeHtml(timeVal)}</td>
-              <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
-              <td class="table-agenda-cell" title="${escapeHtml(complaintText)}">${escapeHtml(complaintText)}</td>
-              <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
-              <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
-                <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #FAF6EE; color: #723F1E; border: 1px solid #ECE5D9; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  <span>Chat</span>
-                </a>
-                <button 
-                  type="button" 
-                  class="btn-view-history" 
-                  data-db-id="${escapeHtml(appt.id)}"
-                  data-id="${escapeHtml(apptId)}" 
-                  data-date="${escapeHtml(dateFormatted)}" 
-                  data-time="${escapeHtml(timeVal)}" 
-                  data-doctor="${escapeHtml(doctorName)}" 
-                  data-duration="${escapeHtml(durationVal)}" 
-                  data-complaint="${escapeHtml(complaintText)}"
-                  data-agenda="${escapeHtml(complaintText)}"
-                  data-patient="${escapeHtml(appt.patient_name || '')}"
-                  data-prescription="${escapeHtml(prescriptionData)}"
-                  data-notes="${escapeHtml(appt.notes || '')}"
-                >
-                  <span>View</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        if (historyCountText) historyCountText.textContent = `Showing ${filtered.length} matching item${filtered.length > 1 ? 's' : ''}`;
-        if (historyPageLabel) historyPageLabel.textContent = '1 of 1';
-        if (btnHistoryPrev) btnHistoryPrev.disabled = true;
-        if (btnHistoryNext) btnHistoryNext.disabled = true;
-        bindViewHistoryButtons();
-      }
-    } else {
-      const tableBody = document.getElementById('myAppointmentsTableBody');
-      if (!tableBody) return;
-
-      if (!term) {
-        renderMyAppointmentsTable();
-        return;
-      }
-
-      const filtered = (loadedMyAppts || []).filter(appt => {
-        const apptId = (appt.appointment_id || ('APT-' + appt.id)).toLowerCase();
-        const dateFormatted = formatDate(appt.appointment_date).toLowerCase();
-        const timeVal = (appt.appointment_time || '').toLowerCase();
-        const doctorName = (appt.doctor_name || '').toLowerCase();
-        const complaintText = (appt.complaint || appt.agenda || appt.service_type || '').toLowerCase();
-        const durationVal = formatDuration(appt.duration).toLowerCase();
-
-        return apptId.includes(term) ||
-               dateFormatted.includes(term) ||
-               timeVal.includes(term) ||
-               doctorName.includes(term) ||
-               complaintText.includes(term) ||
-               durationVal.includes(term);
-      });
-
-      if (filtered.length === 0) {
-        tableBody.innerHTML = `
-          <tr class="no-records-row">
-            <td colspan="7" style="text-align: center; padding: 36px 20px; color: #64748b; font-size: 14px; font-weight: 500;">
-              No records found
-            </td>
-          </tr>
-        `;
-        if (myApptsCountText) myApptsCountText.textContent = 'Showing 0 items';
-        if (myApptsPageLabel) myApptsPageLabel.textContent = '1 of 1';
-        if (btnMyApptsPrev) btnMyApptsPrev.disabled = true;
-        if (btnMyApptsNext) btnMyApptsNext.disabled = true;
-      } else {
-        tableBody.innerHTML = filtered.map(appt => {
-          const apptId = appt.appointment_id || ('APT-' + appt.id);
-          const dateFormatted = formatDate(appt.appointment_date);
-          const timeVal = appt.appointment_time || '3:00 PM';
-          const doctorName = appt.doctor_name || 'Dr. Rohit Mishra';
-          const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
-          const durationVal = formatDuration(appt.duration);
-          const meetLink = appt.meet_link || getMeetLink(doctorName, apptId);
-
-          return `
-            <tr>
-              <td class="table-id-cell">${escapeHtml(apptId)}</td>
-              <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
-              <td class="table-time-cell">${escapeHtml(timeVal)}</td>
-              <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
-              <td class="table-agenda-cell" title="${escapeHtml(complaintText)}">${escapeHtml(complaintText)}</td>
-              <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
-              <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
-                <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #723F1E; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  <span>Chat</span>
-                </a>
-                <button type="button" class="meet-link-btn" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
-                  <span>meet.google...</span>
-                  <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        if (myApptsCountText) myApptsCountText.textContent = `Showing ${filtered.length} matching item${filtered.length > 1 ? 's' : ''}`;
-        if (myApptsPageLabel) myApptsPageLabel.textContent = '1 of 1';
-        if (btnMyApptsPrev) btnMyApptsPrev.disabled = true;
-        if (btnMyApptsNext) btnMyApptsNext.disabled = true;
-        bindMeetLinkButtons();
-      }
-    }
-  };
-
-  if (consultSearchInput) {
-    consultSearchInput.addEventListener('input', () => {
-      applySearchFilter();
-    });
-  }
-
   // ========================================================
   // 3. DYNAMIC APPOINTMENTS INTEGRATION (UPCOMING & HISTORY)
   // ========================================================
@@ -800,6 +615,195 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bindViewHistoryButtons();
   };
+
+  function applySearchFilter() {
+    const term = consultSearchInput ? consultSearchInput.value.toLowerCase().trim() : '';
+    const isHistoryTab = (appointmentHistoryContent && appointmentHistoryContent.style.display !== 'none');
+
+    if (isHistoryTab) {
+      const tableBody = document.getElementById('appointmentHistoryTableBody');
+      if (!tableBody) return;
+
+      if (!term) {
+        renderAppointmentHistoryTable();
+        return;
+      }
+
+      const filtered = (loadedHistoryAppts || []).filter(appt => {
+        const apptId = (appt.appointment_id || ('ABC-' + String(appt.id).padStart(3, '0'))).toLowerCase();
+        const dateFormatted = formatDate(appt.appointment_date).toLowerCase();
+        const timeVal = (appt.appointment_time || '').toLowerCase();
+        const doctorName = (appt.doctor_name || '').toLowerCase();
+        const complaintText = (appt.complaint || appt.agenda || appt.service_type || '').toLowerCase();
+        const durationVal = formatDuration(appt.duration).toLowerCase();
+
+        return apptId.includes(term) ||
+               dateFormatted.includes(term) ||
+               timeVal.includes(term) ||
+               doctorName.includes(term) ||
+               complaintText.includes(term) ||
+               durationVal.includes(term);
+      });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `
+          <tr class="no-records-row">
+            <td colspan="7" style="text-align: center; padding: 36px 20px; color: #64748b; font-size: 14px; font-weight: 500;">
+              No records found
+            </td>
+          </tr>
+        `;
+        if (historyCountText) historyCountText.textContent = 'Showing 0 items';
+        if (historyPageLabel) historyPageLabel.textContent = '1 of 1';
+        if (btnHistoryPrev) btnHistoryPrev.disabled = true;
+        if (btnHistoryNext) btnHistoryNext.disabled = true;
+      } else {
+        tableBody.innerHTML = filtered.map(appt => {
+          const apptId = appt.appointment_id || ('ABC-' + String(appt.id).padStart(3, '0'));
+          const dateFormatted = formatDate(appt.appointment_date);
+          const timeVal = appt.appointment_time || '3:00 PM';
+          const doctorName = appt.doctor_name || 'Dr. Rohit Mehra';
+          const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics review';
+          const durationVal = formatDuration(appt.duration);
+          const prescriptionData = typeof appt.prescription === 'object' ? JSON.stringify(appt.prescription) : (appt.prescription || '');
+
+          return `
+            <tr>
+              <td class="table-id-cell">${escapeHtml(apptId)}</td>
+              <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
+              <td class="table-time-cell">${escapeHtml(timeVal)}</td>
+              <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
+              <td class="table-agenda-cell" title="${escapeHtml(complaintText)}">${escapeHtml(complaintText)}</td>
+              <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
+              <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
+                <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #FAF6EE; color: #723F1E; border: 1px solid #ECE5D9; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>Chat</span>
+                </a>
+                <button 
+                  type="button" 
+                  class="btn-view-history" 
+                  data-db-id="${escapeHtml(appt.id)}"
+                  data-id="${escapeHtml(apptId)}" 
+                  data-date="${escapeHtml(dateFormatted)}" 
+                  data-time="${escapeHtml(timeVal)}" 
+                  data-doctor="${escapeHtml(doctorName)}" 
+                  data-duration="${escapeHtml(durationVal)}" 
+                  data-complaint="${escapeHtml(complaintText)}"
+                  data-agenda="${escapeHtml(complaintText)}"
+                  data-patient="${escapeHtml(appt.patient_name || '')}"
+                  data-prescription="${escapeHtml(prescriptionData)}"
+                  data-notes="${escapeHtml(appt.notes || '')}"
+                >
+                  <span>View</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (historyCountText) historyCountText.textContent = `Showing ${filtered.length} matching item${filtered.length > 1 ? 's' : ''}`;
+        if (historyPageLabel) historyPageLabel.textContent = '1 of 1';
+        if (btnHistoryPrev) btnHistoryPrev.disabled = true;
+        if (btnHistoryNext) btnHistoryNext.disabled = true;
+        bindViewHistoryButtons();
+      }
+    } else {
+      const tableBody = document.getElementById('myAppointmentsTableBody');
+      if (!tableBody) return;
+
+      if (!term) {
+        renderMyAppointmentsTable();
+        return;
+      }
+
+      const filtered = (loadedMyAppts || []).filter(appt => {
+        const apptId = (appt.appointment_id || ('APT-' + appt.id)).toLowerCase();
+        const dateFormatted = formatDate(appt.appointment_date).toLowerCase();
+        const timeVal = (appt.appointment_time || '').toLowerCase();
+        const doctorName = (appt.doctor_name || '').toLowerCase();
+        const complaintText = (appt.complaint || appt.agenda || appt.service_type || '').toLowerCase();
+        const durationVal = formatDuration(appt.duration).toLowerCase();
+
+        return apptId.includes(term) ||
+               dateFormatted.includes(term) ||
+               timeVal.includes(term) ||
+               doctorName.includes(term) ||
+               complaintText.includes(term) ||
+               durationVal.includes(term);
+      });
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `
+          <tr class="no-records-row">
+            <td colspan="7" style="text-align: center; padding: 36px 20px; color: #64748b; font-size: 14px; font-weight: 500;">
+              No records found
+            </td>
+          </tr>
+        `;
+        if (myApptsCountText) myApptsCountText.textContent = 'Showing 0 items';
+        if (myApptsPageLabel) myApptsPageLabel.textContent = '1 of 1';
+        if (btnMyApptsPrev) btnMyApptsPrev.disabled = true;
+        if (btnMyApptsNext) btnMyApptsNext.disabled = true;
+      } else {
+        tableBody.innerHTML = filtered.map(appt => {
+          const apptId = appt.appointment_id || ('APT-' + appt.id);
+          const dateFormatted = formatDate(appt.appointment_date);
+          const timeVal = appt.appointment_time || '3:00 PM';
+          const doctorName = appt.doctor_name || 'Dr. Rohit Mishra';
+          const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
+          const durationVal = formatDuration(appt.duration);
+          const meetLink = appt.meet_link || getMeetLink(doctorName, apptId);
+
+          return `
+            <tr>
+              <td class="table-id-cell">${escapeHtml(apptId)}</td>
+              <td class="table-date-cell">${escapeHtml(dateFormatted)}</td>
+              <td class="table-time-cell">${escapeHtml(timeVal)}</td>
+              <td class="table-doctor-cell">${escapeHtml(doctorName)}</td>
+              <td class="table-agenda-cell" title="${escapeHtml(complaintText)}">${escapeHtml(complaintText)}</td>
+              <td class="table-duration-cell">${escapeHtml(durationVal)}</td>
+              <td class="table-action-cell" style="display: flex; align-items: center; gap: 8px;">
+                <a href="../chat/chat.html?doctor_id=${escapeHtml(appt.doctor_id || 1)}" class="btn-chat-action" title="Chat with ${escapeHtml(doctorName)}" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; background: #723F1E; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>Chat</span>
+                </a>
+                <button type="button" class="meet-link-btn" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
+                  <span>meet.google...</span>
+                  <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (myApptsCountText) myApptsCountText.textContent = `Showing ${filtered.length} matching item${filtered.length > 1 ? 's' : ''}`;
+        if (myApptsPageLabel) myApptsPageLabel.textContent = '1 of 1';
+        if (btnMyApptsPrev) btnMyApptsPrev.disabled = true;
+        if (btnMyApptsNext) btnMyApptsNext.disabled = true;
+        bindMeetLinkButtons();
+      }
+    }
+  };
+
+  if (consultSearchInput) {
+    consultSearchInput.addEventListener('input', () => {
+      applySearchFilter();
+    });
+  }
+
+  
 
   const loadAppointmentsFromDB = async () => {
     try {
