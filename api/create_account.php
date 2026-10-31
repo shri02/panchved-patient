@@ -540,8 +540,8 @@ try {
     $address = isset($data['address']) ? trim($data['address']) : null;
     $address = !empty($address) ? $address : null;
 
-    $packageName = isset($data['packageName']) ? trim($data['packageName']) : (isset($data['package_name']) ? trim($data['package_name']) : 'Stress Management');
-    $packageName = !empty($packageName) ? $packageName : 'Stress Management';
+    $packageName = isset($data['packageName']) ? trim($data['packageName']) : (isset($data['package_name']) ? trim($data['package_name']) : null);
+    $packageName = !empty($packageName) ? $packageName : null;
 
     $referralCode = isset($data['referralCode']) ? strtoupper(trim((string)$data['referralCode'])) : (isset($data['referral_code']) ? strtoupper(trim((string)$data['referral_code'])) : null);
     if ($referralCode === '') {
