@@ -70,15 +70,32 @@ if (!function_exists('getCurrentActor')) {
 if (!function_exists('recordActivity')) {
     /**
      * Record an audit activity into activity_logs table
+     * Supports both modern array payload and legacy positional arguments.
      *
      * @param mysqli $conn Active MySQL database connection
-     * @param array $payload Activity data
+     * @param array|string $payloadOrModule Activity data array or module string
      * @return bool
      */
-    function recordActivity($conn, array $payload) {
+    function recordActivity($conn, $payloadOrModule = [], ...$legacyArgs) {
         if (!$conn) return false;
 
         try {
+            if (!is_array($payloadOrModule)) {
+                $payload = [
+                    'module'      => (string)$payloadOrModule,
+                    'action'      => $legacyArgs[0] ?? 'action.performed',
+                    'description' => $legacyArgs[1] ?? '',
+                    'entity_type' => $legacyArgs[2] ?? '',
+                    'entity_id'   => $legacyArgs[3] ?? '',
+                    'entity_name' => $legacyArgs[4] ?? null,
+                    'new_values'  => $legacyArgs[5] ?? null,
+                    'actor_type'  => $legacyArgs[6] ?? null,
+                    'actor_id'    => $legacyArgs[7] ?? null,
+                    'actor_name'  => $legacyArgs[8] ?? null,
+                ];
+            } else {
+                $payload = $payloadOrModule;
+            }
             date_default_timezone_set('Asia/Kolkata');
             @mysqli_query($conn, "SET time_zone = '+05:30'");
 
