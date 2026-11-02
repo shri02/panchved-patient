@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Search & Toolbar Elements
   const consultSearchInput = document.getElementById('consultSearchInput');
   const btnBookConsultCTA = document.getElementById('btnBookConsultCTA');
+  const btnRefreshConsultations = document.getElementById('btnRefreshConsultations');
 
   // Modals Elements
   // Modal 1: View Appointment History Details (Screen 3)
@@ -826,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   
 
-  const loadAppointmentsFromDB = async () => {
+  const loadAppointmentsFromDB = async (showNotification = false) => {
     try {
       const params = new URLSearchParams();
       if (cachedPhone) params.append('phone', cachedPhone);
@@ -839,20 +840,53 @@ document.addEventListener('DOMContentLoaded', () => {
           loadedMyAppts = Array.isArray(data.my_appointments) ? data.my_appointments : [];
           loadedHistoryAppts = Array.isArray(data.history_appointments) ? data.history_appointments : [];
           
-          currentMyApptPage = 1;
-          currentHistoryPage = 1;
           if (consultSearchInput && consultSearchInput.value.trim()) {
             applySearchFilter();
           } else {
             renderMyAppointmentsTable();
             renderAppointmentHistoryTable();
           }
+
+          if (showNotification) {
+            const activeLinks = loadedMyAppts.filter(a => a.meet_link && String(a.meet_link).trim() !== '').length;
+            if (activeLinks > 0) {
+              showToast(`Refreshed! ${activeLinks} meet link${activeLinks > 1 ? 's' : ''} available.`);
+            } else {
+              showToast('Appointments refreshed successfully!');
+            }
+          }
+        } else if (showNotification) {
+          showToast(data.message || 'Unable to refresh appointments.', true);
         }
+      } else if (showNotification) {
+        showToast('Server error while refreshing.', true);
       }
     } catch (err) {
       console.warn('Notice: Error fetching appointments from DB:', err);
+      if (showNotification) {
+        showToast('Network error while refreshing.', true);
+      }
     }
   };
+
+  // Bind Quick Refresh Button for Patient side
+  if (btnRefreshConsultations) {
+    btnRefreshConsultations.addEventListener('click', async () => {
+      btnRefreshConsultations.classList.add('spinning');
+      btnRefreshConsultations.disabled = true;
+      try {
+        await loadAppointmentsFromDB(true);
+      } finally {
+        setTimeout(() => {
+          btnRefreshConsultations.classList.remove('spinning');
+          btnRefreshConsultations.disabled = false;
+        }, 500);
+      }
+    });
+  }
+
+  // Expose global refresh function
+  window.refreshAppointments = () => loadAppointmentsFromDB(true);
 
   // Fetch appointments dynamically from database on load
   loadAppointmentsFromDB();

@@ -4339,6 +4339,60 @@ body {
   color: #94a3b8;
 }
 
+.consult-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-refresh-consult {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #ffffff;
+  color: var(--brand-terracotta, #723f1e);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: var(--radius-btn, 8px);
+  border: 1.5px solid #dcd7ce;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-refresh-consult:hover {
+  background-color: var(--brand-cream-soft, #fcf8f2);
+  border-color: var(--brand-terracotta, #723f1e);
+  color: var(--brand-terracotta, #723f1e);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(114, 63, 30, 0.12);
+}
+
+.btn-refresh-consult:active {
+  transform: translateY(0);
+}
+
+.btn-refresh-consult .refresh-icon {
+  transition: transform 0.3s ease;
+}
+
+.btn-refresh-consult.spinning .refresh-icon {
+  animation: spinRefresh 0.8s linear infinite;
+}
+
+@keyframes spinRefresh {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .btn-book-consult-cta {
   display: inline-flex;
   align-items: center;
@@ -5954,8 +6008,19 @@ body {
     max-width: 100%;
   }
 
-  .btn-book-consult-cta {
+  .consult-toolbar-actions {
     width: 100%;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-refresh-consult {
+    flex: 1;
+  }
+
+  .btn-book-consult-cta {
+    flex: 2;
+    width: auto;
   }
 }
 

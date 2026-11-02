@@ -451,27 +451,55 @@
             />
           </div>
 
-          <!-- Book Consultation CTA Button -->
-          <button
-            type="button"
-            class="btn-book-consult-cta"
-            id="btnBookConsultCTA"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+          <div class="consult-toolbar-actions">
+            <!-- Quick Refresh Button -->
+            <button
+              type="button"
+              class="btn-refresh-consult"
+              id="btnRefreshConsultations"
+              aria-label="Refresh appointments list"
+              title="Quick refresh to check for doctor meet links and updates"
             >
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>Book Consultation</span>
-          </button>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="refresh-icon"
+              >
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>Refresh</span>
+            </button>
+
+            <!-- Book Consultation CTA Button -->
+            <button
+              type="button"
+              class="btn-book-consult-cta"
+              id="btnBookConsultCTA"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Book Consultation</span>
+            </button>
+          </div>
         </section>
 
         <!-- VIEW 1: My Appointments Table (Screen 1) -->
