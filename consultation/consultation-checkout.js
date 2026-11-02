@@ -341,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const payuPayload = {
             service_type: 'consultation',
+            doctor_id: activeBookingData?.doctorId || '',
             doctor_name: docName,
             doctor_role: docRole,
             patient_name: pName,

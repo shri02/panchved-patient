@@ -75,6 +75,7 @@ $amount = 0.00;
 $productInfo = 'Ocayur Healthcare';
 $itemId = '';
 $doctorName = trim((string)($input['doctor_name'] ?? 'Dr. Nidhi Jha'));
+$doctorId = trim((string)($input['doctor_id'] ?? ''));
 $doctorRole = trim((string)($input['doctor_role'] ?? 'Ayurveda Physician'));
 $appointmentDate = trim((string)($input['appointment_date'] ?? ($input['date'] ?? date('Y-m-d'))));
 $appointmentTime = trim((string)($input['appointment_time'] ?? ($input['time'] ?? '07:00 - 07:45 PM')));
@@ -142,7 +143,8 @@ $metaJson = json_encode([
     'date' => $appointmentDate,
     'time' => $appointmentTime,
     'agenda' => $agenda,
-    'doc_role' => $doctorRole
+    'doc_role' => $doctorRole,
+    'doctor_id' => $doctorId
 ]);
 $udf5 = $metaJson;
 

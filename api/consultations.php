@@ -350,6 +350,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $patDbId       = (int)$patient['id'];
+    $patName       = trim((string)($patient['full_name'] ?? ''));
     $patPhone      = trim((string)$patient['phone_number']);
     $patPhoneDigits = preg_replace('/[^\d]/', '', $patPhone);
     if (strlen($patPhoneDigits) === 12 && substr($patPhoneDigits, 0, 2) === '91') {
@@ -360,11 +361,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                    FROM appointments a 
                    LEFT JOIN doctors d ON a.doctor_id = d.id 
                    LEFT JOIN patients p ON a.patient_id = p.id 
-                   WHERE (a.patient_id = ? OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
+                   WHERE (a.patient_id = ? OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)) OR (? != '' AND a.patient_name = ?))
                    ORDER BY a.appointment_date DESC, a.id DESC";
 
     if ($aStmt = mysqli_prepare($connection1, $apptsQuery)) {
-        mysqli_stmt_bind_param($aStmt, "isss", $patDbId, $patPhone, $patPhone, $patPhoneDigits);
+        mysqli_stmt_bind_param($aStmt, "isssss", $patDbId, $patPhone, $patPhone, $patPhoneDigits, $patName, $patName);
         mysqli_stmt_execute($aStmt);
         $apptsRes = mysqli_stmt_get_result($aStmt);
 

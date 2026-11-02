@@ -570,12 +570,13 @@ if ($connection1) {
                   FROM appointments a 
                   LEFT JOIN packages p ON (a.package_name = p.package_name OR p.package_name LIKE CONCAT('%', a.package_name, '%'))
                   WHERE ((a.patient_id > 0 AND a.patient_id = ?) 
-                     OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?)))
+                     OR (? != '' AND a.patient_id IN (SELECT id FROM patients WHERE phone_number = ? OR phone_number = ?))
+                     OR (? != '' AND a.patient_name = ?))
                     AND a.status IN ('Scheduled', 'Upcoming', 'Completed', 'Active')
                   ORDER BY a.appointment_date DESC, a.id DESC";
 
     if ($aStmt = mysqli_prepare($connection1, $apptQuery)) {
-        mysqli_stmt_bind_param($aStmt, "isss", $patDbId, $patPhone, $patPhone, $phoneDigits);
+        mysqli_stmt_bind_param($aStmt, "isssss", $patDbId, $patPhone, $patPhone, $phoneDigits, $patName, $patName);
         mysqli_stmt_execute($aStmt);
         $apptRes = mysqli_stmt_get_result($aStmt);
         while ($row = mysqli_fetch_assoc($apptRes)) {

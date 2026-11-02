@@ -80,7 +80,15 @@ $appointmentCode = 'APT-' . date('Ymd') . '-' . mt_rand(100, 999);
 $formattedAmount = '₹' . number_format($amount > 0 ? $amount : 0.00, 2);
 
 $doctorName = !empty($udf4) ? $udf4 : ($pending['doctor_name'] ?? 'Dr. Nidhi Jha');
-$apptDate = $meta['date'] ?? ($pending['appointment_date'] ?? date('Y-m-d'));
+$rawApptDate = $meta['date'] ?? ($pending['appointment_date'] ?? date('Y-m-d'));
+$apptDate = date('Y-m-d');
+if (!empty($rawApptDate)) {
+    $parsedDate = strtotime($rawApptDate);
+    if ($parsedDate !== false) {
+        $apptDate = date('Y-m-d', $parsedDate);
+    }
+}
+$displayApptDate = (!empty($rawApptDate) && strtotime($rawApptDate) !== false) ? date('j F Y', strtotime($rawApptDate)) : $rawApptDate;
 $apptTime = $meta['time'] ?? ($pending['appointment_time'] ?? '07:00 - 07:45 PM');
 
 mysqli_report(MYSQLI_REPORT_OFF);
@@ -155,9 +163,24 @@ if ($isSuccess && $connection1) {
             $cleanPhone = substr($cleanPhone, 2);
         }
 
-        // Resolve Patient ID
+        // Resolve Patient ID & Full Name
         $patientDbId = (int)$udf3;
-        if ($patientDbId <= 0) {
+        $patientFullName = !empty($pending['patient_name']) ? $pending['patient_name'] : $firstName;
+
+        if ($patientDbId > 0) {
+            $pQuery = "SELECT id, full_name FROM patients WHERE id = ? LIMIT 1";
+            if ($pStmt = @mysqli_prepare($connection1, $pQuery)) {
+                @mysqli_stmt_bind_param($pStmt, "i", $patientDbId);
+                @mysqli_stmt_execute($pStmt);
+                $pRes = @mysqli_stmt_get_result($pStmt);
+                if ($pRow = @mysqli_fetch_assoc($pRes)) {
+                    if (!empty($pRow['full_name'])) {
+                        $patientFullName = $pRow['full_name'];
+                    }
+                }
+                @mysqli_stmt_close($pStmt);
+            }
+        } else {
             $pQuery = "SELECT id, full_name FROM patients WHERE (phone_number != '' AND (phone_number = ? OR phone_number = ?)) OR (email != '' AND email = ?) LIMIT 1";
             if ($pStmt = @mysqli_prepare($connection1, $pQuery)) {
                 @mysqli_stmt_bind_param($pStmt, "sss", $phone, $cleanPhone, $email);
@@ -165,23 +188,45 @@ if ($isSuccess && $connection1) {
                 $pRes = @mysqli_stmt_get_result($pStmt);
                 if ($pRow = @mysqli_fetch_assoc($pRes)) {
                     $patientDbId = (int)$pRow['id'];
+                    if (!empty($pRow['full_name'])) {
+                        $patientFullName = $pRow['full_name'];
+                    }
                 }
                 @mysqli_stmt_close($pStmt);
             }
         }
 
-        // Resolve Doctor ID
-        $doctorDbId = 1;
-        $dQuery = "SELECT id FROM doctors WHERE full_name = ? OR full_name LIKE ? LIMIT 1";
-        if ($dStmt = @mysqli_prepare($connection1, $dQuery)) {
-            $docLike = '%' . $doctorName . '%';
-            @mysqli_stmt_bind_param($dStmt, "ss", $doctorName, $docLike);
-            @mysqli_stmt_execute($dStmt);
-            $dRes = @mysqli_stmt_get_result($dStmt);
-            if ($dRow = @mysqli_fetch_assoc($dRes)) {
-                $doctorDbId = (int)$dRow['id'];
+        // Resolve Doctor ID & Exact Name
+        $doctorDbId = isset($meta['doctor_id']) && intval($meta['doctor_id']) > 0 ? intval($meta['doctor_id']) : 0;
+        if ($doctorDbId > 0) {
+            $dStmt = @mysqli_prepare($connection1, "SELECT id, full_name FROM doctors WHERE id = ? LIMIT 1");
+            if ($dStmt) {
+                @mysqli_stmt_bind_param($dStmt, "i", $doctorDbId);
+                @mysqli_stmt_execute($dStmt);
+                $dRes = @mysqli_stmt_get_result($dStmt);
+                if ($dRow = @mysqli_fetch_assoc($dRes)) {
+                    $doctorName = $dRow['full_name'];
+                }
+                @mysqli_stmt_close($dStmt);
             }
-            @mysqli_stmt_close($dStmt);
+        }
+        if ($doctorDbId <= 0) {
+            $cleanDocSearch = trim(preg_replace('/\s+/', ' ', preg_replace('/^dr\.?\s+/i', '', $doctorName)));
+            $docLike = '%' . $cleanDocSearch . '%';
+            $dQuery = "SELECT id, full_name FROM doctors WHERE full_name = ? OR full_name LIKE ? OR REPLACE(full_name, '  ', ' ') LIKE ? LIMIT 1";
+            if ($dStmt = @mysqli_prepare($connection1, $dQuery)) {
+                @mysqli_stmt_bind_param($dStmt, "sss", $doctorName, $docLike, $docLike);
+                @mysqli_stmt_execute($dStmt);
+                $dRes = @mysqli_stmt_get_result($dStmt);
+                if ($dRow = @mysqli_fetch_assoc($dRes)) {
+                    $doctorDbId = (int)$dRow['id'];
+                    $doctorName = $dRow['full_name'];
+                }
+                @mysqli_stmt_close($dStmt);
+            }
+            if ($doctorDbId <= 0) {
+                $doctorDbId = 1;
+            }
         }
 
         // A. Package Fulfillment
@@ -205,7 +250,7 @@ if ($isSuccess && $connection1) {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, '45 min', 'Package Consultation', ?, 'Scheduled', NOW(), NOW())");
             if ($insAppt) {
                 $agendaTxt = "Package Enrollment for {$cleanPkgName} (Txn: {$txnid})";
-                @mysqli_stmt_bind_param($insAppt, "sisisssss", $appointmentCode, $patientDbId, $firstName, $doctorDbId, $doctorName, $cleanPkgName, $apptDate, $apptTime, $agendaTxt);
+                @mysqli_stmt_bind_param($insAppt, "sisisssss", $appointmentCode, $patientDbId, $patientFullName, $doctorDbId, $doctorName, $cleanPkgName, $apptDate, $apptTime, $agendaTxt);
                 @mysqli_stmt_execute($insAppt);
                 @mysqli_stmt_close($insAppt);
 
@@ -213,15 +258,16 @@ if ($isSuccess && $connection1) {
                     $connection1,
                     'Consultation',
                     'consultation.booked',
-                    "Patient {$firstName} booked consultation {$appointmentCode} with Dr. {$doctorName} on {$apptDate} at {$apptTime}",
+                    "Patient {$patientFullName} booked consultation {$appointmentCode} with Dr. {$doctorName} on {$displayApptDate} at {$apptTime}",
                     'Consultation',
                     $patientDbId ?: null,
                     $appointmentCode,
                     [
                         'appointment_id' => $appointmentCode,
                         'patient_id' => $patientDbId,
-                        'patient_name' => $firstName,
+                        'patient_name' => $patientFullName,
                         'doctor_name' => $doctorName,
+                        'doctor_id' => $doctorDbId,
                         'appointment_date' => $apptDate,
                         'appointment_time' => $apptTime,
                         'amount' => $amount,
@@ -229,7 +275,7 @@ if ($isSuccess && $connection1) {
                     ],
                     'Patient',
                     $patientDbId,
-                    $firstName
+                    $patientFullName
                 );
             }
 
@@ -241,7 +287,7 @@ if ($isSuccess && $connection1) {
                 $connection1,
                 'Package',
                 'package.purchased',
-                "Patient {$firstName} purchased package: {$cleanPkgName} (Booking: {$bookingId}, Fee: ₹" . number_format($amount, 2) . ")",
+                "Patient {$patientFullName} purchased package: {$cleanPkgName} (Booking: {$bookingId}, Fee: ₹" . number_format($amount, 2) . ")",
                 'Package',
                 intval($udf2) ?: null,
                 $cleanPkgName,
@@ -249,14 +295,15 @@ if ($isSuccess && $connection1) {
                     'booking_id' => $bookingId,
                     'package_name' => $cleanPkgName,
                     'patient_id' => $patientDbId,
-                    'patient_name' => $firstName,
+                    'patient_name' => $patientFullName,
                     'doctor_name' => $doctorName,
+                    'doctor_id' => $doctorDbId,
                     'amount' => $amount,
                     'txnid' => $txnid
                 ],
                 'Patient',
                 $patientDbId,
-                $firstName
+                $patientFullName
             );
 
         // B. Workshop Fulfillment
@@ -281,7 +328,7 @@ if ($isSuccess && $connection1) {
                 $connection1,
                 'Workshop',
                 'workshop.booked',
-                "Patient {$firstName} registered for workshop: {$cleanWsTitle} (Booking: {$bookingId}, Fee: ₹" . number_format($amount, 2) . ")",
+                "Patient {$patientFullName} registered for workshop: {$cleanWsTitle} (Booking: {$bookingId}, Fee: ₹" . number_format($amount, 2) . ")",
                 'Workshop',
                 $wsId,
                 $cleanWsTitle,
@@ -290,13 +337,13 @@ if ($isSuccess && $connection1) {
                     'workshop_id' => $wsId,
                     'workshop_title' => $cleanWsTitle,
                     'patient_id' => $patientDbId,
-                    'patient_name' => $firstName,
+                    'patient_name' => $patientFullName,
                     'amount' => $amount,
                     'txnid' => $txnid
                 ],
                 'Patient',
                 $patientDbId,
-                $firstName
+                $patientFullName
             );
 
         // C. Consultation Fulfillment
@@ -306,23 +353,31 @@ if ($isSuccess && $connection1) {
                 VALUES (?, ?, ?, ?, ?, 'Consultation', ?, ?, '45 min', 'Consultation', ?, 'Scheduled', NOW(), NOW())");
             if ($insAppt) {
                 $agendaTxt = "Doctor Consultation with {$doctorName} (Txn: {$txnid})";
-                @mysqli_stmt_bind_param($insAppt, "sisissss", $appointmentCode, $patientDbId, $firstName, $doctorDbId, $doctorName, $apptDate, $apptTime, $agendaTxt);
-                @mysqli_stmt_execute($insAppt);
+                @mysqli_stmt_bind_param($insAppt, "sisissss", $appointmentCode, $patientDbId, $patientFullName, $doctorDbId, $doctorName, $apptDate, $apptTime, $agendaTxt);
+                $execOk = @mysqli_stmt_execute($insAppt);
+                if (!$execOk) {
+                    error_log('PayU Consultation Insert Error: ' . mysqli_stmt_error($insAppt));
+                }
                 @mysqli_stmt_close($insAppt);
+
+                if ($patientDbId > 0) {
+                    @mysqli_query($connection1, "UPDATE patients SET total_appointments = total_appointments + 1, updated_at = NOW() WHERE id = {$patientDbId}");
+                }
 
                 recordActivity(
                     $connection1,
                     'Consultation',
                     'consultation.booked',
-                    "Patient {$firstName} booked consultation {$appointmentCode} with Dr. {$doctorName} on {$apptDate} at {$apptTime}",
+                    "Patient {$patientFullName} booked consultation {$appointmentCode} with Dr. {$doctorName} on {$displayApptDate} at {$apptTime}",
                     'Consultation',
                     $patientDbId ?: null,
                     $appointmentCode,
                     [
                         'appointment_id' => $appointmentCode,
                         'patient_id' => $patientDbId,
-                        'patient_name' => $firstName,
+                        'patient_name' => $patientFullName,
                         'doctor_name' => $doctorName,
+                        'doctor_id' => $doctorDbId,
                         'appointment_date' => $apptDate,
                         'appointment_time' => $apptTime,
                         'amount' => $amount,
@@ -330,7 +385,7 @@ if ($isSuccess && $connection1) {
                     ],
                     'Patient',
                     $patientDbId,
-                    $firstName
+                    $patientFullName
                 );
             }
         }
