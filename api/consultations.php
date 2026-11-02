@@ -379,8 +379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
                 $apptId   = !empty($r['appointment_id']) ? $r['appointment_id'] : ('APT-' . $r['id']);
                 $docName  = !empty($r['doctor_name']) ? $r['doctor_name'] : 'Doctor';
-                $cleanDoc = strtolower(preg_replace('/[^a-z0-9]/i', '', str_replace(['Dr.', 'Dr '], '', $docName)));
-                $meetLink = "https://meet.google.com/abc-{$cleanDoc}-ocayur";
+                $meetLink = !empty($r['meet_link']) ? trim((string)$r['meet_link']) : null;
 
                 // Resolve prescription strictly per appointment
                 $prescPayload = resolvePrescriptionPayload($r, $patientsMap, $doctorsMap, $prescByAppt, $prescByPatient);

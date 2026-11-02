@@ -357,8 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const getMeetLink = (doctorName, apptId) => {
-    const cleanDoc = (doctorName || 'consult').toLowerCase().replace(/dr\.?|\s+/g, '').replace(/[^a-z0-9]/g, '');
-    return `https://meet.google.com/abc-${cleanDoc || 'ocayur'}-ocayur`;
+    return '';
   };
 
   const escapeHtml = (str) => {
@@ -492,7 +491,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const doctorName = appt.doctor_name || 'Dr. Rohit Mishra';
       const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
       const durationVal = formatDuration(appt.duration);
-      const meetLink = appt.meet_link || getMeetLink(doctorName, apptId);
+      const realMeetLink = (appt.meet_link && String(appt.meet_link).trim() !== '') ? String(appt.meet_link).trim() : '';
+      const meetButtonHtml = realMeetLink ? `
+            <a href="${escapeHtml(realMeetLink)}" target="_blank" rel="noopener noreferrer" class="meet-link-btn" title="Join Google Meet Consultation" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #0284c7; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 10l5-5v14l-5-5"></path>
+                <rect x="2" y="6" width="13" height="12" rx="2"></rect>
+              </svg>
+              <span>Join Meet</span>
+            </a>
+      ` : `
+            <span class="meet-pending-badge" title="Doctor will update the Google Meet link prior to consultation" style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Link Pending</span>
+            </span>
+      `;
 
       return `
         <tr>
@@ -509,13 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </svg>
               <span>Chat</span>
             </a>
-            <button type="button" class="meet-link-btn" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
-              <span>meet.google...</span>
-              <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </button>
+            ${meetButtonHtml}
           </td>
         </tr>
       `;
@@ -759,7 +769,24 @@ document.addEventListener('DOMContentLoaded', () => {
           const doctorName = appt.doctor_name || 'Dr. Rohit Mishra';
           const complaintText = appt.complaint || appt.agenda || appt.service_type || 'Ayurvedic consultation and pulse diagnostics';
           const durationVal = formatDuration(appt.duration);
-          const meetLink = appt.meet_link || getMeetLink(doctorName, apptId);
+          const realMeetLink = (appt.meet_link && String(appt.meet_link).trim() !== '') ? String(appt.meet_link).trim() : '';
+          const meetButtonHtml = realMeetLink ? `
+                <a href="${escapeHtml(realMeetLink)}" target="_blank" rel="noopener noreferrer" class="meet-link-btn" title="Join Google Meet Consultation" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #0284c7; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 10l5-5v14l-5-5"></path>
+                    <rect x="2" y="6" width="13" height="12" rx="2"></rect>
+                  </svg>
+                  <span>Join Meet</span>
+                </a>
+          ` : `
+                <span class="meet-pending-badge" title="Doctor will update the Google Meet link prior to consultation" style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>Link Pending</span>
+                </span>
+          `;
 
           return `
             <tr>
@@ -776,13 +803,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   </svg>
                   <span>Chat</span>
                 </a>
-                <button type="button" class="meet-link-btn" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
-                  <span>meet.google...</span>
-                  <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                </button>
+                ${meetButtonHtml}
               </td>
             </tr>
           `;
