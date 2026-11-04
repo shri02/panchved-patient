@@ -763,6 +763,24 @@ document.addEventListener("DOMContentLoaded", () => {
   restrictPhoneInput(phoneInput, 10);
   restrictPhoneInput(personalPhoneInput, 10);
 
+  // Pre-fill remembered patient credentials
+  const patientRememberMeCheckbox = document.getElementById("patientRememberMe");
+  try {
+    const rememberedPatPhone = localStorage.getItem("panchved_patient_remembered_phone") || localStorage.getItem("ocayur_patient_remembered_phone");
+    const rememberedPatCountry = localStorage.getItem("panchved_patient_remember_code");
+    if (rememberedPatPhone && phoneInput) {
+      phoneInput.value = rememberedPatPhone;
+      if (patientRememberMeCheckbox) {
+        patientRememberMeCheckbox.checked = true;
+      }
+      if (rememberedPatCountry && selectedCountryCode) {
+        selectedCountryCode.textContent = rememberedPatCountry;
+      }
+    }
+  } catch (err) {
+    console.warn("Unable to load remembered patient credentials:", err);
+  }
+
   const restrictNameInput = (inputEl) => {
     if (!inputEl) return;
     inputEl.addEventListener("keydown", (e) => {
@@ -983,6 +1001,25 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>Logging in...</span>
       `;
 
+      const isRememberMe = patientRememberMeCheckbox ? patientRememberMeCheckbox.checked : false;
+      try {
+        if (isRememberMe) {
+          localStorage.setItem("panchved_patient_remembered_phone", phone);
+          localStorage.setItem("ocayur_patient_remembered_phone", phone);
+          if (selectedCountryCode) {
+            localStorage.setItem("panchved_patient_remember_code", countryCode);
+          }
+          localStorage.setItem("panchved_patient_remember_me", "true");
+        } else {
+          localStorage.removeItem("panchved_patient_remembered_phone");
+          localStorage.removeItem("ocayur_patient_remembered_phone");
+          localStorage.removeItem("panchved_patient_remember_code");
+          localStorage.setItem("panchved_patient_remember_me", "false");
+        }
+      } catch (err) {
+        console.warn("Unable to save patient remember me state:", err);
+      }
+
       try {
         const response = await fetch("api/login.php", {
           method: "POST",
@@ -994,6 +1031,7 @@ document.addEventListener("DOMContentLoaded", () => {
             phone: phone,
             password: password,
             country_code: countryCode,
+            remember_me: isRememberMe
           }),
         });
 

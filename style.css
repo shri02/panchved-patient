@@ -688,11 +688,83 @@ body {
   background: transparent;
 }
 
-/* Forgot Password Link */
+/* Options Row: Remember Me & Forgot Password */
+.login-options-row,
 .forgot-password-wrapper {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: -4px;
+  margin-bottom: 6px;
+  user-select: none;
+}
+
+.remember-me-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary, #475569);
+  position: relative;
+  transition: color var(--transition, 0.2s ease);
+}
+
+.remember-me-label:hover {
+  color: var(--text-primary, #0f172a);
+}
+
+.remember-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.checkbox-custom {
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--border-color, #cbd5e1);
+  border-radius: 4px;
+  background-color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.18s ease-in-out;
+}
+
+.remember-checkbox:focus-visible + .checkbox-custom {
+  outline: 2px solid var(--primary-teal);
+  outline-offset: 2px;
+}
+
+.remember-checkbox:checked + .checkbox-custom {
+  background-color: var(--primary-teal, #00796b);
+  border-color: var(--primary-teal, #00796b);
+}
+
+.check-icon {
+  width: 11px;
+  height: 11px;
+  color: #ffffff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.15s ease-in-out;
+}
+
+.remember-checkbox:checked + .checkbox-custom .check-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.remember-text {
+  font-size: 13px;
+  line-height: 1.2;
 }
 
 .forgot-password-link {
