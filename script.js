@@ -9,6 +9,44 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Auto-redirect to dashboard if patient is already logged in with Remember Me
+  const isPatientRemembered = (localStorage.getItem("panchved_patient_logged_in") === "true" || localStorage.getItem("panchved_patient_remember_me") === "true");
+  const localPatient = localStorage.getItem("ocayur_patient_user") || localStorage.getItem("panchved_patient_user") || localStorage.getItem("ocayur_user") || localStorage.getItem("panchved_user") || localStorage.getItem("ocayur_patient") || localStorage.getItem("panchved_patient");
+  const isPatientLogoutAction = window.location.hash === "#logout" || window.location.search.includes("logout=true");
+  const isPatientAuthAction = window.location.hash === "#create-account" || window.location.hash === "#forgot-password";
+
+  if (!isPatientLogoutAction && !isPatientAuthAction && isPatientRemembered && localPatient) {
+    window.location.replace("dashboard/dashboard.html");
+    return;
+  }
+
+  if (!isPatientLogoutAction && !isPatientAuthAction) {
+    fetch("api/check_session.php", {
+      method: "GET",
+      headers: { "Accept": "application/json" }
+    })
+    .then(async (res) => {
+      if (!res.ok) return null;
+      return res.json().catch(() => null);
+    })
+    .then((data) => {
+      if (data && data.authenticated && (data.user || data.patient)) {
+        if (data.user) {
+          localStorage.setItem("ocayur_patient_user", JSON.stringify(data.user));
+          localStorage.setItem("panchved_patient_user", JSON.stringify(data.user));
+          localStorage.setItem("ocayur_user", JSON.stringify(data.user));
+        }
+        if (data.patient) {
+          localStorage.setItem("ocayur_patient", JSON.stringify(data.patient));
+          localStorage.setItem("panchved_patient", JSON.stringify(data.patient));
+        }
+        localStorage.setItem("panchved_patient_logged_in", "true");
+        window.location.replace("dashboard/dashboard.html");
+      }
+    })
+    .catch(() => {});
+  }
+
   // Page Loader Overlay Logic
   const pageLoader = document.getElementById("pageLoader");
   const hidePageLoader = () => {
@@ -407,6 +445,10 @@ document.addEventListener("DOMContentLoaded", () => {
           await fetch("api/logout.php", { method: "POST" });
         } catch (err) {}
         try {
+          localStorage.removeItem("panchved_patient_logged_in");
+          localStorage.removeItem("panchved_patient_remember_me");
+          localStorage.removeItem("ocayur_patient_user");
+          localStorage.removeItem("panchved_patient_user");
           localStorage.removeItem("ocayur_user");
           localStorage.removeItem("panchved_user");
           localStorage.removeItem("ocayur_patient");
@@ -1038,6 +1080,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const result = await response.json();
 
         if (response.ok && result.success) {
+          if (isRememberMe) {
+            localStorage.setItem("panchved_patient_logged_in", "true");
+          } else {
+            localStorage.removeItem("panchved_patient_logged_in");
+          }
           try {
             localStorage.removeItem("ocayur_booked_packages");
             localStorage.removeItem("panchved_booked_packages");

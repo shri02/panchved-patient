@@ -1081,13 +1081,17 @@ document.addEventListener('DOMContentLoaded', () => {
         await fetch('../api/logout.php', { method: 'POST' });
       } catch (err) {}
       try {
+        localStorage.removeItem('panchved_patient_logged_in');
+        localStorage.removeItem('panchved_patient_remember_me');
+        localStorage.removeItem('ocayur_patient_user');
+        localStorage.removeItem('panchved_patient_user');
         localStorage.removeItem('ocayur_user'); localStorage.removeItem('panchved_user');
         localStorage.removeItem('ocayur_patient'); localStorage.removeItem('panchved_patient');
         localStorage.removeItem('ocayur_prakruti_result'); localStorage.removeItem('panchved_prakruti_result');
       } catch (e) {}
       showToast('Logged out successfully.');
       setTimeout(() => {
-        window.location.href = '../index.html';
+        window.location.href = '../index.html#logout';
       }, 350);
     });
   }
