@@ -578,71 +578,136 @@ try {
         throw new mysqli_sql_exception('Failed to generate user record ID.');
     }
 
-    // 2. Insert into `patients` table
+    // 2. Insert into `patients` table with all individual Prakruti Parikshan fields
     $patientRecordId = null;
 
-    if ($hasPatRefCol) {
-        $insertPat = "INSERT INTO patients (
-            patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email, blood_group, emergency_contact, address, package_name, referral_code, total_appointments, status, created_at, updated_at
-        ) VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW()
-        )";
-        $pInStmt = mysqli_prepare($connection1, $insertPat);
-        if (!$pInStmt) {
-            throw new mysqli_sql_exception('Failed to prepare patient insertion: ' . mysqli_error($connection1));
+    // Build structured Prakruti assessment payload
+    $prakrutiPayload = [
+        'profile_type'      => $profileType,
+        'appetite'          => $appetite,
+        'sleep_type'        => $sleepType,
+        'skin_type'         => $skinType,
+        'hair_type'         => $hairType,
+        'bowel_movement'    => $bowelMovement,
+        'stress_response'   => $stressResponse,
+        'body_temperature'  => $bodyTemperature,
+        'physical_activity' => $physicalActivity,
+        'scores'            => [
+            'vata'  => $vataScore,
+            'pitta' => $pittaScore,
+            'kapha' => $kaphaScore
+        ],
+        'assessment_date'   => date('Y-m-d H:i:s')
+    ];
+    $prakrutiJson = json_encode($prakrutiPayload, JSON_UNESCAPED_UNICODE);
+
+    // Fetch existing columns in patients table to adapt dynamically
+    $existingCols = [];
+    $cRes = @mysqli_query($connection1, "SHOW COLUMNS FROM `patients`");
+    if ($cRes) {
+        while ($cRow = mysqli_fetch_assoc($cRes)) {
+            $existingCols[$cRow['Field']] = true;
         }
-        mysqli_stmt_bind_param($pInStmt, "ssssisssssssssss", 
-            $newPatientId, 
-            $profileType, 
-            $fullName, 
-            $formattedDob, 
-            $age, 
-            $heightValue, 
-            $weightValue, 
-            $phoneDigits, 
-            $gender, 
-            $email,
-            $bloodGroup,
-            $emergencyContact,
-            $address,
-            $packageName,
-            $referralCode,
-            $status
-        );
-        mysqli_stmt_execute($pInStmt);
-        $patientRecordId = mysqli_insert_id($connection1);
-        mysqli_stmt_close($pInStmt);
-    } else {
-        $insertPat = "INSERT INTO patients (
-            patient_id, patient_profile, full_name, dob, age, height, weight, phone_number, gender, email, blood_group, emergency_contact, address, package_name, total_appointments, status, created_at, updated_at
-        ) VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW()
-        )";
-        $pInStmt = mysqli_prepare($connection1, $insertPat);
-        if (!$pInStmt) {
-            throw new mysqli_sql_exception('Failed to prepare patient insertion: ' . mysqli_error($connection1));
-        }
-        mysqli_stmt_bind_param($pInStmt, "ssssissssssssss", 
-            $newPatientId, 
-            $profileType, 
-            $fullName, 
-            $formattedDob, 
-            $age, 
-            $heightValue, 
-            $weightValue, 
-            $phoneDigits, 
-            $gender, 
-            $email,
-            $bloodGroup,
-            $emergencyContact,
-            $address,
-            $packageName,
-            $status
-        );
-        mysqli_stmt_execute($pInStmt);
-        $patientRecordId = mysqli_insert_id($connection1);
-        mysqli_stmt_close($pInStmt);
     }
+
+    $colNames = ['patient_id', 'patient_profile', 'full_name', 'dob', 'age', 'height', 'weight', 'phone_number', 'gender', 'email', 'blood_group', 'emergency_contact', 'address', 'package_name', 'total_appointments', 'status'];
+    $bindTypes = 'ssssisssssssssis';
+    $bindValues = [
+        $newPatientId,
+        $profileType,
+        $fullName,
+        $formattedDob,
+        $age,
+        $heightValue,
+        $weightValue,
+        $phoneDigits,
+        $gender,
+        $email,
+        $bloodGroup,
+        $emergencyContact,
+        $address,
+        $packageName,
+        0,
+        $status
+    ];
+
+    if (!empty($existingCols['referral_code'])) {
+        $colNames[] = 'referral_code';
+        $bindTypes .= 's';
+        $bindValues[] = $referralCode;
+    }
+    if (!empty($existingCols['appetite'])) {
+        $colNames[] = 'appetite';
+        $bindTypes .= 's';
+        $bindValues[] = $appetite;
+    }
+    if (!empty($existingCols['sleep_type'])) {
+        $colNames[] = 'sleep_type';
+        $bindTypes .= 's';
+        $bindValues[] = $sleepType;
+    }
+    if (!empty($existingCols['skin_type'])) {
+        $colNames[] = 'skin_type';
+        $bindTypes .= 's';
+        $bindValues[] = $skinType;
+    }
+    if (!empty($existingCols['hair_type'])) {
+        $colNames[] = 'hair_type';
+        $bindTypes .= 's';
+        $bindValues[] = $hairType;
+    }
+    if (!empty($existingCols['bowel_movement'])) {
+        $colNames[] = 'bowel_movement';
+        $bindTypes .= 's';
+        $bindValues[] = $bowelMovement;
+    }
+    if (!empty($existingCols['stress_response'])) {
+        $colNames[] = 'stress_response';
+        $bindTypes .= 's';
+        $bindValues[] = $stressResponse;
+    }
+    if (!empty($existingCols['body_temperature'])) {
+        $colNames[] = 'body_temperature';
+        $bindTypes .= 's';
+        $bindValues[] = $bodyTemperature;
+    }
+    if (!empty($existingCols['physical_activity'])) {
+        $colNames[] = 'physical_activity';
+        $bindTypes .= 's';
+        $bindValues[] = $physicalActivity;
+    }
+    if (!empty($existingCols['prakruti_data'])) {
+        $colNames[] = 'prakruti_data';
+        $bindTypes .= 's';
+        $bindValues[] = $prakrutiJson;
+    }
+
+    // Append created_at and updated_at
+    if (!empty($existingCols['created_at'])) {
+        $colNames[] = 'created_at';
+    }
+    if (!empty($existingCols['updated_at'])) {
+        $colNames[] = 'updated_at';
+    }
+
+    $placeholders = [];
+    foreach ($colNames as $cName) {
+        if ($cName === 'created_at' || $cName === 'updated_at') {
+            $placeholders[] = 'NOW()';
+        } else {
+            $placeholders[] = '?';
+        }
+    }
+
+    $insertPat = "INSERT INTO `patients` (`" . implode('`, `', $colNames) . "`) VALUES (" . implode(', ', $placeholders) . ")";
+    $pInStmt = mysqli_prepare($connection1, $insertPat);
+    if (!$pInStmt) {
+        throw new mysqli_sql_exception('Failed to prepare patient insertion: ' . mysqli_error($connection1));
+    }
+    mysqli_stmt_bind_param($pInStmt, $bindTypes, ...$bindValues);
+    mysqli_stmt_execute($pInStmt);
+    $patientRecordId = mysqli_insert_id($connection1);
+    mysqli_stmt_close($pInStmt);
 
     if (!$patientRecordId) {
         throw new mysqli_sql_exception('Failed to create patient profile record.');
