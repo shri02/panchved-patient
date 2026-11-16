@@ -1042,7 +1042,7 @@
               <label for="consultDate" class="form-field-label"
                 >Date<span class="required-star">*</span></label
               >
-              <div class="input-with-icon">
+              <div class="input-with-icon date-picker-input-container">
                 <input
                   type="text"
                   id="consultDate"
@@ -1050,6 +1050,8 @@
                   class="modal-input icon-input"
                   placeholder="Select Date here"
                   value=""
+                  readonly
+                  style="cursor: pointer;"
                   required
                 />
                 <button
@@ -1085,16 +1087,8 @@
                 <input
                   type="date"
                   id="nativeDatePicker"
-                  style="
-                    position: absolute;
-                    opacity: 0;
-                    pointer-events: none;
-                    width: 0;
-                    height: 0;
-                    left: 0;
-                    bottom: 0;
-                  "
-                  aria-hidden="true"
+                  class="native-date-overlay"
+                  aria-label="Select Date"
                   tabindex="-1"
                 />
               </div>

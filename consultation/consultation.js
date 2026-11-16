@@ -1343,39 +1343,42 @@ document.addEventListener('DOMContentLoaded', () => {
     nativeDatePicker.setAttribute('min', todayISO);
   }
 
-  if (btnDateCalendar && nativeDatePicker && consultDate) {
-    btnDateCalendar.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+  if (nativeDatePicker && consultDate) {
+    const triggerDatePicker = (e) => {
       try {
-        if (nativeDatePicker.showPicker) {
+        if (typeof nativeDatePicker.showPicker === 'function') {
           nativeDatePicker.showPicker();
         } else {
           nativeDatePicker.focus();
         }
       } catch (err) {
-        nativeDatePicker.focus();
-      }
-    });
-
-    consultDate.addEventListener('click', () => {
-      if (!consultDate.value) {
         try {
-          if (nativeDatePicker.showPicker) nativeDatePicker.showPicker();
-        } catch (err) {}
+          nativeDatePicker.focus();
+        } catch (e2) {}
       }
+    };
+
+    if (btnDateCalendar) {
+      btnDateCalendar.addEventListener('click', (e) => {
+        triggerDatePicker(e);
+      });
+    }
+
+    consultDate.addEventListener('click', (e) => {
+      triggerDatePicker(e);
     });
 
     nativeDatePicker.addEventListener('change', () => {
       if (nativeDatePicker.value) {
         const parts = nativeDatePicker.value.split('-');
         if (parts.length === 3) {
-          const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
           const formatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
           consultDate.value = formatted;
         } else {
           consultDate.value = nativeDatePicker.value;
         }
+        consultDate.dispatchEvent(new Event('change', { bubbles: true }));
       }
     });
   }

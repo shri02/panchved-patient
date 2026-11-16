@@ -3343,6 +3343,43 @@ body {
   transform: translateY(-50%) scale(0.92);
 }
 
+/* Modal Native Date Picker Transparent Touch Overlay */
+.date-picker-input-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.native-date-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 3;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.native-date-overlay::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.date-picker-input-container:focus-within .icon-input {
+  border-color: var(--primary-teal, #14b8a6);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+
 /* ========================================================
    Complete Clock Time Picker Component
    ======================================================== */
