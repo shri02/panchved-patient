@@ -1893,7 +1893,7 @@ document.addEventListener('DOMContentLoaded', () => {
         slot: timeFormatted,
         complaint: agenda,
         agenda: agenda || `Ayurvedic consultation with ${doctorName}`,
-        fee: '₹1.00'
+        fee: '₹500.00'
       };
 
       try {
