@@ -450,7 +450,7 @@ $appointmentDateRaw = isset($data['appointment_date']) ? trim($data['appointment
 $appointmentTime = isset($data['appointment_time']) ? trim($data['appointment_time']) : (isset($data['time']) ? trim($data['time']) : '07:00 - 07:45 PM');
 $duration      = isset($data['duration']) ? trim($data['duration']) : '45 min';
 $agenda        = isset($data['complaint']) && !empty(trim($data['complaint'])) ? trim($data['complaint']) : (isset($data['agenda']) ? trim($data['agenda']) : "Ayurvedic consultation with {$doctorName}");
-$amount        = isset($data['amount']) ? (float)$data['amount'] : 500.00;
+$amount        = isset($data['amount']) ? (float)$data['amount'] : 1.00;
 
 // Resolve Date
 $appointmentDate = date('Y-m-d');

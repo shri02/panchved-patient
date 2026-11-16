@@ -182,11 +182,12 @@ try {
     } elseif ($serviceType === 'consultation') {
         $productInfo = 'Consultation ' . preg_replace('/[^a-zA-Z0-9\s]/', '', $doctorName);
         $itemId = 'consultation';
-        $amount = isset($input['amount']) && is_numeric($input['amount']) ? (float)$input['amount'] : 500.00;
+        // Temporary testing cost: set to 1.00 (change back to 500.00 after test)
+        $amount = isset($input['amount']) && is_numeric($input['amount']) ? (float)$input['amount'] : 1.00;
     }
 
     if ($amount <= 0) {
-        $amount = 500.00;
+        $amount = ($serviceType === 'consultation') ? 1.00 : 500.00;
     }
     $formattedAmount = round($amount, 2);
 

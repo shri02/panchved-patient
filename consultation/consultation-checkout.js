@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appointment_date: dateText,
             appointment_time: timeText,
             agenda: activeBookingData?.complaint || activeBookingData?.agenda || `Online consultation with ${docName}`,
-            amount: 500.00
+            amount: 1.00
           };
 
           const res = await checkoutHandler.processPayment(payuPayload);
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
           duration: '45 min',
           agenda: activeBookingData?.complaint || activeBookingData?.agenda || `Online consultation with ${docName}`,
           payment_method: payMethod,
-          amount: 500.00
+          amount: 1.00
         };
 
         const res = await fetch('../api/consultations.php', {
@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (receiptBookingId) receiptBookingId.textContent = bookingId;
         if (receiptDoctorName) receiptDoctorName.textContent = docName;
         if (receiptDateTime) receiptDateTime.textContent = `${dateText}, ${timeText}`;
-        if (receiptAmount) receiptAmount.textContent = '₹500.00';
+        if (receiptAmount) receiptAmount.textContent = '₹1.00';
 
         if (bookingSuccessModal) {
           bookingSuccessModal.classList.add('active');
