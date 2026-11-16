@@ -321,22 +321,22 @@ try {
     }
 
     // 7. Body Temperature
-    if (in_array($bodyTemperature, ['feels_cold', 'vata'])) {
+    if (in_array($bodyTemperature, ['feels_cold', 'vata', 'cold_hands_legs', 'Cold hands and legs'])) {
         $vataScore++;
-    } elseif (in_array($bodyTemperature, ['feels_hot', 'pitta'])) {
+    } elseif (in_array($bodyTemperature, ['feels_hot', 'pitta', 'warm_legs_hands', 'warm legs and hands'])) {
         $pittaScore++;
-    } elseif (in_array($bodyTemperature, ['cool_stable', 'kapha'])) {
+    } elseif (in_array($bodyTemperature, ['cool_stable', 'kapha', 'normal_stable', 'normal & stable', 'normal and stable'])) {
         $kaphaScore++;
     } else {
         $pittaScore++;
     }
 
     // 8. Physical Activity
-    if (in_array($physicalActivity, ['quick_irregular', 'vata'])) {
+    if (in_array($physicalActivity, ['quick_irregular', 'vata', 'weekly_3_times', 'weekly 3 times'])) {
         $vataScore++;
-    } elseif (in_array($physicalActivity, ['active_intense', 'pitta'])) {
+    } elseif (in_array($physicalActivity, ['active_intense', 'pitta', 'regular', 'Regular'])) {
         $pittaScore++;
-    } elseif (in_array($physicalActivity, ['slow_steady', 'kapha'])) {
+    } elseif (in_array($physicalActivity, ['slow_steady', 'kapha', 'no_movement', 'No Movement'])) {
         $kaphaScore++;
     } else {
         $pittaScore++;
