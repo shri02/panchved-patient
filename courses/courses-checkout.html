@@ -272,15 +272,15 @@
 
             <div class="payment-methods-list" role="radiogroup" aria-label="Select Payment Method">
               
-              <!-- PayU Payment Gateway (Supports UPI, Cards, NetBanking, Wallets) -->
-              <label class="payment-method-item active" for="payPayU">
+              <!-- Cashfree Payment Gateway (Supports UPI, Cards, NetBanking, Wallets) -->
+              <label class="payment-method-item active" for="payCashfree">
                 <div class="payment-radio-left">
-                  <input type="radio" name="paymentMethod" id="payPayU" value="payu" checked />
+                  <input type="radio" name="paymentMethod" id="payCashfree" value="cashfree" checked />
                   <span class="custom-radio"></span>
-                  <span class="payment-name">PayU Payment Gateway</span>
+                  <span class="payment-name">Cashfree Payment Gateway</span>
                 </div>
                 <div class="payment-logo-badge" aria-hidden="true">
-                  <span style="font-weight: 800; font-size: 16px; color: #009933; letter-spacing: -0.5px;">Pay<span style="color: #66cc33;">U</span></span>
+                  <span style="font-weight: 800; font-size: 16px; color: #0084ff; letter-spacing: -0.5px;">Cash<span style="color: #00d084;">free</span></span>
                 </div>
               </label>
 
@@ -407,6 +407,8 @@
     <span id="toastMsg">Action completed successfully!</span>
   </div>
 
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <script src="../assets/cashfree_checkout.js"></script>
   <script src="../assets/payu_checkout.js"></script>
   <script src="courses-checkout.js"></script>
 </body>

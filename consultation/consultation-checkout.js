@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const getSelectedPaymentMethod = () => {
     const activeRadio = document.querySelector('input[name="paymentMethod"]:checked');
-    return activeRadio ? activeRadio.value : 'payu';
+    return activeRadio ? activeRadio.value : 'cashfree';
   };
 
   // 4. Confirm Payment -> Backend API Sync & Success Modal
@@ -337,7 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let bookingId = '#' + Math.floor(100000 + Math.random() * 900000);
 
       // Process with PayU Payment Gateway if selected
-      if (payMethod === 'payu' && window.PayUCheckout) {
+      const checkoutHandler = window.CashfreeCheckout || window.PayUCheckout;
+      if ((payMethod === 'cashfree' || payMethod === 'payu') && checkoutHandler) {
         try {
           const payuPayload = {
             service_type: 'consultation',
@@ -354,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
             amount: 500.00
           };
 
-          const res = await window.PayUCheckout.processPayment(payuPayload);
+          const res = await checkoutHandler.processPayment(payuPayload);
           if (res && res.redirected) {
             return; // Browser redirected to PayU gateway
           }

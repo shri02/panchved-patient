@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const successPaymentAmount = document.getElementById('successPaymentAmount');
 
   let activeWorkshopData = null;
-  let selectedPaymentMethod = 'PayU';
+  let selectedPaymentMethod = 'Cashfree';
 
   // Helper: Toast Message
   const showToast = (message, isError = false) => {
@@ -734,9 +734,10 @@ document.addEventListener('DOMContentLoaded', () => {
         time: timeText
       };
 
-      // Process with PayU Payment Gateway if selected
-      const isPayU = (selectedPaymentMethod.toLowerCase().includes('payu') || selectedPaymentMethod.toLowerCase() === 'payu');
-      if (isPayU && window.PayUCheckout) {
+      // Process with Cashfree Payment Gateway if selected
+      const checkoutHandler = window.CashfreeCheckout || window.PayUCheckout;
+      const isGateway = (selectedPaymentMethod.toLowerCase().includes('cashfree') || selectedPaymentMethod.toLowerCase().includes('payu') || selectedPaymentMethod.toLowerCase() === 'cashfree');
+      if (isGateway && checkoutHandler) {
         try {
           const payuPayload = {
             service_type: 'workshop',
@@ -752,7 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
             time: timeText
           };
 
-          const res = await window.PayUCheckout.processPayment(payuPayload);
+          const res = await checkoutHandler.processPayment(payuPayload);
           if (res && res.redirected) {
             return; // Browser redirected to PayU gateway
           }

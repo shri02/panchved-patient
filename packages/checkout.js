@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Helper: Get Selected Payment Method
   const getSelectedPaymentMethod = () => {
     const activeRadio = document.querySelector('input[name="paymentMethod"]:checked');
-    return activeRadio ? activeRadio.value : 'payu';
+    return activeRadio ? activeRadio.value : 'cashfree';
   };
 
   // 5. Confirm Payment & Show Success Modal with MySQL DB Backend Sync
@@ -928,8 +928,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Process with PayU Payment Gateway if selected
-      if (payMethod === 'payu' && window.PayUCheckout) {
+      // Process with Cashfree Payment Gateway if selected
+      const checkoutHandler = window.CashfreeCheckout || window.PayUCheckout;
+      if ((payMethod === 'cashfree' || payMethod === 'payu') && checkoutHandler) {
         try {
           const payuPayload = {
             service_type: 'package',
@@ -947,12 +948,12 @@ document.addEventListener('DOMContentLoaded', () => {
             agenda: `Package Enrollment for ${currentPkgTitle}`
           };
 
-          const res = await window.PayUCheckout.processPayment(payuPayload);
+          const res = await checkoutHandler.processPayment(payuPayload);
           if (res && res.redirected) {
-            return; // Browser redirected to PayU gateway
+            return; // Browser redirected to Cashfree gateway
           }
         } catch (payuErr) {
-          console.error('PayU Checkout Error:', payuErr);
+          console.error('Cashfree Checkout Error:', payuErr);
           showToast(payuErr.message || 'Payment initiation failed. Please try again.', true);
           confirmPaymentBtn.disabled = false;
           confirmPaymentBtn.style.opacity = '1';
