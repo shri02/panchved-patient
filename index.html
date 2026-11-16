@@ -1,1418 +1,2878 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ocayur - Patient portal</title>
+    <meta
+      name="description"
+      content="Ocayur Patient Portal - Complete Ayurved & Physiotherapy Rehab Center Login and Registration"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
 
-<head>
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ocayur - Patient portal</title>
-  <meta name="description"
-    content="Ocayur Patient Portal - Complete Ayurved & Physiotherapy Rehab Center Login and Registration">
-  <link rel="stylesheet" href="style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet">
-</head>
-
-<body>
-
-  <!-- Page Loader Overlay -->
-  <div class="page-loader-overlay" id="pageLoader" role="status" aria-live="polite">
-    <div class="page-loader-card">
-      <div class="page-loader-spinner"></div>
-      <p class="page-loader-text">Loading portal...</p>
-    </div>
-  </div>
-
-  <main class="login-page-container">
-    <!-- Brand Logo Section -->
-    <header class="brand-header">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-      <a href="#" class="brand-logo-link" title="Ocayur Ayurveda Lifestyle">
-        <img src="assets/logo.svg" alt="Ocayur Ayurveda Lifestyle"
-          class="brand-logo-img" width="160" height="88" />
-      </a>
-    </header>
-
-    <!-- View 1: Login Card -->
-    <section class="auth-card login-card" id="loginCard" aria-labelledby="login-heading">
-      <div class="card-header">
-        <h1 id="login-heading" class="card-title">Login</h1>
-        <p class="card-subtitle">
-          New User? <a href="#create-account" class="highlight-link" id="create-account-link">Create an Account</a>
-        </p>
+  <body>
+    <!-- Page Loader Overlay -->
+    <div
+      class="page-loader-overlay"
+      id="pageLoader"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="page-loader-card">
+        <div class="page-loader-spinner"></div>
+        <p class="page-loader-text">Loading portal...</p>
       </div>
+    </div>
 
-      <form class="auth-form login-form" id="loginForm" novalidate>
-        <!-- Phone Number Field -->
-        <div class="form-group">
-          <label for="phoneNumberInput" class="form-label">
-            <span class="label-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
-                <path
-                  d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
-            </span>
-            Phone Number<span class="required-star">*</span>
-          </label>
-          <div class="input-wrapper phone-input-wrapper">
-            <div class="country-code-selector" id="countryCodeSelector" tabindex="0" role="combobox"
-              aria-expanded="false" aria-haspopup="listbox" aria-label="Country calling code">
-              <span class="country-code-text" id="selectedCountryCode">+91</span>
-              <span class="chevron-icon" aria-hidden="true">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
+    <main class="login-page-container">
+      <!-- Brand Logo Section -->
+      <header class="brand-header">
+        <link rel="icon" type="image/png" href="assets/favicon.png" />
+        <a href="#" class="brand-logo-link" title="Ocayur Ayurveda Lifestyle">
+          <img
+            src="assets/logo.svg"
+            alt="Ocayur Ayurveda Lifestyle"
+            class="brand-logo-img"
+            width="160"
+            height="88"
+          />
+        </a>
+      </header>
+
+      <!-- View 1: Login Card -->
+      <section
+        class="auth-card login-card"
+        id="loginCard"
+        aria-labelledby="login-heading"
+      >
+        <div class="card-header">
+          <h1 id="login-heading" class="card-title">Login</h1>
+          <p class="card-subtitle">
+            New User?
+            <a
+              href="#create-account"
+              class="highlight-link"
+              id="create-account-link"
+              >Create an Account</a
+            >
+          </p>
+        </div>
+
+        <form class="auth-form login-form" id="loginForm" novalidate>
+          <!-- Phone Number Field -->
+          <div class="form-group">
+            <label for="phoneNumberInput" class="form-label">
+              <span class="label-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+                  />
                 </svg>
               </span>
-              <ul class="country-dropdown" id="countryDropdown" role="listbox">
-                <li class="country-item active" role="option" data-code="+91"><span>🇮🇳 India</span>
-                  <strong>+91</strong>
-                </li>
-                <li class="country-item" role="option" data-code="+1"><span>🇺🇸 USA / Canada</span> <strong>+1</strong>
-                </li>
-                <li class="country-item" role="option" data-code="+44"><span>🇬🇧 UK</span> <strong>+44</strong></li>
-                <li class="country-item" role="option" data-code="+971"><span>🇦🇪 UAE</span> <strong>+971</strong></li>
-                <li class="country-item" role="option" data-code="+61"><span>🇦🇺 Australia</span> <strong>+61</strong>
-                </li>
-                <li class="country-item" role="option" data-code="+65"><span>🇸🇬 Singapore</span> <strong>+65</strong>
-                </li>
-              </ul>
-            </div>
-
-            <div class="input-divider" aria-hidden="true"></div>
-
-            <input type="tel" id="phoneNumberInput" name="phone" class="phone-input-field" placeholder="10-digit Phone Number"
-              maxlength="15" autocomplete="tel" required />
-          </div>
-        </div>
-
-        <!-- Password Field -->
-        <div class="form-group">
-          <label for="passwordInput" class="form-label">
-            <span class="label-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-            </span>
-            Password<span class="required-star">*</span>
-          </label>
-          <div class="input-wrapper">
-            <input type="password" id="passwordInput" name="password" class="password-input-field"
-              placeholder="••••••••" autocomplete="current-password" required />
-            <button type="button" class="password-toggle-btn" id="passwordToggleBtn"
-              aria-label="Toggle password visibility" title="Toggle password visibility">
-              <svg id="eyeOffIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
-                </path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-              <svg id="eyeOnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Remember Me & Forgot Password Row -->
-        <div class="login-options-row">
-          <label class="remember-me-label" for="patientRememberMe">
-            <input
-              type="checkbox"
-              id="patientRememberMe"
-              name="rememberMe"
-              class="remember-checkbox"
-            />
-            <span class="checkbox-custom" aria-hidden="true">
-              <svg viewBox="0 0 16 16" fill="none" class="check-icon">
-                <polyline points="3 8 6.5 11.5 13 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            <span class="remember-text">Remember me</span>
-          </label>
-          <a href="#forgot-password" class="forgot-password-link" id="forgotPasswordLink">Forgot Password</a>
-        </div>
-
-        <!-- Submit Button -->
-        <button type="submit" class="btn-primary btn-login" id="loginBtn">
-          <span>Login</span>
-        </button>
-      </form>
-
-      <!-- Legal / Disclaimer -->
-      <footer class="legal-footer">
-        I agree to the <a href="terms-and-conditions.html" target="_blank" id="termsLink">Terms &amp; Conditions</a>
-      </footer>
-    </section>
-
-    <!-- View 2: Personal Details Card (Registration Step 1/2) -->
-    <section class="auth-card personal-details-card" id="personalDetailsCard" aria-labelledby="personal-details-heading"
-      style="display: none;">
-      <div class="card-header personal-details-header">
-        <h1 id="personal-details-heading" class="card-title personal-details-title">Personal Details</h1>
-      </div>
-
-      <form class="auth-form personal-details-form" id="personalDetailsForm" novalidate>
-        <!-- Full Name Field -->
-        <div class="form-group">
-          <label for="fullNameInput" class="form-label">
-            Full Name<span class="required-star">*</span>
-          </label>
-          <div class="input-wrapper simple-input-wrapper">
-            <input type="text" id="fullNameInput" name="fullName" class="text-input-field" placeholder="Eg. Rajesh"
-              autocomplete="name" required />
-          </div>
-        </div>
-
-        <!-- Date of Birth & Gender (2 Columns) -->
-        <div class="form-row-grid">
-          <!-- Date of Birth -->
-          <div class="form-group">
-            <label for="dobInput" class="form-label">
-              Date of Birth<span class="required-star">*</span>
+              Phone Number<span class="required-star">*</span>
             </label>
-            <div class="input-wrapper simple-input-wrapper date-input-wrapper">
-              <input type="text" id="dobInput" name="dob" class="text-input-field" placeholder="dd/mm/yy" maxlength="10"
-                autocomplete="bday" required />
-              <button type="button" class="calendar-toggle-btn" id="dobCalendarBtn" aria-label="Open date of birth calendar" title="Select Date of Birth">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
+            <div class="input-wrapper phone-input-wrapper">
+              <div
+                class="country-code-selector"
+                id="countryCodeSelector"
+                tabindex="0"
+                role="combobox"
+                aria-expanded="false"
+                aria-haspopup="listbox"
+                aria-label="Country calling code"
+              >
+                <span class="country-code-text" id="selectedCountryCode"
+                  >+91</span
+                >
+                <span class="chevron-icon" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+                <ul
+                  class="country-dropdown"
+                  id="countryDropdown"
+                  role="listbox"
+                >
+                  <li class="country-item active" role="option" data-code="+91">
+                    <span>🇮🇳 India</span>
+                    <strong>+91</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+1">
+                    <span>🇺🇸 USA / Canada</span> <strong>+1</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+44">
+                    <span>🇬🇧 UK</span> <strong>+44</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+971">
+                    <span>🇦🇪 UAE</span> <strong>+971</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+61">
+                    <span>🇦🇺 Australia</span> <strong>+61</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+65">
+                    <span>🇸🇬 Singapore</span> <strong>+65</strong>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="input-divider" aria-hidden="true"></div>
+
+              <input
+                type="tel"
+                id="phoneNumberInput"
+                name="phone"
+                class="phone-input-field"
+                placeholder="10-digit Phone Number"
+                maxlength="15"
+                autocomplete="tel"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="form-group">
+            <label for="passwordInput" class="form-label">
+              <span class="label-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </span>
+              Password<span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                type="password"
+                id="passwordInput"
+                name="password"
+                class="password-input-field"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle-btn"
+                id="passwordToggleBtn"
+                aria-label="Toggle password visibility"
+                title="Toggle password visibility"
+              >
+                <svg
+                  id="eyeOffIcon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                  ></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <svg
+                  id="eyeOnIcon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="display: none"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
                 </svg>
               </button>
-              <input type="date" id="dobNativePicker" class="dob-hidden-picker" aria-hidden="true" tabindex="-1" />
-            </div>
-            <div id="dobAgeBadge" class="dob-age-badge" style="display: none;" aria-live="polite">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              <span>Age: <strong id="dobAgeValue">--</strong> yrs</span>
             </div>
           </div>
 
-          <!-- Gender -->
-          <div class="form-group custom-select-group" data-select-id="gender">
-            <label class="form-label">
-              Gender<span class="required-star">*</span>
-            </label>
-            <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false"
-              aria-haspopup="listbox">
-              <span class="selected-value placeholder">Select gender</span>
-              <span class="chevron-icon" aria-hidden="true">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
+          <!-- Remember Me & Forgot Password Row -->
+          <div class="login-options-row">
+            <label class="remember-me-label" for="patientRememberMe">
+              <input
+                type="checkbox"
+                id="patientRememberMe"
+                name="rememberMe"
+                class="remember-checkbox"
+              />
+              <span class="checkbox-custom" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" class="check-icon">
+                  <polyline
+                    points="3 8 6.5 11.5 13 4"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </span>
-            </div>
-            <ul class="custom-select-options" role="listbox">
-              <li class="select-option" data-value="male">Male</li>
-              <li class="select-option" data-value="female">Female</li>
-              <li class="select-option" data-value="other">Other</li>
-            </ul>
-            <input type="hidden" name="gender" id="genderSelect" required />
+              <span class="remember-text">Remember me</span>
+            </label>
+            <a
+              href="#forgot-password"
+              class="forgot-password-link"
+              id="forgotPasswordLink"
+              >Forgot Password</a
+            >
           </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn-primary btn-login" id="loginBtn">
+            <span>Login</span>
+          </button>
+        </form>
+
+        <!-- Legal / Disclaimer -->
+        <footer class="legal-footer">
+          I agree to the
+          <a href="terms-and-conditions.html" target="_blank" id="termsLink"
+            >Terms &amp; Conditions</a
+          >
+        </footer>
+      </section>
+
+      <!-- View 2: Personal Details Card (Registration Step 1/2) -->
+      <section
+        class="auth-card personal-details-card"
+        id="personalDetailsCard"
+        aria-labelledby="personal-details-heading"
+        style="display: none"
+      >
+        <div class="card-header personal-details-header">
+          <h1
+            id="personal-details-heading"
+            class="card-title personal-details-title"
+          >
+            Personal Details
+          </h1>
         </div>
 
-        <!-- Height & Weight (2 Columns) -->
-        <div class="form-row-grid">
-          <!-- Height (in Feet & Inches) -->
+        <form
+          class="auth-form personal-details-form"
+          id="personalDetailsForm"
+          novalidate
+        >
+          <!-- Full Name Field -->
           <div class="form-group">
-            <label for="heightFeetInput" class="form-label">
-              Height<span class="required-star">*</span>
-            </label>
-            <div class="input-wrapper height-combo-wrapper" id="heightComboWrapper">
-              <input 
-                type="number" 
-                id="heightFeetInput" 
-                name="height_feet" 
-                class="text-input-field height-num-input" 
-                placeholder="Feet" 
-                min="1" 
-                max="8" 
-                step="1"
-                inputmode="numeric"
-                aria-label="Height in feet"
-                required 
-              />
-              <span class="height-unit-label">ft</span>
-              <span class="height-divider" aria-hidden="true"></span>
-              <input 
-                type="number" 
-                id="heightInchesInput" 
-                name="height_inches" 
-                class="text-input-field height-num-input" 
-                placeholder="Inches" 
-                min="0" 
-                max="11" 
-                step="1"
-                inputmode="numeric"
-                aria-label="Height in inches"
-              />
-              <span class="height-unit-label">in</span>
-              <input type="hidden" id="heightInput" name="height" />
-            </div>
-          </div>
-
-          <!-- Weight -->
-          <div class="form-group">
-            <label for="weightInput" class="form-label">
-              Weight<span class="required-star">*</span>
+            <label for="fullNameInput" class="form-label">
+              Full Name<span class="required-star">*</span>
             </label>
             <div class="input-wrapper simple-input-wrapper">
-              <input type="text" id="weightInput" name="weight" class="text-input-field" placeholder="Eg. XX kg"
-                required />
+              <input
+                type="text"
+                id="fullNameInput"
+                name="fullName"
+                class="text-input-field"
+                placeholder="Eg. Rajesh"
+                autocomplete="name"
+                required
+              />
             </div>
           </div>
-        </div>
 
-        <!-- Phone Number Field -->
-        <div class="form-group">
-          <label for="personalPhoneInput" class="form-label">
-            Phone Number<span class="required-star">*</span>
-          </label>
-          <div class="input-wrapper phone-input-wrapper">
-            <div class="country-code-selector" id="personalCountryCodeSelector" tabindex="0" role="combobox"
-              aria-expanded="false" aria-haspopup="listbox" aria-label="Country calling code">
-              <span class="country-code-text" id="personalSelectedCountryCode">+91</span>
-              <span class="chevron-icon" aria-hidden="true">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
+          <!-- Date of Birth & Gender (2 Columns) -->
+          <div class="form-row-grid">
+            <!-- Date of Birth -->
+            <div class="form-group">
+              <label for="dobInput" class="form-label">
+                Date of Birth<span class="required-star">*</span>
+              </label>
+              <div
+                class="input-wrapper simple-input-wrapper date-input-wrapper"
+              >
+                <input
+                  type="text"
+                  id="dobInput"
+                  name="dob"
+                  class="text-input-field"
+                  placeholder="dd/mm/yy"
+                  maxlength="10"
+                  autocomplete="bday"
+                  required
+                />
+                <button
+                  type="button"
+                  class="calendar-toggle-btn"
+                  id="dobCalendarBtn"
+                  aria-label="Open date of birth calendar"
+                  title="Select Date of Birth"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect
+                      x="3"
+                      y="4"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </button>
+                <input
+                  type="date"
+                  id="dobNativePicker"
+                  class="dob-hidden-picker"
+                  aria-hidden="true"
+                  tabindex="-1"
+                />
+              </div>
+              <div
+                id="dobAgeBadge"
+                class="dob-age-badge"
+                style="display: none"
+                aria-live="polite"
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-              </span>
-              <ul class="country-dropdown" id="personalCountryDropdown" role="listbox">
-                <li class="country-item active" role="option" data-code="+91"><span>🇮🇳 India</span>
-                  <strong>+91</strong>
-                </li>
-                <li class="country-item" role="option" data-code="+1"><span>🇺🇸 USA / Canada</span> <strong>+1</strong>
-                </li>
-                <li class="country-item" role="option" data-code="+44"><span>🇬🇧 UK</span> <strong>+44</strong></li>
-                <li class="country-item" role="option" data-code="+971"><span>🇦🇪 UAE</span> <strong>+971</strong></li>
-                <li class="country-item" role="option" data-code="+61"><span>🇦🇺 Australia</span> <strong>+61</strong>
-                </li>
-                <li class="country-item" role="option" data-code="+65"><span>🇸🇬 Singapore</span> <strong>+65</strong>
-                </li>
-              </ul>
-            </div>
-
-            <div class="input-divider" aria-hidden="true"></div>
-
-            <input type="tel" id="personalPhoneInput" name="phone" class="phone-input-field" placeholder="10-digit Phone Number"
-              maxlength="10" autocomplete="tel" required />
-          </div>
-        </div>
-
-        <!-- Email Field -->
-        <div class="form-group">
-          <label for="emailInput" class="form-label">
-            Email<span class="required-star">*</span>
-          </label>
-          <div class="input-wrapper simple-input-wrapper">
-            <input type="email" id="emailInput" name="email" class="text-input-field" placeholder="Eg. rajesh@gmail.com"
-              autocomplete="email" required />
-          </div>
-        </div>
-
-        <!-- Referral Code Field (Optional) -->
-        <div class="form-group">
-          <label for="referralCodeInput" class="form-label">
-            Referral Code <span class="optional-badge" style="font-size: 11px; font-weight: normal; color: var(--color-text-muted, #78716c);">(Optional)</span>
-          </label>
-          <div class="input-wrapper simple-input-wrapper">
-            <input type="text" id="referralCodeInput" name="referralCode" class="text-input-field" placeholder="Eg. DOC-ABC1 or REF-XYZ2" autocomplete="off" style="text-transform: uppercase;" />
-          </div>
-        </div>
-
-        <!-- Continue Button -->
-        <button type="submit" class="btn-primary btn-continue" id="continueBtn">
-          <span>Continue</span>
-        </button>
-
-        <!-- Security Disclaimer -->
-        <div class="security-badge">
-          <svg class="security-lock-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-            <path
-              d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
-          </svg>
-          <span>Your data is secure and encrypted</span>
-        </div>
-
-        <!-- Step Indicator & Back Option -->
-        <div class="card-bottom-row">
-          <button type="button" class="back-link-btn" id="backToLoginBtn" title="Back to Login">
-            &larr; Back to Login
-          </button>
-          <div class="step-badge" id="stepIndicator">Step 1/3</div>
-        </div>
-      </form>
-    </section>
-
-    <!-- View 3: Prakruti Parikshan Card (Registration Step 2/3) -->
-    <section class="auth-card prakruti-card" id="prakrutiCard" aria-labelledby="prakruti-heading"
-      style="display: none;">
-      <div class="card-header prakruti-header">
-        <h1 id="prakruti-heading" class="card-title prakruti-title">Prakruti Parikshan</h1>
-      </div>
-
-      <form class="auth-form prakruti-form" id="prakrutiForm" novalidate>
-        <!-- 1. Appetite -->
-        <div class="form-group custom-select-group" data-select-id="appetite">
-          <label class="form-label">Appetite<span class="required-star">*</span></label>
-          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select appetite pattern</span>
-            <span class="chevron-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          </div>
-          <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="irregular" data-dosha="vata">Irregular; sometimes hungry, sometimes not</li>
-            <li class="select-option" data-value="strong" data-dosha="pitta">Strong &amp; regular; gets hungry on time</li>
-            <li class="select-option" data-value="mild" data-dosha="kapha">Mild/moderate; can skip meals</li>
-          </ul>
-          <input type="hidden" name="appetite" id="appetiteInput" required />
-        </div>
-
-        <!-- 2. Sleep Type -->
-        <div class="form-group custom-select-group" data-select-id="sleepType">
-          <label class="form-label">Sleep Type<span class="required-star">*</span></label>
-          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select sleep pattern</span>
-            <span class="chevron-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          </div>
-          <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="light" data-dosha="vata">Light, interrupted, difficulty falling asleep</li>
-            <li class="select-option" data-value="moderate" data-dosha="pitta">Moderate; may wake due to heat/thoughts</li>
-            <li class="select-option" data-value="deep" data-dosha="kapha">Deep, long; difficulty waking</li>
-          </ul>
-          <input type="hidden" name="sleepType" id="sleepTypeInput" required />
-        </div>
-
-        <!-- 3. Skin Type & Hair Type (2 Columns) -->
-        <div class="form-row-grid">
-          <!-- Skin Type -->
-          <div class="form-group custom-select-group" data-select-id="skinType">
-            <label class="form-label">Skin Type<span class="required-star">*</span></label>
-            <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false"
-              aria-haspopup="listbox">
-              <span class="selected-value placeholder">Select skin type</span>
-              <span class="chevron-icon" aria-hidden="true">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </span>
-            </div>
-            <ul class="custom-select-options" role="listbox">
-              <li class="select-option" data-value="dry_rough" data-dosha="vata">Dry, rough, thin</li>
-              <li class="select-option" data-value="warm_sensitive" data-dosha="pitta">Warm, sensitive, reddish; may be oily</li>
-              <li class="select-option" data-value="soft_smooth" data-dosha="kapha">Soft, smooth, thick, oily/moist</li>
-            </ul>
-            <input type="hidden" name="skinType" id="skinTypeInput" required />
-          </div>
-
-          <!-- Hair Type -->
-          <div class="form-group custom-select-group" data-select-id="hairType">
-            <label class="form-label">Hair Type<span class="required-star">*</span></label>
-            <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false"
-              aria-haspopup="listbox">
-              <span class="selected-value placeholder">Select hair type</span>
-              <span class="chevron-icon" aria-hidden="true">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </span>
-            </div>
-            <ul class="custom-select-options" role="listbox">
-              <li class="select-option" data-value="dry_frizzy" data-dosha="vata">Dry, rough, frizzy</li>
-              <li class="select-option" data-value="fine_soft" data-dosha="pitta">Fine/soft; tendency to early greying/hair fall</li>
-              <li class="select-option" data-value="thick_dense" data-dosha="kapha">Thick, dense, smooth &amp; oily</li>
-            </ul>
-            <input type="hidden" name="hairType" id="hairTypeInput" required />
-          </div>
-        </div>
-
-        <!-- 4. Bowel Movement -->
-        <div class="form-group custom-select-group" data-select-id="bowelMovement">
-          <label class="form-label">Bowel Movement<span class="required-star">*</span></label>
-          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select bowel movement</span>
-            <span class="chevron-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          </div>
-          <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="irregular_constipation" data-dosha="vata">Irregular, constipation, hard/dry stool</li>
-            <li class="select-option" data-value="regular_frequent" data-dosha="pitta">Regular/frequent, soft or loose, urgency</li>
-            <li class="select-option" data-value="slow_heavy" data-dosha="kapha">Slow/regular, heavy or sticky</li>
-          </ul>
-          <input type="hidden" name="bowelMovement" id="bowelMovementInput" required />
-        </div>
-
-        <!-- 5. Stress Response -->
-        <div class="form-group custom-select-group" data-select-id="stressResponse">
-          <label class="form-label">Stress Response<span class="required-star">*</span></label>
-          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select stress response</span>
-            <span class="chevron-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          </div>
-          <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="worry_anxiety" data-dosha="vata">Worry, anxiety, overthinking</li>
-            <li class="select-option" data-value="irritability_anger" data-dosha="pitta">Irritability, anger, impatience</li>
-            <li class="select-option" data-value="withdrawal_sluggish" data-dosha="kapha">Withdrawal, emotional heaviness, sluggishness</li>
-          </ul>
-          <input type="hidden" name="stressResponse" id="stressResponseInput" required />
-        </div>
-
-        <!-- 6. Body Temperature -->
-        <div class="form-group custom-select-group" data-select-id="bodyTemperature">
-          <label class="form-label">Body Temperature<span class="required-star">*</span></label>
-          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select temperature tendency</span>
-            <span class="chevron-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          </div>
-          <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="cold_hands_legs" data-dosha="vata">Cold hands and legs</li>
-            <li class="select-option" data-value="warm_legs_hands" data-dosha="pitta">warm legs and hands</li>
-            <li class="select-option" data-value="normal_stable" data-dosha="kapha">normal &amp; stable</li>
-          </ul>
-          <input type="hidden" name="bodyTemperature" id="bodyTemperatureInput" required />
-        </div>
-
-        <!-- 7. Physical Activity -->
-        <div class="form-group custom-select-group" data-select-id="physicalActivity">
-          <label class="form-label">Physical Activity<span class="required-star">*</span></label>
-          <div class="custom-select-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <span class="selected-value placeholder">Select physical activity style</span>
-            <span class="chevron-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          </div>
-          <ul class="custom-select-options" role="listbox">
-            <li class="select-option" data-value="regular" data-dosha="pitta">Regular</li>
-            <li class="select-option" data-value="weekly_3_times" data-dosha="vata">weekly 3 times</li>
-            <li class="select-option" data-value="no_movement" data-dosha="kapha">No Movement</li>
-          </ul>
-          <input type="hidden" name="physicalActivity" id="physicalActivityInput" required />
-        </div>
-
-        <!-- Terms and Conditions Agreement (Before Password State) -->
-        <div class="terms-agreement-container" id="prakrutiTermsAgreementGroup">
-          <label class="terms-agreement-label" for="agreeTermsCheckbox">
-            <input type="checkbox" id="agreeTermsCheckbox" name="agreeTerms" class="terms-checkbox-input" required />
-            <span class="custom-terms-checkbox" aria-hidden="true">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </span>
-            <span class="terms-label-text">
-              I agree to the <a href="terms-and-conditions.html" target="_blank" class="terms-legal-link">Terms &amp; Conditions and Disclaimer</a><span class="required-star">*</span>
-            </span>
-          </label>
-        </div>
-
-        <!-- Next Button -->
-        <button type="submit" class="btn-primary btn-submit" id="submitPrakrutiBtn">
-          <span>I Agree &amp; Continue</span>
-        </button>
-
-        <!-- Step Indicator & Back Option -->
-        <div class="card-bottom-row">
-          <button type="button" class="back-link-btn" id="backToPersonalBtn" title="Back to Personal Details">
-            &larr; Back to Personal Details
-          </button>
-          <div class="step-badge">Step 2/3</div>
-        </div>
-      </form>
-    </section>
-
-    <!-- View: Security Credentials Card (Registration Step 3/3) -->
-    <section class="auth-card security-card" id="securityCard" aria-labelledby="security-heading" style="display: none;">
-      <div class="card-header security-header">
-        <h1 id="security-heading" class="card-title security-title">Security Credentials</h1>
-      </div>
-
-      <form class="auth-form security-form" id="securityForm" novalidate>
-        <!-- New Password Field -->
-        <div class="form-group">
-          <label for="securityNewPasswordInput" class="form-label">
-            New Password<span class="required-star">*</span>
-          </label>
-          <div class="input-wrapper">
-            <input 
-              type="password" 
-              id="securityNewPasswordInput" 
-              name="newPassword" 
-              class="password-input-field"
-              placeholder="••••••••" 
-              autocomplete="new-password" 
-              required 
-            />
-            <button type="button" class="password-toggle-btn" id="secNewPasswordToggleBtn"
-              aria-label="Toggle new password visibility" title="Toggle password visibility">
-              <svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
-                </path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-              <svg class="eye-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Confirm Password Field -->
-        <div class="form-group">
-          <label for="securityConfirmPasswordInput" class="form-label">
-            Confirm Password<span class="required-star">*</span>
-          </label>
-          <div class="input-wrapper">
-            <input 
-              type="password" 
-              id="securityConfirmPasswordInput" 
-              name="confirmPassword" 
-              class="password-input-field"
-              placeholder="••••••••" 
-              autocomplete="new-password" 
-              required 
-            />
-            <button type="button" class="password-toggle-btn" id="secConfirmPasswordToggleBtn"
-              aria-label="Toggle confirm password visibility" title="Toggle password visibility">
-              <svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
-                </path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-              <svg class="eye-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Submit Button -->
-        <button type="submit" class="btn-primary btn-submit" id="submitSecurityBtn">
-          <span>Submit</span>
-        </button>
-
-        <!-- Step Indicator & Back Option -->
-        <div class="card-bottom-row">
-          <button type="button" class="back-link-btn" id="backToPersonalFromSecBtn" title="Back to Personal Details">
-            &larr; Back to Personal Details
-          </button>
-          <div class="step-badge">Step 3/3</div>
-        </div>
-      </form>
-    </section>
-
-    <!-- View 4: Ayurveda Profile Result Card -->
-    <section class="auth-card profile-card" id="profileCard" aria-labelledby="profile-heading" style="display: none;">
-      <div class="card-header profile-header">
-        <h1 id="profile-heading" class="card-title profile-title">Your Ayurveda Profile</h1>
-      </div>
-
-      <div class="profile-content">
-        <!-- Flame Icon for Agni -->
-        <div class="profile-icon-wrapper" aria-hidden="true">
-          <svg class="profile-flame-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path
-              d="M12 2.5C12 2.5 7 8 7 14C7 16.7614 9.23858 19 12 19C14.7614 19 17 16.7614 17 14C17 8 12 2.5 12 2.5Z" />
-            <path
-              d="M12 19C10.6193 19 9.5 17.8807 9.5 16.5C9.5 14 12 11.5 12 11.5C12 11.5 14.5 14 14.5 16.5C14.5 17.8807 13.3807 19 12 19Z" />
-          </svg>
-        </div>
-
-        <!-- Profile Type Name -->
-        <h2 class="profile-type-title" id="profileTypeName">--</h2>
-
-        <!-- Dosha Scores Breakdown Badges -->
-        <div class="profile-dosha-badges" id="profileDoshaBadges" style="display: none;">
-          <span class="dosha-badge-pill vata" id="vataBadgePill">Vata: 0/8</span>
-          <span class="dosha-badge-pill pitta" id="pittaBadgePill">Pitta: 0/8</span>
-          <span class="dosha-badge-pill kapha" id="kaphaBadgePill">Kapha: 0/8</span>
-        </div>
-
-        <!-- Profile Description -->
-        <p class="profile-description" id="profileDescription">
-          Loading your Ayurveda profile...
-        </p>
-
-        <!-- Health Tendencies Block -->
-        <div class="profile-info-block" id="healthTendenciesBlock" style="display: none;">
-          <div class="profile-info-block-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-            </svg>
-            <span>Health Tendencies to Watch</span>
-          </div>
-          <div class="profile-tendency-grid" id="healthTendencyGrid">
-            <!-- Dynamic Tendencies List -->
-          </div>
-        </div>
-
-        <!-- Preventive Healthcare Block (Show to all) -->
-        <div class="profile-info-block" id="preventiveCareBlock">
-          <div class="profile-info-block-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-teal, #146e66)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-            <span>Prakruti &amp; Preventive Healthcare</span>
-          </div>
-          <div class="profile-preventive-list">
-            <div class="preventive-care-item">
-              <div class="preventive-care-item-title">1. Early Risk Awareness</div>
-              <p class="preventive-care-item-desc">Prakruti assessment helps identify individual tendencies such as digestive problems, stress sensitivity, sleep disturbances, or seasonal imbalances before they become persistent concerns.</p>
-            </div>
-            <div class="preventive-care-item">
-              <div class="preventive-care-item-title">2. Personalized Prevention</div>
-              <p class="preventive-care-item-desc">Dosha-specific diet, daily routine, seasonal care, sleep, and exercise can help maintain digestion, energy, sleep quality, and overall balance.</p>
-            </div>
-            <div class="preventive-care-item">
-              <div class="preventive-care-item-title">3. Long-Term Health Protection</div>
-              <p class="preventive-care-item-desc">Living according to Prakruti may help reduce lifestyle-related imbalances, support immunity and healthy metabolism, and promote sustained physical and mental well-being.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Button (Switches to Dashboard View) -->
-        <a href="dashboard/dashboard.html" class="btn-primary btn-explore" id="explorePackagesBtn">
-          <span>Explore Programmes</span>
-        </a>
-      </div>
-    </section>
-  </main>
-
-  <!-- View 5: Dashboard View Directly in Index File -->
-  <div class="dashboard-view-wrapper" id="dashboardView" style="display: none;">
-    <!-- Mobile Top Navigation Bar -->
-    <header class="mobile-nav-bar" id="mobileNavBar">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-      <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" title="Toggle menu">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
-      <a href="dashboard/dashboard.html" class="mobile-logo-link">
-        <img src="assets/logo.svg" alt="Ocayur Logo" class="mobile-logo-img" />
-      </a>
-      <div class="mobile-user-avatar" title="My Profile">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-          <circle cx="12" cy="7" r="4"></circle>
-        </svg>
-      </div>
-    </header>
-
-    <!-- Sidebar Overlay for Mobile -->
-    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
-
-    <!-- Main Dashboard Layout Wrapper -->
-    <div class="dashboard-layout">
-
-      <!-- Left Sidebar Navigation -->
-      <aside class="dashboard-sidebar" id="dashboardSidebar">
-        <!-- Brand Logo Header -->
-        <div class="sidebar-brand-header">
-          <a href="dashboard/dashboard.html" class="brand-logo-link" title="Ocayur Ayurveda Lifestyle">
-            <img src="assets/logo.svg" alt="Ocayur Ayurveda Lifestyle"
-              class="brand-logo-img" width="160" height="88" />
-          </a>
-        </div>
-
-        <!-- Navigation Menu -->
-        <nav class="sidebar-nav" aria-label="Main Navigation">
-          <ul class="nav-list">
-            <li class="nav-item">
-              <a href="dashboard/dashboard.html" class="nav-link active" id="navDashboard">
-                <span class="nav-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                  </svg>
-                </span>
-                <span class="nav-label">Dashboard</span>
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a href="#packages" class="nav-link" id="navPackages">
-                <span class="nav-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </span>
-                <span class="nav-label">Programmes</span>
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a href="#consultations" class="nav-link" id="navConsultations">
-                <span class="nav-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <line x1="19" y1="8" x2="19" y2="14"></line>
-                    <line x1="22" y1="11" x2="16" y2="11"></line>
-                  </svg>
-                </span>
-                <span class="nav-label">Consultations</span>
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a href="chat/chat.html" class="nav-link" id="navChat">
-                <span class="nav-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                </span>
-                <span class="nav-label">Messages</span>
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a href="#courses" class="nav-link" id="navCourses">
-                <span class="nav-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="9" cy="21" r="1"></circle>
-                    <circle cx="20" cy="21" r="1"></circle>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                  </svg>
-                </span>
-                <span class="nav-label">Workshops</span>
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a href="#billing" class="nav-link" id="navBilling">
-                <span class="nav-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="5" width="20" height="14" rx="2"></rect>
-                    <line x1="2" y1="10" x2="22" y2="10"></line>
-                  </svg>
-                </span>
-                <span class="nav-label">Billing</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-
-        <!-- Sidebar Footer (Log Out Button) -->
-        <div class="sidebar-footer">
-          <button type="button" class="btn-logout" id="logoutBtn" title="Log out from patient portal">
-            <span class="logout-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-            </span>
-            <span>Log out</span>
-          </button>
-        </div>
-      </aside>
-
-      <!-- Main Content Area -->
-      <main class="dashboard-main-content">
-
-        <!-- Top Header Section: Title, Greeting & User Profile Badge -->
-        <header class="dashboard-top-header">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-          <div class="header-titles">
-            <h1 class="dashboard-heading">Dashboard</h1>
-            <p class="greeting-subtitle" id="userGreeting">Welcome!</p>
-          </div>
-
-          <!-- User Profile Pill -->
-          <div class="user-profile-card" id="userProfileCard" tabindex="0"
-            aria-label="User profile">
-            <div class="user-avatar" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
-            <div class="user-meta">
-              <span class="user-name" id="userName">--</span>
-              <span class="user-patient-id" id="patientId">--</span>
-            </div>
-          </div>
-        </header>
-
-        <!-- Sub-View 1: Dashboard Overview (Cards + Appointments Chart) -->
-        <div id="dashboardOverviewSection" class="dashboard-subview-section">
-          <!-- Stats Metric Cards (3 Column Grid) -->
-          <section class="stats-cards-grid" aria-label="Patient Statistics Overview">
-            <!-- Card 1: Upcoming Consultations -->
-            <article class="stat-card" id="cardConsultations">
-              <div class="stat-card-header">
-                <h2 class="stat-card-title">Upcoming Consultations</h2>
-                <div class="stat-card-icon" aria-hidden="true">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </div>
+                <span>Age: <strong id="dobAgeValue">--</strong> yrs</span>
               </div>
-              <div class="stat-card-value-wrapper">
-                <span class="stat-card-value" data-target="4">4</span>
-              </div>
-            </article>
+            </div>
 
-            <!-- Card 2: Active Packages -->
-            <article class="stat-card" id="cardPackages">
-              <div class="stat-card-header">
-                <h2 class="stat-card-title">Active Programmes</h2>
-                <div class="stat-card-icon" aria-hidden="true">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="stat-card-value-wrapper">
-                <span class="stat-card-value" data-target="2">2</span>
-              </div>
-            </article>
-
-            <!-- Card 3: Unread Messages -->
-            <article class="stat-card" id="cardMessages">
-              <div class="stat-card-header">
-                <h2 class="stat-card-title">Unread messages</h2>
-                <div class="stat-card-icon" aria-hidden="true">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="stat-card-value-wrapper">
-                <span class="stat-card-value" data-target="3">3</span>
-              </div>
-            </article>
-          </section>
-
-          <!-- Analytics Section: Total Appointments Chart -->
-          <section class="analytics-card" aria-labelledby="analyticsHeading">
-            <!-- Analytics Card Header -->
-            <div class="analytics-card-header">
-              <h2 id="analyticsHeading" class="analytics-title">Total Appointments</h2>
-
-              <!-- Period Selector Dropdown -->
-              <div class="period-select-wrapper">
-                <select class="period-select" id="periodSelect" aria-label="Select appointment timeframe">
-                  <option value="12m" selected>Last 12 months</option>
-                  <option value="6m">Last 6 months</option>
-                  <option value="3m">Last 3 months</option>
-                  <option value="2026">Year 2026</option>
-                </select>
-                <span class="period-chevron-icon" aria-hidden="true">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <!-- Gender -->
+            <div class="form-group custom-select-group" data-select-id="gender">
+              <label class="form-label">
+                Gender<span class="required-star">*</span>
+              </label>
+              <div
+                class="custom-select-trigger"
+                tabindex="0"
+                role="combobox"
+                aria-expanded="false"
+                aria-haspopup="listbox"
+              >
+                <span class="selected-value placeholder">Select gender</span>
+                <span class="chevron-icon" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
                     <polyline points="6 9 12 15 18 9"></polyline>
                   </svg>
                 </span>
               </div>
+              <ul class="custom-select-options" role="listbox">
+                <li class="select-option" data-value="male">Male</li>
+                <li class="select-option" data-value="female">Female</li>
+                <li class="select-option" data-value="other">Other</li>
+              </ul>
+              <input type="hidden" name="gender" id="genderSelect" required />
+            </div>
+          </div>
+
+          <!-- Height & Weight (2 Columns) -->
+          <div class="form-row-grid">
+            <!-- Height (in Feet & Inches) -->
+            <div class="form-group">
+              <label for="heightFeetInput" class="form-label">
+                Height<span class="required-star">*</span>
+              </label>
+              <div
+                class="input-wrapper height-combo-wrapper"
+                id="heightComboWrapper"
+              >
+                <input
+                  type="number"
+                  id="heightFeetInput"
+                  name="height_feet"
+                  class="text-input-field height-num-input"
+                  placeholder="Feet"
+                  min="1"
+                  max="8"
+                  step="1"
+                  inputmode="numeric"
+                  aria-label="Height in feet"
+                  required
+                />
+                <span class="height-unit-label">ft</span>
+                <span class="height-divider" aria-hidden="true"></span>
+                <input
+                  type="number"
+                  id="heightInchesInput"
+                  name="height_inches"
+                  class="text-input-field height-num-input"
+                  placeholder="Inches"
+                  min="0"
+                  max="11"
+                  step="1"
+                  inputmode="numeric"
+                  aria-label="Height in inches"
+                />
+                <span class="height-unit-label">in</span>
+                <input type="hidden" id="heightInput" name="height" />
+              </div>
             </div>
 
-            <!-- Chart Container -->
-            <div class="chart-container" id="chartContainer">
-              <!-- Interactive SVG Spline Chart -->
-              <div class="svg-chart-wrapper" id="svgChartWrapper">
-                <svg id="appointmentsChartSvg" viewBox="0 0 900 360" preserveAspectRatio="none"
-                  class="appointments-chart-svg">
-                  <defs>
-                    <!-- Soft Blue/Teal Gradient Fill beneath the curve -->
-                    <linearGradient id="chartFillGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.32" />
-                      <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.12" />
-                      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.01" />
-                    </linearGradient>
+            <!-- Weight -->
+            <div class="form-group">
+              <label for="weightInput" class="form-label">
+                Weight<span class="required-star">*</span>
+              </label>
+              <div class="input-wrapper simple-input-wrapper">
+                <input
+                  type="text"
+                  id="weightInput"
+                  name="weight"
+                  class="text-input-field"
+                  placeholder="Eg. XX kg"
+                  required
+                />
+              </div>
+            </div>
+          </div>
 
-                    <!-- Dot Shadow Filter -->
-                    <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0284c7" flood-opacity="0.3" />
-                    </filter>
-                  </defs>
-
-                  <!-- Horizontal Grid Lines & Y-Axis Labels -->
-                  <g class="grid-group" id="gridGroup">
-                    <!-- 10 -->
-                    <text x="32" y="35" class="axis-label y-label">10</text>
-                    <line x1="55" y1="30" x2="880" y2="30" class="grid-line" stroke-dasharray="3,3" />
-
-                    <!-- 8 -->
-                    <text x="32" y="95" class="axis-label y-label">8</text>
-                    <line x1="55" y1="90" x2="880" y2="90" class="grid-line" stroke-dasharray="3,3" />
-
-                    <!-- 6 -->
-                    <text x="32" y="155" class="axis-label y-label">6</text>
-                    <line x1="55" y1="150" x2="880" y2="150" class="grid-line" stroke-dasharray="3,3" />
-
-                    <!-- 4 -->
-                    <text x="32" y="215" class="axis-label y-label">4</text>
-                    <line x1="55" y1="210" x2="880" y2="210" class="grid-line" stroke-dasharray="3,3" />
-
-                    <!-- 2 -->
-                    <text x="32" y="275" class="axis-label y-label">2</text>
-                    <line x1="55" y1="270" x2="880" y2="270" class="grid-line" stroke-dasharray="3,3" />
-
-                    <!-- 0 -->
-                    <text x="32" y="335" class="axis-label y-label">0</text>
-                    <line x1="55" y1="330" x2="880" y2="330" class="grid-line baseline" />
-                  </g>
-
-                  <!-- Chart Area Path (Gradient Fill) -->
-                  <path id="chartAreaPath" class="chart-area-path" fill="url(#chartFillGradient)" />
-
-                  <!-- Chart Spline Curve (Smooth Line) -->
-                  <path id="chartLinePath" class="chart-line-path" />
-
-                  <!-- Interactive Data Points and Tooltip Triggers -->
-                  <g id="chartPointsGroup" class="chart-points-group"></g>
-
-                  <!-- X-Axis Labels (Months) -->
-                  <g id="xAxisLabelsGroup" class="x-axis-labels-group"></g>
-                </svg>
-
-                <!-- Interactive Floating Tooltip matching Figma Design -->
-                <div class="chart-tooltip" id="chartTooltip">
-                  <div class="tooltip-title">No. of Appointments</div>
-                  <div class="tooltip-val" id="tooltipVal">150</div>
-                  <div class="tooltip-arrow"></div>
-                </div>
+          <!-- Phone Number Field -->
+          <div class="form-group">
+            <label for="personalPhoneInput" class="form-label">
+              Phone Number<span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper phone-input-wrapper">
+              <div
+                class="country-code-selector"
+                id="personalCountryCodeSelector"
+                tabindex="0"
+                role="combobox"
+                aria-expanded="false"
+                aria-haspopup="listbox"
+                aria-label="Country calling code"
+              >
+                <span class="country-code-text" id="personalSelectedCountryCode"
+                  >+91</span
+                >
+                <span class="chevron-icon" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+                <ul
+                  class="country-dropdown"
+                  id="personalCountryDropdown"
+                  role="listbox"
+                >
+                  <li class="country-item active" role="option" data-code="+91">
+                    <span>🇮🇳 India</span>
+                    <strong>+91</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+1">
+                    <span>🇺🇸 USA / Canada</span> <strong>+1</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+44">
+                    <span>🇬🇧 UK</span> <strong>+44</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+971">
+                    <span>🇦🇪 UAE</span> <strong>+971</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+61">
+                    <span>🇦🇺 Australia</span> <strong>+61</strong>
+                  </li>
+                  <li class="country-item" role="option" data-code="+65">
+                    <span>🇸🇬 Singapore</span> <strong>+65</strong>
+                  </li>
+                </ul>
               </div>
 
-              <!-- Bottom Chart Legend (2026 with toggle navigation arrows) -->
-              <footer class="chart-footer">
-                <button class="year-nav-btn" id="prevYearBtn" aria-label="Previous Year" title="Previous Year">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                  </svg>
-                </button>
-                <div class="legend-indicator">
-                  <span class="legend-dot" aria-hidden="true"></span>
-                  <span class="legend-year" id="currentYearDisplay">2026</span>
-                </div>
-                <button class="year-nav-btn" id="nextYearBtn" aria-label="Next Year" title="Next Year">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
-                </button>
-              </footer>
+              <div class="input-divider" aria-hidden="true"></div>
+
+              <input
+                type="tel"
+                id="personalPhoneInput"
+                name="phone"
+                class="phone-input-field"
+                placeholder="10-digit Phone Number"
+                maxlength="10"
+                autocomplete="tel"
+                required
+              />
             </div>
-          </section>
+          </div>
+
+          <!-- Email Field -->
+          <div class="form-group">
+            <label for="emailInput" class="form-label">
+              Email<span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper simple-input-wrapper">
+              <input
+                type="email"
+                id="emailInput"
+                name="email"
+                class="text-input-field"
+                placeholder="Eg. rajesh@gmail.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Referral Code Field (Optional) -->
+          <div class="form-group">
+            <label for="referralCodeInput" class="form-label">
+              Referral Code
+              <span
+                class="optional-badge"
+                style="
+                  font-size: 11px;
+                  font-weight: normal;
+                  color: var(--color-text-muted, #78716c);
+                "
+                >(Optional)</span
+              >
+            </label>
+            <div class="input-wrapper simple-input-wrapper">
+              <input
+                type="text"
+                id="referralCodeInput"
+                name="referralCode"
+                class="text-input-field"
+                placeholder="Eg. DOC-ABC1 or REF-XYZ2"
+                autocomplete="off"
+                style="text-transform: uppercase"
+              />
+            </div>
+          </div>
+
+          <!-- Continue Button -->
+          <button
+            type="submit"
+            class="btn-primary btn-continue"
+            id="continueBtn"
+          >
+            <span>Continue</span>
+          </button>
+
+          <!-- Security Disclaimer -->
+          <div class="security-badge">
+            <svg
+              class="security-lock-icon"
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="currentColor"
+            >
+              <path
+                d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"
+              />
+            </svg>
+            <span>Your data is secure and encrypted</span>
+          </div>
+
+          <!-- Step Indicator & Back Option -->
+          <div class="card-bottom-row">
+            <button
+              type="button"
+              class="back-link-btn"
+              id="backToLoginBtn"
+              title="Back to Login"
+            >
+              &larr; Back to Login
+            </button>
+            <div class="step-badge" id="stepIndicator">Step 1/3</div>
+          </div>
+        </form>
+      </section>
+
+      <!-- View 3: Prakruti Parikshan Card (Registration Step 2/3) -->
+      <section
+        class="auth-card prakruti-card"
+        id="prakrutiCard"
+        aria-labelledby="prakruti-heading"
+        style="display: none"
+      >
+        <div class="card-header prakruti-header">
+          <h1 id="prakruti-heading" class="card-title prakruti-title">
+            Prakruti Parikshan
+          </h1>
         </div>
 
-        <!-- Sub-View 2: Patient Profile Settings (Matching Figma Profile Design) -->
-        <div id="profileSettingsSection" class="dashboard-subview-section" style="display: none;">
-          <section class="profile-settings-card" aria-labelledby="profileSettingsHeading">
-            <form class="profile-settings-form" id="profileSettingsForm" novalidate>
+        <form class="auth-form prakruti-form" id="prakrutiForm" novalidate>
+          <!-- 1. Appetite -->
+          <div class="form-group custom-select-group" data-select-id="appetite">
+            <label class="form-label"
+              >Appetite<span class="required-star">*</span></label
+            >
+            <div
+              class="custom-select-trigger"
+              tabindex="0"
+              role="combobox"
+              aria-expanded="false"
+              aria-haspopup="listbox"
+            >
+              <span class="selected-value placeholder"
+                >Select appetite pattern</span
+              >
+              <span class="chevron-icon" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </div>
+            <ul class="custom-select-options" role="listbox">
+              <li
+                class="select-option"
+                data-value="irregular"
+                data-dosha="vata"
+              >
+                Irregular; sometimes hungry, sometimes not
+              </li>
+              <li class="select-option" data-value="strong" data-dosha="pitta">
+                Strong &amp; regular; gets hungry on time
+              </li>
+              <li class="select-option" data-value="mild" data-dosha="kapha">
+                Mild/moderate; can skip meals
+              </li>
+            </ul>
+            <input type="hidden" name="appetite" id="appetiteInput" required />
+          </div>
 
-              <!-- Profile Image Section -->
-              <div class="profile-image-section">
-                <label class="form-section-label">Profile Image</label>
-                <div class="profile-avatar-display" id="profileAvatarDisplay" title="Patient Profile Image">
-                  <div class="profile-avatar-circle">
-                    <svg width="46" height="46" viewBox="0 0 24 24" fill="currentColor">
+          <!-- 2. Sleep Type -->
+          <div
+            class="form-group custom-select-group"
+            data-select-id="sleepType"
+          >
+            <label class="form-label"
+              >Sleep Type<span class="required-star">*</span></label
+            >
+            <div
+              class="custom-select-trigger"
+              tabindex="0"
+              role="combobox"
+              aria-expanded="false"
+              aria-haspopup="listbox"
+            >
+              <span class="selected-value placeholder"
+                >Select sleep pattern</span
+              >
+              <span class="chevron-icon" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </div>
+            <ul class="custom-select-options" role="listbox">
+              <li class="select-option" data-value="light" data-dosha="vata">
+                Light, interrupted, difficulty falling asleep
+              </li>
+              <li
+                class="select-option"
+                data-value="moderate"
+                data-dosha="pitta"
+              >
+                Moderate; may wake due to heat/thoughts
+              </li>
+              <li class="select-option" data-value="deep" data-dosha="kapha">
+                Deep, long; difficulty waking
+              </li>
+            </ul>
+            <input
+              type="hidden"
+              name="sleepType"
+              id="sleepTypeInput"
+              required
+            />
+          </div>
+
+          <!-- 3. Skin Type & Hair Type (2 Columns) -->
+          <div class="form-row-grid">
+            <!-- Skin Type -->
+            <div
+              class="form-group custom-select-group"
+              data-select-id="skinType"
+            >
+              <label class="form-label"
+                >Skin Type<span class="required-star">*</span></label
+              >
+              <div
+                class="custom-select-trigger"
+                tabindex="0"
+                role="combobox"
+                aria-expanded="false"
+                aria-haspopup="listbox"
+              >
+                <span class="selected-value placeholder">Select skin type</span>
+                <span class="chevron-icon" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+              </div>
+              <ul class="custom-select-options" role="listbox">
+                <li
+                  class="select-option"
+                  data-value="dry_rough"
+                  data-dosha="vata"
+                >
+                  Dry, rough, thin
+                </li>
+                <li
+                  class="select-option"
+                  data-value="warm_sensitive"
+                  data-dosha="pitta"
+                >
+                  Warm, sensitive, reddish; may be oily
+                </li>
+                <li
+                  class="select-option"
+                  data-value="soft_smooth"
+                  data-dosha="kapha"
+                >
+                  Soft, smooth, thick, oily/moist
+                </li>
+              </ul>
+              <input
+                type="hidden"
+                name="skinType"
+                id="skinTypeInput"
+                required
+              />
+            </div>
+
+            <!-- Hair Type -->
+            <div
+              class="form-group custom-select-group"
+              data-select-id="hairType"
+            >
+              <label class="form-label"
+                >Hair Type<span class="required-star">*</span></label
+              >
+              <div
+                class="custom-select-trigger"
+                tabindex="0"
+                role="combobox"
+                aria-expanded="false"
+                aria-haspopup="listbox"
+              >
+                <span class="selected-value placeholder">Select hair type</span>
+                <span class="chevron-icon" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+              </div>
+              <ul class="custom-select-options" role="listbox">
+                <li
+                  class="select-option"
+                  data-value="dry_frizzy"
+                  data-dosha="vata"
+                >
+                  Dry, rough, frizzy
+                </li>
+                <li
+                  class="select-option"
+                  data-value="fine_soft"
+                  data-dosha="pitta"
+                >
+                  Fine/soft; tendency to early greying/hair fall
+                </li>
+                <li
+                  class="select-option"
+                  data-value="thick_dense"
+                  data-dosha="kapha"
+                >
+                  Thick, dense, smooth &amp; oily
+                </li>
+              </ul>
+              <input
+                type="hidden"
+                name="hairType"
+                id="hairTypeInput"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- 4. Bowel Movement -->
+          <div
+            class="form-group custom-select-group"
+            data-select-id="bowelMovement"
+          >
+            <label class="form-label"
+              >Bowel Movement<span class="required-star">*</span></label
+            >
+            <div
+              class="custom-select-trigger"
+              tabindex="0"
+              role="combobox"
+              aria-expanded="false"
+              aria-haspopup="listbox"
+            >
+              <span class="selected-value placeholder"
+                >Select bowel movement</span
+              >
+              <span class="chevron-icon" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </div>
+            <ul class="custom-select-options" role="listbox">
+              <li
+                class="select-option"
+                data-value="irregular_constipation"
+                data-dosha="vata"
+              >
+                Irregular, constipation, hard/dry stool
+              </li>
+              <li
+                class="select-option"
+                data-value="regular_frequent"
+                data-dosha="pitta"
+              >
+                Regular/frequent, soft or loose, urgency
+              </li>
+              <li
+                class="select-option"
+                data-value="slow_heavy"
+                data-dosha="kapha"
+              >
+                Slow/regular, heavy or sticky
+              </li>
+            </ul>
+            <input
+              type="hidden"
+              name="bowelMovement"
+              id="bowelMovementInput"
+              required
+            />
+          </div>
+
+          <!-- 5. Stress Response -->
+          <div
+            class="form-group custom-select-group"
+            data-select-id="stressResponse"
+          >
+            <label class="form-label"
+              >Stress Response<span class="required-star">*</span></label
+            >
+            <div
+              class="custom-select-trigger"
+              tabindex="0"
+              role="combobox"
+              aria-expanded="false"
+              aria-haspopup="listbox"
+            >
+              <span class="selected-value placeholder"
+                >Select stress response</span
+              >
+              <span class="chevron-icon" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </div>
+            <ul class="custom-select-options" role="listbox">
+              <li
+                class="select-option"
+                data-value="worry_anxiety"
+                data-dosha="vata"
+              >
+                Worry, anxiety, overthinking
+              </li>
+              <li
+                class="select-option"
+                data-value="irritability_anger"
+                data-dosha="pitta"
+              >
+                Irritability, anger, impatience
+              </li>
+              <li
+                class="select-option"
+                data-value="withdrawal_sluggish"
+                data-dosha="kapha"
+              >
+                Withdrawal, emotional heaviness, sluggishness
+              </li>
+            </ul>
+            <input
+              type="hidden"
+              name="stressResponse"
+              id="stressResponseInput"
+              required
+            />
+          </div>
+
+          <!-- 6. Body Temperature -->
+          <div
+            class="form-group custom-select-group"
+            data-select-id="bodyTemperature"
+          >
+            <label class="form-label"
+              >Body Temperature<span class="required-star">*</span></label
+            >
+            <div
+              class="custom-select-trigger"
+              tabindex="0"
+              role="combobox"
+              aria-expanded="false"
+              aria-haspopup="listbox"
+            >
+              <span class="selected-value placeholder"
+                >Select temperature tendency</span
+              >
+              <span class="chevron-icon" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </div>
+            <ul class="custom-select-options" role="listbox">
+              <li
+                class="select-option"
+                data-value="cold_hands_legs"
+                data-dosha="vata"
+              >
+                Cold hands and Legs
+              </li>
+              <li
+                class="select-option"
+                data-value="warm_legs_hands"
+                data-dosha="pitta"
+              >
+                Warm legs and Hands
+              </li>
+              <li
+                class="select-option"
+                data-value="normal_stable"
+                data-dosha="kapha"
+              >
+                Normal &amp; Stable
+              </li>
+            </ul>
+            <input
+              type="hidden"
+              name="bodyTemperature"
+              id="bodyTemperatureInput"
+              required
+            />
+          </div>
+
+          <!-- 7. Physical Activity -->
+          <div
+            class="form-group custom-select-group"
+            data-select-id="physicalActivity"
+          >
+            <label class="form-label"
+              >Physical Activity<span class="required-star">*</span></label
+            >
+            <div
+              class="custom-select-trigger"
+              tabindex="0"
+              role="combobox"
+              aria-expanded="false"
+              aria-haspopup="listbox"
+            >
+              <span class="selected-value placeholder"
+                >Select physical activity style</span
+              >
+              <span class="chevron-icon" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            </div>
+            <ul class="custom-select-options" role="listbox">
+              <li class="select-option" data-value="regular" data-dosha="pitta">
+                Regular
+              </li>
+              <li
+                class="select-option"
+                data-value="weekly_3_times"
+                data-dosha="vata"
+              >
+                Weekly 3 times
+              </li>
+              <li
+                class="select-option"
+                data-value="no_movement"
+                data-dosha="kapha"
+              >
+                No Movement
+              </li>
+            </ul>
+            <input
+              type="hidden"
+              name="physicalActivity"
+              id="physicalActivityInput"
+              required
+            />
+          </div>
+
+          <!-- Terms and Conditions Agreement (Before Password State) -->
+          <div
+            class="terms-agreement-container"
+            id="prakrutiTermsAgreementGroup"
+          >
+            <label class="terms-agreement-label" for="agreeTermsCheckbox">
+              <input
+                type="checkbox"
+                id="agreeTermsCheckbox"
+                name="agreeTerms"
+                class="terms-checkbox-input"
+                required
+              />
+              <span class="custom-terms-checkbox" aria-hidden="true">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span class="terms-label-text">
+                I agree to the
+                <a
+                  href="terms-and-conditions.html"
+                  target="_blank"
+                  class="terms-legal-link"
+                  >Terms &amp; Conditions and Disclaimer</a
+                ><span class="required-star">*</span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Next Button -->
+          <button
+            type="submit"
+            class="btn-primary btn-submit"
+            id="submitPrakrutiBtn"
+          >
+            <span>I Agree &amp; Continue</span>
+          </button>
+
+          <!-- Step Indicator & Back Option -->
+          <div class="card-bottom-row">
+            <button
+              type="button"
+              class="back-link-btn"
+              id="backToPersonalBtn"
+              title="Back to Personal Details"
+            >
+              &larr; Back to Personal Details
+            </button>
+            <div class="step-badge">Step 2/3</div>
+          </div>
+        </form>
+      </section>
+
+      <!-- View: Security Credentials Card (Registration Step 3/3) -->
+      <section
+        class="auth-card security-card"
+        id="securityCard"
+        aria-labelledby="security-heading"
+        style="display: none"
+      >
+        <div class="card-header security-header">
+          <h1 id="security-heading" class="card-title security-title">
+            Security Credentials
+          </h1>
+        </div>
+
+        <form class="auth-form security-form" id="securityForm" novalidate>
+          <!-- New Password Field -->
+          <div class="form-group">
+            <label for="securityNewPasswordInput" class="form-label">
+              New Password<span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                type="password"
+                id="securityNewPasswordInput"
+                name="newPassword"
+                class="password-input-field"
+                placeholder="••••••••"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle-btn"
+                id="secNewPasswordToggleBtn"
+                aria-label="Toggle new password visibility"
+                title="Toggle password visibility"
+              >
+                <svg
+                  class="eye-off-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                  ></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <svg
+                  class="eye-on-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="display: none"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirm Password Field -->
+          <div class="form-group">
+            <label for="securityConfirmPasswordInput" class="form-label">
+              Confirm Password<span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                type="password"
+                id="securityConfirmPasswordInput"
+                name="confirmPassword"
+                class="password-input-field"
+                placeholder="••••••••"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle-btn"
+                id="secConfirmPasswordToggleBtn"
+                aria-label="Toggle confirm password visibility"
+                title="Toggle password visibility"
+              >
+                <svg
+                  class="eye-off-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                  ></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <svg
+                  class="eye-on-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="display: none"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            class="btn-primary btn-submit"
+            id="submitSecurityBtn"
+          >
+            <span>Submit</span>
+          </button>
+
+          <!-- Step Indicator & Back Option -->
+          <div class="card-bottom-row">
+            <button
+              type="button"
+              class="back-link-btn"
+              id="backToPersonalFromSecBtn"
+              title="Back to Personal Details"
+            >
+              &larr; Back to Personal Details
+            </button>
+            <div class="step-badge">Step 3/3</div>
+          </div>
+        </form>
+      </section>
+
+      <!-- View 4: Ayurveda Profile Result Card -->
+      <section
+        class="auth-card profile-card"
+        id="profileCard"
+        aria-labelledby="profile-heading"
+        style="display: none"
+      >
+        <div class="card-header profile-header">
+          <h1 id="profile-heading" class="card-title profile-title">
+            Your Ayurveda Profile
+          </h1>
+        </div>
+
+        <div class="profile-content">
+          <!-- Flame Icon for Agni -->
+          <div class="profile-icon-wrapper" aria-hidden="true">
+            <svg
+              class="profile-flame-icon"
+              width="38"
+              height="38"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12 2.5C12 2.5 7 8 7 14C7 16.7614 9.23858 19 12 19C14.7614 19 17 16.7614 17 14C17 8 12 2.5 12 2.5Z"
+              />
+              <path
+                d="M12 19C10.6193 19 9.5 17.8807 9.5 16.5C9.5 14 12 11.5 12 11.5C12 11.5 14.5 14 14.5 16.5C14.5 17.8807 13.3807 19 12 19Z"
+              />
+            </svg>
+          </div>
+
+          <!-- Profile Type Name -->
+          <h2 class="profile-type-title" id="profileTypeName">--</h2>
+
+          <!-- Dosha Scores Breakdown Badges -->
+          <div
+            class="profile-dosha-badges"
+            id="profileDoshaBadges"
+            style="display: none"
+          >
+            <span class="dosha-badge-pill vata" id="vataBadgePill"
+              >Vata: 0/8</span
+            >
+            <span class="dosha-badge-pill pitta" id="pittaBadgePill"
+              >Pitta: 0/8</span
+            >
+            <span class="dosha-badge-pill kapha" id="kaphaBadgePill"
+              >Kapha: 0/8</span
+            >
+          </div>
+
+          <!-- Profile Description -->
+          <p class="profile-description" id="profileDescription">
+            Loading your Ayurveda profile...
+          </p>
+
+          <!-- Health Tendencies Block -->
+          <div
+            class="profile-info-block"
+            id="healthTendenciesBlock"
+            style="display: none"
+          >
+            <div class="profile-info-block-header">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+              <span>Health Tendencies to Watch</span>
+            </div>
+            <div class="profile-tendency-grid" id="healthTendencyGrid">
+              <!-- Dynamic Tendencies List -->
+            </div>
+          </div>
+
+          <!-- Preventive Healthcare Block (Show to all) -->
+          <div class="profile-info-block" id="preventiveCareBlock">
+            <div class="profile-info-block-header">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--primary-teal, #146e66)"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>Prakruti &amp; Preventive Healthcare</span>
+            </div>
+            <div class="profile-preventive-list">
+              <div class="preventive-care-item">
+                <div class="preventive-care-item-title">
+                  1. Early Risk Awareness
+                </div>
+                <p class="preventive-care-item-desc">
+                  Prakruti assessment helps identify individual tendencies such
+                  as digestive problems, stress sensitivity, sleep disturbances,
+                  or seasonal imbalances before they become persistent concerns.
+                </p>
+              </div>
+              <div class="preventive-care-item">
+                <div class="preventive-care-item-title">
+                  2. Personalized Prevention
+                </div>
+                <p class="preventive-care-item-desc">
+                  Dosha-specific diet, daily routine, seasonal care, sleep, and
+                  exercise can help maintain digestion, energy, sleep quality,
+                  and overall balance.
+                </p>
+              </div>
+              <div class="preventive-care-item">
+                <div class="preventive-care-item-title">
+                  3. Long-Term Health Protection
+                </div>
+                <p class="preventive-care-item-desc">
+                  Living according to Prakruti may help reduce lifestyle-related
+                  imbalances, support immunity and healthy metabolism, and
+                  promote sustained physical and mental well-being.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Button (Switches to Dashboard View) -->
+          <a
+            href="dashboard/dashboard.html"
+            class="btn-primary btn-explore"
+            id="explorePackagesBtn"
+          >
+            <span>Explore Programmes</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <!-- View 5: Dashboard View Directly in Index File -->
+    <div
+      class="dashboard-view-wrapper"
+      id="dashboardView"
+      style="display: none"
+    >
+      <!-- Mobile Top Navigation Bar -->
+      <header class="mobile-nav-bar" id="mobileNavBar">
+        <link rel="icon" type="image/png" href="assets/favicon.png" />
+        <button
+          class="mobile-menu-toggle"
+          id="mobileMenuToggle"
+          aria-label="Toggle navigation menu"
+          title="Toggle menu"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <a href="dashboard/dashboard.html" class="mobile-logo-link">
+          <img
+            src="assets/logo.svg"
+            alt="Ocayur Logo"
+            class="mobile-logo-img"
+          />
+        </a>
+        <div class="mobile-user-avatar" title="My Profile">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+      </header>
+
+      <!-- Sidebar Overlay for Mobile -->
+      <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+      <!-- Main Dashboard Layout Wrapper -->
+      <div class="dashboard-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="dashboard-sidebar" id="dashboardSidebar">
+          <!-- Brand Logo Header -->
+          <div class="sidebar-brand-header">
+            <a
+              href="dashboard/dashboard.html"
+              class="brand-logo-link"
+              title="Ocayur Ayurveda Lifestyle"
+            >
+              <img
+                src="assets/logo.svg"
+                alt="Ocayur Ayurveda Lifestyle"
+                class="brand-logo-img"
+                width="160"
+                height="88"
+              />
+            </a>
+          </div>
+
+          <!-- Navigation Menu -->
+          <nav class="sidebar-nav" aria-label="Main Navigation">
+            <ul class="nav-list">
+              <li class="nav-item">
+                <a
+                  href="dashboard/dashboard.html"
+                  class="nav-link active"
+                  id="navDashboard"
+                >
+                  <span class="nav-icon" aria-hidden="true">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
                       <path
-                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                      ></path>
+                      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                  </span>
+                  <span class="nav-label">Dashboard</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="#packages" class="nav-link" id="navPackages">
+                  <span class="nav-icon" aria-hidden="true">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                      ></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  </span>
+                  <span class="nav-label">Programmes</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="#consultations" class="nav-link" id="navConsultations">
+                  <span class="nav-icon" aria-hidden="true">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                      ></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <line x1="19" y1="8" x2="19" y2="14"></line>
+                      <line x1="22" y1="11" x2="16" y2="11"></line>
+                    </svg>
+                  </span>
+                  <span class="nav-label">Consultations</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="chat/chat.html" class="nav-link" id="navChat">
+                  <span class="nav-icon" aria-hidden="true">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                      ></path>
+                    </svg>
+                  </span>
+                  <span class="nav-label">Messages</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="#courses" class="nav-link" id="navCourses">
+                  <span class="nav-icon" aria-hidden="true">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="9" cy="21" r="1"></circle>
+                      <circle cx="20" cy="21" r="1"></circle>
+                      <path
+                        d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                      ></path>
+                    </svg>
+                  </span>
+                  <span class="nav-label">Workshops</span>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="#billing" class="nav-link" id="navBilling">
+                  <span class="nav-icon" aria-hidden="true">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                      <line x1="2" y1="10" x2="22" y2="10"></line>
+                    </svg>
+                  </span>
+                  <span class="nav-label">Billing</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+
+          <!-- Sidebar Footer (Log Out Button) -->
+          <div class="sidebar-footer">
+            <button
+              type="button"
+              class="btn-logout"
+              id="logoutBtn"
+              title="Log out from patient portal"
+            >
+              <span class="logout-icon" aria-hidden="true">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+              </span>
+              <span>Log out</span>
+            </button>
+          </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="dashboard-main-content">
+          <!-- Top Header Section: Title, Greeting & User Profile Badge -->
+          <header class="dashboard-top-header">
+            <link rel="icon" type="image/png" href="assets/favicon.png" />
+            <div class="header-titles">
+              <h1 class="dashboard-heading">Dashboard</h1>
+              <p class="greeting-subtitle" id="userGreeting">Welcome!</p>
+            </div>
+
+            <!-- User Profile Pill -->
+            <div
+              class="user-profile-card"
+              id="userProfileCard"
+              tabindex="0"
+              aria-label="User profile"
+            >
+              <div class="user-avatar" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <div class="user-meta">
+                <span class="user-name" id="userName">--</span>
+                <span class="user-patient-id" id="patientId">--</span>
+              </div>
+            </div>
+          </header>
+
+          <!-- Sub-View 1: Dashboard Overview (Cards + Appointments Chart) -->
+          <div id="dashboardOverviewSection" class="dashboard-subview-section">
+            <!-- Stats Metric Cards (3 Column Grid) -->
+            <section
+              class="stats-cards-grid"
+              aria-label="Patient Statistics Overview"
+            >
+              <!-- Card 1: Upcoming Consultations -->
+              <article class="stat-card" id="cardConsultations">
+                <div class="stat-card-header">
+                  <h2 class="stat-card-title">Upcoming Consultations</h2>
+                  <div class="stat-card-icon" aria-hidden="true">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                      ></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                   </div>
                 </div>
-              </div>
-
-              <!-- Row 1: Full Name & Date of Birth (2 Columns) -->
-              <div class="profile-form-row">
-                <div class="profile-field-group">
-                  <label for="profileFullName" class="profile-field-label">Full Name<span class="required-star">*</span></label>
-                  <input type="text" id="profileFullName" name="fullName" class="profile-input-field"
-                    value="" placeholder="Full Name" required />
+                <div class="stat-card-value-wrapper">
+                  <span class="stat-card-value" data-target="4">4</span>
                 </div>
+              </article>
 
-                <div class="profile-field-group">
-                  <label for="profileDob" class="profile-field-label">Date of Birth<span class="required-star">*</span></label>
-                  <div class="profile-date-wrapper">
-                    <input type="text" id="profileDob" name="dob" class="profile-input-field" value=""
-                      placeholder="dd/mm/yyyy" maxlength="10" autocomplete="bday" required />
-                    <button type="button" class="calendar-toggle-btn" id="modalProfileDobCalendarBtn" aria-label="Open date of birth calendar" title="Select Date of Birth">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                    </button>
-                    <input type="date" id="modalProfileDobNativePicker" class="dob-hidden-picker" aria-hidden="true" tabindex="-1" />
+              <!-- Card 2: Active Packages -->
+              <article class="stat-card" id="cardPackages">
+                <div class="stat-card-header">
+                  <h2 class="stat-card-title">Active Programmes</h2>
+                  <div class="stat-card-icon" aria-hidden="true">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                      ></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
                   </div>
                 </div>
-              </div>
-
-              <!-- Row 2: Phone Number & Gender (2 Columns) -->
-              <div class="profile-form-row">
-                <div class="profile-field-group">
-                  <label for="profilePhone" class="profile-field-label">Phone Number<span class="required-star">*</span></label>
-                  <input type="tel" id="profilePhone" name="phone" class="profile-input-field" value=""
-                    placeholder="Phone Number" required />
+                <div class="stat-card-value-wrapper">
+                  <span class="stat-card-value" data-target="2">2</span>
                 </div>
+              </article>
 
-                <div class="profile-field-group">
-                  <label for="profileGender" class="profile-field-label">Gender<span class="required-star">*</span></label>
-                  <select id="profileGender" name="gender" class="profile-input-field profile-select-field" required>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
+              <!-- Card 3: Unread Messages -->
+              <article class="stat-card" id="cardMessages">
+                <div class="stat-card-header">
+                  <h2 class="stat-card-title">Unread messages</h2>
+                  <div class="stat-card-icon" aria-hidden="true">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                      ></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="stat-card-value-wrapper">
+                  <span class="stat-card-value" data-target="3">3</span>
+                </div>
+              </article>
+            </section>
+
+            <!-- Analytics Section: Total Appointments Chart -->
+            <section class="analytics-card" aria-labelledby="analyticsHeading">
+              <!-- Analytics Card Header -->
+              <div class="analytics-card-header">
+                <h2 id="analyticsHeading" class="analytics-title">
+                  Total Appointments
+                </h2>
+
+                <!-- Period Selector Dropdown -->
+                <div class="period-select-wrapper">
+                  <select
+                    class="period-select"
+                    id="periodSelect"
+                    aria-label="Select appointment timeframe"
+                  >
+                    <option value="12m" selected>Last 12 months</option>
+                    <option value="6m">Last 6 months</option>
+                    <option value="3m">Last 3 months</option>
+                    <option value="2026">Year 2026</option>
                   </select>
+                  <span class="period-chevron-icon" aria-hidden="true">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </span>
                 </div>
               </div>
 
-              <!-- Row 3: Email (Full Width) -->
-              <div class="profile-field-group profile-field-full">
-                <label for="profileEmail" class="profile-field-label">Email<span class="required-star">*</span></label>
-                <input type="email" id="profileEmail" name="email" class="profile-input-field"
-                  value="" placeholder="Email Address" required />
-              </div>
+              <!-- Chart Container -->
+              <div class="chart-container" id="chartContainer">
+                <!-- Interactive SVG Spline Chart -->
+                <div class="svg-chart-wrapper" id="svgChartWrapper">
+                  <svg
+                    id="appointmentsChartSvg"
+                    viewBox="0 0 900 360"
+                    preserveAspectRatio="none"
+                    class="appointments-chart-svg"
+                  >
+                    <defs>
+                      <!-- Soft Blue/Teal Gradient Fill beneath the curve -->
+                      <linearGradient
+                        id="chartFillGradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="0%"
+                        y2="100%"
+                      >
+                        <stop
+                          offset="0%"
+                          stop-color="#38bdf8"
+                          stop-opacity="0.32"
+                        />
+                        <stop
+                          offset="50%"
+                          stop-color="#38bdf8"
+                          stop-opacity="0.12"
+                        />
+                        <stop
+                          offset="100%"
+                          stop-color="#38bdf8"
+                          stop-opacity="0.01"
+                        />
+                      </linearGradient>
 
-              <!-- Row 4: Action Button (Aligned to Right) -->
-              <div class="profile-form-actions">
-                <button type="submit" class="btn-update-profile" id="updateProfileBtn">
-                  <span>Update</span>
-                </button>
-              </div>
+                      <!-- Dot Shadow Filter -->
+                      <filter
+                        id="dotShadow"
+                        x="-20%"
+                        y="-20%"
+                        width="140%"
+                        height="140%"
+                      >
+                        <feDropShadow
+                          dx="0"
+                          dy="2"
+                          stdDeviation="2"
+                          flood-color="#0284c7"
+                          flood-opacity="0.3"
+                        />
+                      </filter>
+                    </defs>
 
-            </form>
+                    <!-- Horizontal Grid Lines & Y-Axis Labels -->
+                    <g class="grid-group" id="gridGroup">
+                      <!-- 10 -->
+                      <text x="32" y="35" class="axis-label y-label">10</text>
+                      <line
+                        x1="55"
+                        y1="30"
+                        x2="880"
+                        y2="30"
+                        class="grid-line"
+                        stroke-dasharray="3,3"
+                      />
 
-            <!-- Change Password Section -->
-            <div class="profile-section-divider"></div>
-            
-            <form class="profile-settings-form" id="changePasswordForm" novalidate>
-              <div class="profile-section-header">
-                <h2 class="profile-section-heading">Change Password</h2>
-              </div>
+                      <!-- 8 -->
+                      <text x="32" y="95" class="axis-label y-label">8</text>
+                      <line
+                        x1="55"
+                        y1="90"
+                        x2="880"
+                        y2="90"
+                        class="grid-line"
+                        stroke-dasharray="3,3"
+                      />
 
-              <!-- Password Field 1: Old Password -->
-              <div class="profile-form-row">
-                <div class="profile-field-group">
-                  <label for="oldPassword" class="profile-field-label">Old Password<span class="required-star">*</span></label>
-                  <div class="profile-password-wrapper">
-                    <input 
-                      type="password" 
-                      id="oldPassword" 
-                      name="oldPassword" 
-                      class="profile-input-field" 
-                      placeholder="••••••••" 
-                      autocomplete="current-password" 
-                      required 
+                      <!-- 6 -->
+                      <text x="32" y="155" class="axis-label y-label">6</text>
+                      <line
+                        x1="55"
+                        y1="150"
+                        x2="880"
+                        y2="150"
+                        class="grid-line"
+                        stroke-dasharray="3,3"
+                      />
+
+                      <!-- 4 -->
+                      <text x="32" y="215" class="axis-label y-label">4</text>
+                      <line
+                        x1="55"
+                        y1="210"
+                        x2="880"
+                        y2="210"
+                        class="grid-line"
+                        stroke-dasharray="3,3"
+                      />
+
+                      <!-- 2 -->
+                      <text x="32" y="275" class="axis-label y-label">2</text>
+                      <line
+                        x1="55"
+                        y1="270"
+                        x2="880"
+                        y2="270"
+                        class="grid-line"
+                        stroke-dasharray="3,3"
+                      />
+
+                      <!-- 0 -->
+                      <text x="32" y="335" class="axis-label y-label">0</text>
+                      <line
+                        x1="55"
+                        y1="330"
+                        x2="880"
+                        y2="330"
+                        class="grid-line baseline"
+                      />
+                    </g>
+
+                    <!-- Chart Area Path (Gradient Fill) -->
+                    <path
+                      id="chartAreaPath"
+                      class="chart-area-path"
+                      fill="url(#chartFillGradient)"
                     />
-                    <button type="button" class="profile-password-toggle" id="oldPasswordToggleBtn" aria-label="Toggle old password visibility" title="Toggle password visibility">
-                      <svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                      <svg class="eye-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    </button>
+
+                    <!-- Chart Spline Curve (Smooth Line) -->
+                    <path id="chartLinePath" class="chart-line-path" />
+
+                    <!-- Interactive Data Points and Tooltip Triggers -->
+                    <g id="chartPointsGroup" class="chart-points-group"></g>
+
+                    <!-- X-Axis Labels (Months) -->
+                    <g id="xAxisLabelsGroup" class="x-axis-labels-group"></g>
+                  </svg>
+
+                  <!-- Interactive Floating Tooltip matching Figma Design -->
+                  <div class="chart-tooltip" id="chartTooltip">
+                    <div class="tooltip-title">No. of Appointments</div>
+                    <div class="tooltip-val" id="tooltipVal">150</div>
+                    <div class="tooltip-arrow"></div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Password Fields 2 & 3: New Password & Confirm Password (2 Columns) -->
-              <div class="profile-form-row">
-                <div class="profile-field-group">
-                  <label for="newPassword" class="profile-field-label">New Password<span class="required-star">*</span></label>
-                  <div class="profile-password-wrapper">
-                    <input 
-                      type="password" 
-                      id="newPassword" 
-                      name="newPassword" 
-                      class="profile-input-field" 
-                      placeholder="••••••••" 
-                      autocomplete="new-password" 
-                      required 
-                    />
-                    <button type="button" class="profile-password-toggle" id="newPasswordToggleBtn" aria-label="Toggle new password visibility" title="Toggle password visibility">
-                      <svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                      <svg class="eye-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    </button>
+                <!-- Bottom Chart Legend (2026 with toggle navigation arrows) -->
+                <footer class="chart-footer">
+                  <button
+                    class="year-nav-btn"
+                    id="prevYearBtn"
+                    aria-label="Previous Year"
+                    title="Previous Year"
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                  <div class="legend-indicator">
+                    <span class="legend-dot" aria-hidden="true"></span>
+                    <span class="legend-year" id="currentYearDisplay"
+                      >2026</span
+                    >
                   </div>
-                  <!-- Password Strength Meter -->
-                  <div class="strength-meter-wrap" id="strengthMeterWrap">
-                    <div class="strength-bar-track">
-                      <div class="strength-bar-fill" id="strengthBarFill"></div>
+                  <button
+                    class="year-nav-btn"
+                    id="nextYearBtn"
+                    aria-label="Next Year"
+                    title="Next Year"
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </footer>
+              </div>
+            </section>
+          </div>
+
+          <!-- Sub-View 2: Patient Profile Settings (Matching Figma Profile Design) -->
+          <div
+            id="profileSettingsSection"
+            class="dashboard-subview-section"
+            style="display: none"
+          >
+            <section
+              class="profile-settings-card"
+              aria-labelledby="profileSettingsHeading"
+            >
+              <form
+                class="profile-settings-form"
+                id="profileSettingsForm"
+                novalidate
+              >
+                <!-- Profile Image Section -->
+                <div class="profile-image-section">
+                  <label class="form-section-label">Profile Image</label>
+                  <div
+                    class="profile-avatar-display"
+                    id="profileAvatarDisplay"
+                    title="Patient Profile Image"
+                  >
+                    <div class="profile-avatar-circle">
+                      <svg
+                        width="46"
+                        height="46"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path
+                          d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                        />
+                      </svg>
                     </div>
-                    <span class="strength-label" id="strengthLabel">Enter password</span>
                   </div>
-                  <span class="field-error" id="newPasswordError"></span>
                 </div>
 
-                <div class="profile-field-group">
-                  <label for="confirmPassword" class="profile-field-label">Confirm Password<span class="required-star">*</span></label>
-                  <div class="profile-password-wrapper">
-                    <input 
-                      type="password" 
-                      id="confirmPassword" 
-                      name="confirmPassword" 
-                      class="profile-input-field" 
-                      placeholder="••••••••" 
-                      autocomplete="new-password" 
-                      required 
+                <!-- Row 1: Full Name & Date of Birth (2 Columns) -->
+                <div class="profile-form-row">
+                  <div class="profile-field-group">
+                    <label for="profileFullName" class="profile-field-label"
+                      >Full Name<span class="required-star">*</span></label
+                    >
+                    <input
+                      type="text"
+                      id="profileFullName"
+                      name="fullName"
+                      class="profile-input-field"
+                      value=""
+                      placeholder="Full Name"
+                      required
                     />
-                    <button type="button" class="profile-password-toggle" id="confirmPasswordToggleBtn" aria-label="Toggle confirm password visibility" title="Toggle password visibility">
-                      <svg class="eye-off-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                      <svg class="eye-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    </button>
                   </div>
-                  <span class="field-error" id="confirmPasswordError"></span>
+
+                  <div class="profile-field-group">
+                    <label for="profileDob" class="profile-field-label"
+                      >Date of Birth<span class="required-star">*</span></label
+                    >
+                    <div class="profile-date-wrapper">
+                      <input
+                        type="text"
+                        id="profileDob"
+                        name="dob"
+                        class="profile-input-field"
+                        value=""
+                        placeholder="dd/mm/yyyy"
+                        maxlength="10"
+                        autocomplete="bday"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="calendar-toggle-btn"
+                        id="modalProfileDobCalendarBtn"
+                        aria-label="Open date of birth calendar"
+                        title="Select Date of Birth"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <rect
+                            x="3"
+                            y="4"
+                            width="18"
+                            height="18"
+                            rx="2"
+                            ry="2"
+                          ></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                      </button>
+                      <input
+                        type="date"
+                        id="modalProfileDobNativePicker"
+                        class="dob-hidden-picker"
+                        aria-hidden="true"
+                        tabindex="-1"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Password Guidelines Hint -->
-              <div class="password-tips">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
-                <span>The password should contain special characters, numbers, and alphabets, and it must be at least 8 digits long.</span>
-              </div>
+                <!-- Row 2: Phone Number & Gender (2 Columns) -->
+                <div class="profile-form-row">
+                  <div class="profile-field-group">
+                    <label for="profilePhone" class="profile-field-label"
+                      >Phone Number<span class="required-star">*</span></label
+                    >
+                    <input
+                      type="tel"
+                      id="profilePhone"
+                      name="phone"
+                      class="profile-input-field"
+                      value=""
+                      placeholder="Phone Number"
+                      required
+                    />
+                  </div>
 
-              <!-- Password Action Button (Aligned to Right) -->
-              <div class="profile-form-actions">
-                <button type="submit" class="btn-update-profile" id="changePasswordBtn">
-                  <span>Update Password</span>
+                  <div class="profile-field-group">
+                    <label for="profileGender" class="profile-field-label"
+                      >Gender<span class="required-star">*</span></label
+                    >
+                    <select
+                      id="profileGender"
+                      name="gender"
+                      class="profile-input-field profile-select-field"
+                      required
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Row 3: Email (Full Width) -->
+                <div class="profile-field-group profile-field-full">
+                  <label for="profileEmail" class="profile-field-label"
+                    >Email<span class="required-star">*</span></label
+                  >
+                  <input
+                    type="email"
+                    id="profileEmail"
+                    name="email"
+                    class="profile-input-field"
+                    value=""
+                    placeholder="Email Address"
+                    required
+                  />
+                </div>
+
+                <!-- Row 4: Action Button (Aligned to Right) -->
+                <div class="profile-form-actions">
+                  <button
+                    type="submit"
+                    class="btn-update-profile"
+                    id="updateProfileBtn"
+                  >
+                    <span>Update</span>
+                  </button>
+                </div>
+              </form>
+
+              <!-- Change Password Section -->
+              <div class="profile-section-divider"></div>
+
+              <form
+                class="profile-settings-form"
+                id="changePasswordForm"
+                novalidate
+              >
+                <div class="profile-section-header">
+                  <h2 class="profile-section-heading">Change Password</h2>
+                </div>
+
+                <!-- Password Field 1: Old Password -->
+                <div class="profile-form-row">
+                  <div class="profile-field-group">
+                    <label for="oldPassword" class="profile-field-label"
+                      >Old Password<span class="required-star">*</span></label
+                    >
+                    <div class="profile-password-wrapper">
+                      <input
+                        type="password"
+                        id="oldPassword"
+                        name="oldPassword"
+                        class="profile-input-field"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="profile-password-toggle"
+                        id="oldPasswordToggleBtn"
+                        aria-label="Toggle old password visibility"
+                        title="Toggle password visibility"
+                      >
+                        <svg
+                          class="eye-off-icon"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <path
+                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                          ></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                        <svg
+                          class="eye-on-icon"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          style="display: none"
+                        >
+                          <path
+                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"
+                          ></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Password Fields 2 & 3: New Password & Confirm Password (2 Columns) -->
+                <div class="profile-form-row">
+                  <div class="profile-field-group">
+                    <label for="newPassword" class="profile-field-label"
+                      >New Password<span class="required-star">*</span></label
+                    >
+                    <div class="profile-password-wrapper">
+                      <input
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        class="profile-input-field"
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="profile-password-toggle"
+                        id="newPasswordToggleBtn"
+                        aria-label="Toggle new password visibility"
+                        title="Toggle password visibility"
+                      >
+                        <svg
+                          class="eye-off-icon"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <path
+                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                          ></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                        <svg
+                          class="eye-on-icon"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          style="display: none"
+                        >
+                          <path
+                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"
+                          ></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                    </div>
+                    <!-- Password Strength Meter -->
+                    <div class="strength-meter-wrap" id="strengthMeterWrap">
+                      <div class="strength-bar-track">
+                        <div
+                          class="strength-bar-fill"
+                          id="strengthBarFill"
+                        ></div>
+                      </div>
+                      <span class="strength-label" id="strengthLabel"
+                        >Enter password</span
+                      >
+                    </div>
+                    <span class="field-error" id="newPasswordError"></span>
+                  </div>
+
+                  <div class="profile-field-group">
+                    <label for="confirmPassword" class="profile-field-label"
+                      >Confirm Password<span class="required-star"
+                        >*</span
+                      ></label
+                    >
+                    <div class="profile-password-wrapper">
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        class="profile-input-field"
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        class="profile-password-toggle"
+                        id="confirmPasswordToggleBtn"
+                        aria-label="Toggle confirm password visibility"
+                        title="Toggle password visibility"
+                      >
+                        <svg
+                          class="eye-off-icon"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <path
+                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                          ></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                        <svg
+                          class="eye-on-icon"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          style="display: none"
+                        >
+                          <path
+                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"
+                          ></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                    </div>
+                    <span class="field-error" id="confirmPasswordError"></span>
+                  </div>
+                </div>
+
+                <!-- Password Guidelines Hint -->
+                <div class="password-tips">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                  <span
+                    >The password should contain special characters, numbers,
+                    and alphabets, and it must be at least 8 digits long.</span
+                  >
+                </div>
+
+                <!-- Password Action Button (Aligned to Right) -->
+                <div class="profile-form-actions">
+                  <button
+                    type="submit"
+                    class="btn-update-profile"
+                    id="changePasswordBtn"
+                  >
+                    <span>Update Password</span>
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Interactive Feedback Toast -->
+    <div id="toast" class="toast-msg" role="status" aria-live="polite">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#22c55e"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span id="toastMsg">Action completed successfully!</span>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div
+      class="auth-modal-overlay"
+      id="forgotPasswordModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fpPatientModalTitle"
+    >
+      <div class="auth-modal-card">
+        <button
+          type="button"
+          class="modal-close-btn"
+          id="fpCloseBtn"
+          aria-label="Close modal"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <!-- Step 1: Request OTP -->
+        <div id="fpStepRequest">
+          <div class="modal-header-icon">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h2 class="modal-title" id="fpPatientModalTitle">Forgot Password</h2>
+          <p class="modal-subtitle">
+            Enter your registered phone number or email address. We'll send a
+            6-digit OTP to your registered email.
+          </p>
+
+          <div
+            class="modal-alert-box alert-danger"
+            id="fpRequestError"
+            role="alert"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="flex-shrink: 0"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="fpRequestErrorText"></span>
+          </div>
+
+          <form id="fpRequestForm">
+            <div class="modal-form-group">
+              <label for="fpIdentifier" class="modal-label"
+                >Registered Phone Number / Email</label
+              >
+              <input
+                type="text"
+                id="fpIdentifier"
+                class="modal-input"
+                placeholder="e.g. 9876543210 or name@gmail.com"
+                required
+                autocomplete="username"
+              />
+            </div>
+
+            <button type="submit" class="modal-btn-primary" id="fpSendOtpBtn">
+              <span class="btn-text">Send Verification Code</span>
+              <span class="btn-spinner hidden" aria-hidden="true"></span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 2: Verify OTP & Reset Password -->
+        <div id="fpStepVerify" style="display: none">
+          <div class="modal-header-icon">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <h2 class="modal-title">Verify & Reset Password</h2>
+          <p class="modal-subtitle">
+            Enter the 6-digit code sent to
+            <strong id="fpMaskedEmailText">your email</strong> and your new
+            password.
+          </p>
+
+          <div
+            class="modal-alert-box alert-danger"
+            id="fpResetError"
+            role="alert"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="flex-shrink: 0"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="fpResetErrorText"></span>
+          </div>
+
+          <form id="fpResetForm">
+            <div class="modal-form-group">
+              <label for="fpOtpCode" class="modal-label"
+                >6-Digit Verification Code (OTP)</label
+              >
+              <input
+                type="text"
+                id="fpOtpCode"
+                class="modal-input modal-otp-input"
+                maxlength="6"
+                pattern="\d{6}"
+                placeholder="------"
+                required
+                autocomplete="one-time-code"
+              />
+            </div>
+
+            <div class="modal-form-group">
+              <label for="fpNewPassword" class="modal-label"
+                >New Password</label
+              >
+              <div class="modal-input-pass-wrap">
+                <input
+                  type="password"
+                  id="fpNewPassword"
+                  class="modal-input"
+                  placeholder="At least 6 characters"
+                  minlength="6"
+                  required
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="modal-pass-toggle"
+                  id="fpToggleNewPw"
+                  aria-label="Toggle password visibility"
+                >
+                  <svg
+                    class="eye-icon"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
                 </button>
               </div>
-            </form>
-          </section>
-        </div>
-
-      </main>
-    </div>
-  </div>
-
-
-  <!-- Interactive Feedback Toast -->
-  <div id="toast" class="toast-msg" role="status" aria-live="polite">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-      <polyline points="22 4 12 14.01 9 11.01"></polyline>
-    </svg>
-    <span id="toastMsg">Action completed successfully!</span>
-  </div>
-
-  <!-- Forgot Password Modal -->
-  <div class="auth-modal-overlay" id="forgotPasswordModal" role="dialog" aria-modal="true" aria-labelledby="fpPatientModalTitle">
-    <div class="auth-modal-card">
-      <button type="button" class="modal-close-btn" id="fpCloseBtn" aria-label="Close modal">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-
-      <!-- Step 1: Request OTP -->
-      <div id="fpStepRequest">
-        <div class="modal-header-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-        </div>
-        <h2 class="modal-title" id="fpPatientModalTitle">Forgot Password</h2>
-        <p class="modal-subtitle">Enter your registered phone number or email address. We'll send a 6-digit OTP to your registered email.</p>
-
-        <div class="modal-alert-box alert-danger" id="fpRequestError" role="alert">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <span id="fpRequestErrorText"></span>
-        </div>
-
-        <form id="fpRequestForm">
-          <div class="modal-form-group">
-            <label for="fpIdentifier" class="modal-label">Registered Phone Number / Email</label>
-            <input type="text" id="fpIdentifier" class="modal-input" placeholder="e.g. 9876543210 or name@gmail.com" required autocomplete="username" />
-          </div>
-
-          <button type="submit" class="modal-btn-primary" id="fpSendOtpBtn">
-            <span class="btn-text">Send Verification Code</span>
-            <span class="btn-spinner hidden" aria-hidden="true"></span>
-          </button>
-        </form>
-      </div>
-
-      <!-- Step 2: Verify OTP & Reset Password -->
-      <div id="fpStepVerify" style="display: none;">
-        <div class="modal-header-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-        </div>
-        <h2 class="modal-title">Verify & Reset Password</h2>
-        <p class="modal-subtitle">Enter the 6-digit code sent to <strong id="fpMaskedEmailText">your email</strong> and your new password.</p>
-
-        <div class="modal-alert-box alert-danger" id="fpResetError" role="alert">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <span id="fpResetErrorText"></span>
-        </div>
-
-        <form id="fpResetForm">
-          <div class="modal-form-group">
-            <label for="fpOtpCode" class="modal-label">6-Digit Verification Code (OTP)</label>
-            <input type="text" id="fpOtpCode" class="modal-input modal-otp-input" maxlength="6" pattern="\d{6}" placeholder="------" required autocomplete="one-time-code" />
-          </div>
-
-          <div class="modal-form-group">
-            <label for="fpNewPassword" class="modal-label">New Password</label>
-            <div class="modal-input-pass-wrap">
-              <input type="password" id="fpNewPassword" class="modal-input" placeholder="At least 6 characters" minlength="6" required autocomplete="new-password" />
-              <button type="button" class="modal-pass-toggle" id="fpToggleNewPw" aria-label="Toggle password visibility">
-                <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
             </div>
-          </div>
 
-          <div class="modal-form-group">
-            <label for="fpConfirmPassword" class="modal-label">Confirm New Password</label>
-            <div class="modal-input-pass-wrap">
-              <input type="password" id="fpConfirmPassword" class="modal-input" placeholder="Repeat new password" minlength="6" required autocomplete="new-password" />
-              <button type="button" class="modal-pass-toggle" id="fpToggleConfirmPw" aria-label="Toggle password visibility">
-                <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
+            <div class="modal-form-group">
+              <label for="fpConfirmPassword" class="modal-label"
+                >Confirm New Password</label
+              >
+              <div class="modal-input-pass-wrap">
+                <input
+                  type="password"
+                  id="fpConfirmPassword"
+                  class="modal-input"
+                  placeholder="Repeat new password"
+                  minlength="6"
+                  required
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="modal-pass-toggle"
+                  id="fpToggleConfirmPw"
+                  aria-label="Toggle password visibility"
+                >
+                  <svg
+                    class="eye-icon"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
 
-          <button type="submit" class="modal-btn-primary" id="fpSubmitResetBtn">
-            <span class="btn-text">Reset Password</span>
-            <span class="btn-spinner hidden" aria-hidden="true"></span>
-          </button>
+            <button
+              type="submit"
+              class="modal-btn-primary"
+              id="fpSubmitResetBtn"
+            >
+              <span class="btn-text">Reset Password</span>
+              <span class="btn-spinner hidden" aria-hidden="true"></span>
+            </button>
 
-          <div class="modal-resend-row">
-            <a href="javascript:void(0)" class="modal-resend-link" id="fpBackToRequestBtn">← Change account</a>
-            <span id="fpResendContainer">
-              <a href="javascript:void(0)" class="modal-resend-link" id="fpResendOtpBtn">Resend code</a>
-              <span id="fpResendCountdown" style="display:none; color: #8e877b;">Resend in <strong id="fpTimerCount">60</strong>s</span>
-            </span>
-          </div>
-        </form>
-      </div>
-
-      <!-- Step 3: Success -->
-      <div id="fpStepSuccess" style="display: none; text-align: center;">
-        <div class="modal-header-icon icon-success" style="margin: 0 auto 16px auto;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
+            <div class="modal-resend-row">
+              <a
+                href="javascript:void(0)"
+                class="modal-resend-link"
+                id="fpBackToRequestBtn"
+                >← Change account</a
+              >
+              <span id="fpResendContainer">
+                <a
+                  href="javascript:void(0)"
+                  class="modal-resend-link"
+                  id="fpResendOtpBtn"
+                  >Resend code</a
+                >
+                <span
+                  id="fpResendCountdown"
+                  style="display: none; color: #8e877b"
+                  >Resend in <strong id="fpTimerCount">60</strong>s</span
+                >
+              </span>
+            </div>
+          </form>
         </div>
-        <h2 class="modal-title">Password Reset Complete!</h2>
-        <p class="modal-subtitle">Your password has been securely updated. You can now log into your patient account using your new password.</p>
-        <button type="button" class="modal-btn-primary" id="fpSuccessDoneBtn">Return to Login</button>
+
+        <!-- Step 3: Success -->
+        <div id="fpStepSuccess" style="display: none; text-align: center">
+          <div
+            class="modal-header-icon icon-success"
+            style="margin: 0 auto 16px auto"
+          >
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <h2 class="modal-title">Password Reset Complete!</h2>
+          <p class="modal-subtitle">
+            Your password has been securely updated. You can now log into your
+            patient account using your new password.
+          </p>
+          <button type="button" class="modal-btn-primary" id="fpSuccessDoneBtn">
+            Return to Login
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script src="script.js"></script>
-</body>
-
+    <script src="script.js"></script>
+  </body>
 </html>
