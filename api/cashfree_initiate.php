@@ -9,7 +9,7 @@
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
@@ -18,11 +18,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
 }
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    @session_start();
 }
 
+/**
+ * Standardized JSON response helper.
+ * CRITICAL: Always return HTTP 200 on Azure App Service / IIS.
+ * Azure / IIS intercepts non-200 HTTP status codes (500, 502, 404, 405) and returns an Azure HTML 404 error page,
+ * which hides database exception details and JSON error messages.
+ */
 function sendCashfreeInitResponse($success, $message, $data = [], $statusCode = 200) {
-    http_response_code($statusCode);
+    http_response_code(200);
     echo json_encode(array_merge([
         'success' => (bool)$success,
         'message' => $message,
@@ -40,17 +46,45 @@ set_error_handler(function($severity, $message, $file, $line) {
 });
 
 try {
-    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
-        sendCashfreeInitResponse(false, 'Only POST requests are allowed.', [], 405);
+    require_once __DIR__ . '/cashfree_config.php';
+
+    // Handle GET status check (e.g. browser probe)
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
+        $cfg = getCashfreeConfig();
+        sendCashfreeInitResponse(true, 'Cashfree Patient Initiate Endpoint is active.', [
+            'method' => 'GET',
+            'is_configured' => $cfg['is_configured'],
+            'environment' => $cfg['mode'],
+            'api_version' => $cfg['api_version']
+        ], 200);
     }
 
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        sendCashfreeInitResponse(false, 'Only POST requests are allowed.', [
+            'received_method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'
+        ], 200);
+    }
+
+    // Enable strict MySQL reporting so database connection errors throw catchable mysqli_sql_exception
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+    // Database connection
     require_once __DIR__ . '/database.php';
-    require_once __DIR__ . '/cashfree_config.php';
+
+    if (!isset($connection1) || !$connection1) {
+        if (mysqli_connect_errno()) {
+            throw new mysqli_sql_exception(mysqli_connect_error(), mysqli_connect_errno());
+        }
+        throw new mysqli_sql_exception('MySQL database connection unavailable.', 500);
+    }
 
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true);
-    if (!is_array($input)) {
+    if (!is_array($input) || empty($input)) {
         $input = $_POST;
+    }
+    if (!is_array($input)) {
+        $input = [];
     }
 
     $clientOrigin = trim((string)($input['origin_url'] ?? ($input['client_origin'] ?? '')));
@@ -60,7 +94,7 @@ try {
         sendCashfreeInitResponse(false, 'Cashfree credentials not configured. Please ensure CASHFREE_APP_ID and CASHFREE_SECRET_KEY are set in Azure App Service Configuration.', [
             'is_configured' => false,
             'required_variables' => ['CASHFREE_APP_ID', 'CASHFREE_SECRET_KEY', 'CASHFREE_ENV']
-        ], 500);
+        ], 200);
     }
 
     $serviceType = strtolower(trim((string)($input['service_type'] ?? 'package'))); // 'package', 'workshop', 'consultation'
@@ -69,13 +103,13 @@ try {
     $patientPhone = trim((string)($input['patient_phone'] ?? ($_SESSION['phone_number'] ?? '')));
     $patientId = trim((string)($input['patient_id'] ?? ($_SESSION['patient_id'] ?? '')));
 
-    // Clean phone number (10 digits for Cashfree India)
-    $cleanPhone = preg_replace('/[^\d]/', '', $patientPhone);
+    // Clean phone number (Indian 10 digits starting with 6, 7, 8, 9 for Cashfree India)
+    $cleanPhone = preg_replace('/[^\d]/', '', (string)$patientPhone);
     if (strlen($cleanPhone) === 12 && substr($cleanPhone, 0, 2) === '91') {
         $cleanPhone = substr($cleanPhone, 2);
     }
-    if (strlen($cleanPhone) !== 10) {
-        $cleanPhone = '9999999999';
+    if (strlen($cleanPhone) !== 10 || !preg_match('/^[6-9]\d{9}$/', $cleanPhone)) {
+        $cleanPhone = '9876543210';
     }
 
     $cleanName = preg_replace('/[^a-zA-Z0-9\s.]/', '', $patientName);
@@ -84,7 +118,8 @@ try {
     }
 
     if (empty($patientEmail) || !filter_var($patientEmail, FILTER_VALIDATE_EMAIL)) {
-        $patientEmail = 'patient_' . ($patientId ? $patientId : 'user') . '@panchved.com';
+        $safeId = preg_replace('/[^a-zA-Z0-9]/', '', (string)$patientId);
+        $patientEmail = 'patient_' . ($safeId ?: 'user') . '@panchved.com';
     }
 
     // Resolve service-specific properties
@@ -92,7 +127,7 @@ try {
     $productInfo = 'Ocayur Healthcare';
     $itemId = '';
     $doctorName = trim((string)($input['doctor_name'] ?? 'Dr. Nidhi Jha'));
-    $doctorId = trim((string)($input['doctor_id'] ?? ''));
+    $doctorId = trim((string)($input['doctor_id'] ?? '1'));
     $doctorRole = trim((string)($input['doctor_role'] ?? 'Ayurveda Physician'));
     $appointmentDate = trim((string)($input['appointment_date'] ?? ($input['date'] ?? date('Y-m-d'))));
     $appointmentTime = trim((string)($input['appointment_time'] ?? ($input['time'] ?? '07:00 - 07:45 PM')));
@@ -105,6 +140,7 @@ try {
         $prefix = 'CNS';
     }
 
+    // Cashfree order_id: max 45 characters, alphanumeric, hyphen, underscore
     $orderId = 'CF_' . $prefix . '_' . date('YmdHis') . '_' . mt_rand(1000, 9999);
 
     if ($serviceType === 'package' || $serviceType === 'programme') {
@@ -127,7 +163,7 @@ try {
                     @mysqli_stmt_close($q);
                 }
             } catch (mysqli_sql_exception $e) {
-                // Non-fatal
+                // Non-fatal fee lookup fallback
             } catch (Throwable $e) {
                 // Non-fatal
             }
@@ -151,8 +187,28 @@ try {
     }
     $formattedAmount = round($amount, 2);
 
-    $customerId = 'pat_' . ($patientId ? $patientId : '1') . '_' . substr(md5($patientEmail . $cleanPhone), 0, 8);
-    $orderNote = substr(preg_replace('/[^a-zA-Z0-9\s_\-]/', '', $productInfo), 0, 80);
+    $cleanCustId = preg_replace('/[^a-zA-Z0-9_\-]/', '', (string)$patientId);
+    if (empty($cleanCustId) || $cleanCustId === '--') {
+        $cleanCustId = 'guest';
+    }
+    $customerId = substr('pat_' . $cleanCustId . '_' . substr(md5($patientEmail . $cleanPhone), 0, 8), 0, 45);
+    $orderNote = substr(preg_replace('/[^a-zA-Z0-9\s_\-]/', '', $productInfo), 0, 75);
+
+    // Cashfree order_meta: notify_url must be HTTPS URL; omit if HTTP/localhost
+    $orderMeta = [
+        'return_url' => $config['callback_url'] . '?order_id={order_id}'
+    ];
+    if (!empty($config['notify_url']) && strpos($config['notify_url'], 'https://') === 0 && strpos($config['notify_url'], 'localhost') === false) {
+        $orderMeta['notify_url'] = $config['notify_url'];
+    }
+
+    // Cashfree requires all order_tags values to be non-empty strings (max 100 chars)
+    $orderTags = [
+        'service_type' => substr((string)($serviceType ?: 'package'), 0, 40),
+        'item_id' => substr((string)($itemId ?: '1'), 0, 40),
+        'patient_id' => substr((string)($patientId ?: '1'), 0, 40),
+        'doctor_name' => substr((string)($doctorName ?: 'Doctor'), 0, 40)
+    ];
 
     // Build Cashfree API request payload
     $orderPayload = [
@@ -165,17 +221,9 @@ try {
             'customer_email' => $patientEmail,
             'customer_phone' => $cleanPhone
         ],
-        'order_meta' => [
-            'return_url' => $config['callback_url'] . '?order_id={order_id}',
-            'notify_url' => $config['notify_url']
-        ],
+        'order_meta' => $orderMeta,
         'order_note' => $orderNote,
-        'order_tags' => [
-            'service_type' => $serviceType,
-            'item_id' => (string)$itemId,
-            'patient_id' => (string)$patientId,
-            'doctor_name' => substr($doctorName, 0, 40)
-        ]
+        'order_tags' => $orderTags
     ];
 
     // Call Cashfree API to create the order
@@ -191,7 +239,7 @@ try {
             'api_error' => $errorMsg,
             'api_response' => $details,
             'http_code' => $apiResult['http_code']
-        ], 502);
+        ], 200);
     }
 
     $resData = $apiResult['data'];
@@ -200,7 +248,7 @@ try {
     if (empty($paymentSessionId)) {
         sendCashfreeInitResponse(false, 'Cashfree did not return a payment_session_id.', [
             'api_response' => $resData
-        ], 502);
+        ], 200);
     }
 
     // Pre-record in transactions table if available
@@ -212,8 +260,9 @@ try {
                 ON DUPLICATE KEY UPDATE `payment_status` = 'Pending', `amount` = VALUES(`amount`), `payment_method` = 'Cashfree'");
             if ($ins) {
                 $amtVal = floatval($formattedAmount);
+                $itIdStr = (string)$itemId;
                 @mysqli_stmt_bind_param($ins, "sssssssd",
-                    $orderId, $serviceType, $itemId, $orderNote, $cleanName, $patientEmail, $cleanPhone, $amtVal
+                    $orderId, $serviceType, $itIdStr, $orderNote, $cleanName, $patientEmail, $cleanPhone, $amtVal
                 );
                 @mysqli_stmt_execute($ins);
                 @mysqli_stmt_close($ins);
@@ -254,7 +303,7 @@ try {
         'cf_environment' => $config['mode'],
         'amount' => $formattedAmount,
         'return_url' => $config['callback_url'] . '?order_id=' . urlencode($orderId)
-    ]);
+    ], 200);
 
 } catch (mysqli_sql_exception $e) {
     sendCashfreeInitResponse(false, 'Database Error: ' . $e->getMessage(), [
@@ -264,7 +313,7 @@ try {
         'error_details' => $e->getMessage(),
         'file' => basename($e->getFile()),
         'line' => $e->getLine()
-    ], 500);
+    ], 200);
 } catch (Throwable $e) {
     sendCashfreeInitResponse(false, 'Server Error: ' . $e->getMessage(), [
         'error_type' => get_class($e),
@@ -272,5 +321,5 @@ try {
         'error_details' => $e->getMessage(),
         'file' => basename($e->getFile()),
         'line' => $e->getLine()
-    ], 500);
+    ], 200);
 }
