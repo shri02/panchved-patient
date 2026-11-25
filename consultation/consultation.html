@@ -17,30 +17,162 @@
       rel="stylesheet"
     />
     <style>
+      @page {
+        size: A4 portrait;
+        margin: 12mm 14mm;
+      }
+
       @media print {
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+          color: #1e293b !important;
+          font-size: 10.5pt !important;
+          line-height: 1.5 !important;
+          height: auto !important;
+          overflow: visible !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
         body * {
           visibility: hidden !important;
         }
-        #prescriptionModal, #prescriptionModal * {
+
+        .mobile-nav-bar,
+        .dashboard-sidebar,
+        .sidebar-overlay,
+        .dashboard-top-header,
+        .dashboard-main-content,
+        .modal-close-btn,
+        .prescription-actions-row,
+        .btn-print-rx,
+        #viewAppointmentModal,
+        #consultationModal,
+        #logoutModal,
+        #toast,
+        #pageLoader {
+          display: none !important;
+        }
+
+        #prescriptionModal,
+        #prescriptionModal * {
           visibility: visible !important;
         }
+
         #prescriptionModal {
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
+          position: static !important;
+          inset: auto !important;
           width: 100% !important;
+          height: auto !important;
           margin: 0 !important;
           padding: 0 !important;
           background: #ffffff !important;
           display: block !important;
+          overflow: visible !important;
         }
-        .modal-card.prescription-card {
-          box-shadow: none !important;
-          border: 1px solid #cbd5e1 !important;
+
+        .prescription-modal-box {
+          position: static !important;
+          width: 100% !important;
           max-width: 100% !important;
+          max-height: none !important;
+          margin: 0 !important;
+          padding: 18px 22px !important;
+          box-shadow: none !important;
+          border: 1.5px solid #cbd5e1 !important;
+          border-radius: 8px !important;
+          background: #ffffff !important;
+          overflow: visible !important;
+          transform: none !important;
         }
-        .modal-close-btn, .modal-backdrop, .mobile-nav-bar, .patient-sidebar, .page-header {
-          display: none !important;
+
+        .prescription-top-header {
+          padding-bottom: 12px !important;
+          border-bottom: 2px solid #723F1E !important;
+          margin-bottom: 12px !important;
+        }
+
+        .rx-document-title {
+          font-size: 18pt !important;
+          letter-spacing: 0.08em !important;
+          color: #723F1E !important;
+        }
+
+        .rx-patient-info-row {
+          background: #faf6ee !important;
+          border: 1px solid #e2d9c8 !important;
+          border-radius: 6px !important;
+          padding: 8px 14px !important;
+          margin-bottom: 10px !important;
+          font-size: 10pt !important;
+        }
+
+        .rx-vitals-strip {
+          background: #faf6ee !important;
+          border: 1px solid #e2d9c8 !important;
+          padding: 8px 12px !important;
+          margin: 8px 0 10px !important;
+          font-size: 9.5pt !important;
+          gap: 10px 16px !important;
+        }
+
+        .rx-clinical-section,
+        .rx-findings-section {
+          margin: 10px 0 !important;
+        }
+
+        .rx-clinical-row,
+        .rx-findings-row {
+          padding: 5px 0 !important;
+          border-bottom: 1px dashed #e2e8f0 !important;
+          font-size: 10pt !important;
+          line-height: 1.45 !important;
+        }
+
+        .rx-clinical-row:last-child,
+        .rx-findings-row:last-child {
+          border-bottom: none !important;
+        }
+
+        .rx-label,
+        .rx-findings-label {
+          color: #475569 !important;
+          font-weight: 700 !important;
+        }
+
+        .rx-medication-grid {
+          border: 1px solid #cbd5e1 !important;
+          border-radius: 6px !important;
+          margin: 12px 0 !important;
+          padding: 10px 12px !important;
+          background: #ffffff !important;
+          break-inside: avoid !important;
+          page-break-inside: avoid !important;
+        }
+
+        .rx-med-col-header {
+          font-size: 9pt !important;
+          color: #723F1E !important;
+          font-weight: 700 !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+          padding-bottom: 4px !important;
+          margin-bottom: 4px !important;
+        }
+
+        .rx-med-col-val {
+          font-size: 9.8pt !important;
+          line-height: 1.4 !important;
+          color: #0f172a !important;
+        }
+
+        .rx-footer-row {
+          margin-top: 16px !important;
+          padding-top: 12px !important;
+          border-top: 1.5px solid #cbd5e1 !important;
+          break-inside: avoid !important;
+          page-break-inside: avoid !important;
         }
       }
     </style>

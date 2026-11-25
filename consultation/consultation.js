@@ -1261,7 +1261,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnPrintPrescription) {
     btnPrintPrescription.addEventListener('click', () => {
+      const prevTitle = document.title;
+      const pName = (document.getElementById('rxPatientName')?.textContent || 'Patient').trim().replace(/\s+/g, '_');
+      const pDate = (document.getElementById('rxDate')?.textContent || '').trim().replace(/[\/\s:]+/g, '-');
+      document.title = `Prescription_${pName}${pDate ? '_' + pDate : ''}`;
       window.print();
+      setTimeout(() => { document.title = prevTitle; }, 500);
     });
   }
 
