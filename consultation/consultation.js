@@ -1031,12 +1031,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (rxMedHistory) rxMedHistory.textContent = rx.medical_history || 'None recorded';
     if (rxSymptoms) rxSymptoms.textContent = formatClinicalSymptoms(rx.symptoms);
-    if (rxDiagnosis) rxDiagnosis.textContent = rx.diagnosis || '--';
+    if (rxDiagnosis) {
+      const diagTypeStr = rx.diagnosis_type ? ` [${rx.diagnosis_type}]` : '';
+      rxDiagnosis.textContent = (rx.diagnosis || '--') + diagTypeStr;
+    }
     if (rxFindings) rxFindings.textContent = rx.examination_findings || 'None recorded';
     if (rxNotes) rxNotes.textContent = rx.notes || '--';
 
+    // Vitals Strip
+    const rxVitalsStrip = document.getElementById('rxVitalsStrip');
+    if (rxVitalsStrip) {
+      const v = rx.vitals && typeof rx.vitals === 'object' ? rx.vitals : {};
+      const vitalItems = [];
+      if (v.bp) vitalItems.push(`<span><strong>BP:</strong> ${escapeHtml(v.bp)} mmHg</span>`);
+      if (v.pulse) vitalItems.push(`<span><strong>Pulse:</strong> ${escapeHtml(v.pulse)} bpm</span>`);
+      if (v.temp) vitalItems.push(`<span><strong>Temp:</strong> ${escapeHtml(v.temp)} °F</span>`);
+      if (v.spo2) vitalItems.push(`<span><strong>SpO2:</strong> ${escapeHtml(v.spo2)}%</span>`);
+      if (v.weight) vitalItems.push(`<span><strong>Weight:</strong> ${escapeHtml(v.weight)} kg</span>`);
+      if (v.height) vitalItems.push(`<span><strong>Height:</strong> ${escapeHtml(v.height)} cm</span>`);
+      if (v.bmi) vitalItems.push(`<span><strong>BMI:</strong> ${escapeHtml(v.bmi)}</span>`);
+      if (v.rbs) vitalItems.push(`<span><strong>RBS:</strong> ${escapeHtml(v.rbs)} mg/dL</span>`);
+      if (vitalItems.length > 0) {
+        rxVitalsStrip.innerHTML = vitalItems.join('');
+        rxVitalsStrip.style.display = 'flex';
+      } else {
+        rxVitalsStrip.style.display = 'none';
+      }
+    }
+
+    // Investigations, Procedures, Advice, Follow-up
+    const toggleArrayRow = (rowId, valId, arr) => {
+      const row = document.getElementById(rowId);
+      const valEl = document.getElementById(valId);
+      if (!row || !valEl) return;
+      if (Array.isArray(arr) && arr.length > 0) {
+        valEl.textContent = arr.join(', ');
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    };
+    toggleArrayRow('rxInvestigationsRow', 'rxInvestigations', rx.investigations);
+    toggleArrayRow('rxProceduresRow', 'rxProcedures', rx.procedures);
+    toggleArrayRow('rxAdviceRow', 'rxAdvice', rx.advice);
+
+    const rxFollowUpRow = document.getElementById('rxFollowUpRow');
+    const rxFollowUp = document.getElementById('rxFollowUp');
+    if (rxFollowUpRow && rxFollowUp) {
+      const fuParts = [];
+      if (rx.follow_up_date) fuParts.push(formatDate(rx.follow_up_date) || rx.follow_up_date);
+      if (rx.follow_up_notes) fuParts.push(rx.follow_up_notes);
+      if (fuParts.length > 0) {
+        rxFollowUp.textContent = fuParts.join(' — ');
+        rxFollowUpRow.style.display = '';
+      } else {
+        rxFollowUpRow.style.display = 'none';
+      }
+    }
+
     if (rxReferralDoctor) rxReferralDoctor.textContent = rx.referred_doctor || rx.doctor_name || '--';
     if (rxReferralSpecialty) rxReferralSpecialty.textContent = rx.referred_specialty || rx.doctor_specialty || 'Ayurvedic Medicine';
+
+    const rxDoctorRegNo = document.getElementById('rxDoctorRegNo');
+    if (rxDoctorRegNo) {
+      if (rx.doctor_reg_no) {
+        rxDoctorRegNo.textContent = `Reg. No: ${rx.doctor_reg_no}`;
+        rxDoctorRegNo.style.display = 'block';
+      } else {
+        rxDoctorRegNo.style.display = 'none';
+      }
+    }
+    const rxDigitalSign = document.getElementById('rxDigitalSign');
+    if (rxDigitalSign) {
+      if (rx.digital_signature) {
+        rxDigitalSign.textContent = rx.digital_signature + (rx.prescription_code ? ` (${rx.prescription_code})` : '');
+        rxDigitalSign.style.display = 'block';
+      } else {
+        rxDigitalSign.style.display = 'none';
+      }
+    }
     if (rxContactText) {
       const phone = rx.support_phone || rx.doctor_phone || '+91 7896543210';
       const email = rx.support_email || rx.doctor_email || 'care@ocayur.com';
@@ -1053,8 +1126,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (meds.length > 0) {
         rxMedGrid.innerHTML = meds.map(med => {
-          const medNameHtml = escapeHtml(med.medication || med.name || '--').replace(/\((.*?)\)/, '<br>($1)');
-          const freqHtml = escapeHtml(med.frequency || '--').replace('BEFORE', '<br>BEFORE');
+          const baseName = escapeHtml(med.medication || med.name || '--').replace(/\((.*?)\)/, '<br>($1)');
+          const formBadge = med.form ? `<br><small style="color: #64748b; font-weight: 500;">[${escapeHtml(med.form)}]</small>` : '';
+          const medNameHtml = baseName + formBadge;
+          const freqBase = escapeHtml(med.frequency || '--').replace('BEFORE', '<br>BEFORE');
+          const timingSub = med.timing ? `<br><small style="color: #64748b;">${escapeHtml(med.timing)}</small>` : '';
+          const freqHtml = freqBase + timingSub;
           return `
             <div class="rx-med-col">
               <p class="rx-med-col-header">Medication:</p>

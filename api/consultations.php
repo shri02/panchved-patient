@@ -168,27 +168,47 @@ function resolvePrescriptionPayload($appt, $patientsMap, $doctorsMap, $prescByAp
     $referralPhone = $prescRow['doctor_phone'] ?? ($dRow['phone_number'] ?? '');
     $referralEmail = $prescRow['doctor_email'] ?? ($dRow['email'] ?? '');
 
+    $decodeJsonField = function($val, $fallback = null) {
+        if (is_array($val)) return $val;
+        if (is_string($val) && trim($val) !== '') {
+            $d = json_decode($val, true);
+            if (is_array($d)) return $d;
+        }
+        return $fallback;
+    };
+
     return [
-        'appointment_id'    => $appt['appointment_id'] ?? ('APT-' . ($appt['id'] ?? 1)),
-        'appointment_db_id' => $apptDbId,
-        'date'              => $resolvedDate,
-        'time'              => $resolvedTime,
-        'patient_name'      => $resolvedPatientName,
-        'gender'            => $resolvedGender,
-        'age'               => $resolvedAge,
-        'medical_history'   => $resolvedMedHistory,
-        'symptoms'          => $resolvedSymptoms,
-        'diagnosis'         => $resolvedDiagnosis,
-        'diagnosis_name'    => $diagVal,
-        'diagnosis_duration' => $diagDur,
-        'medications'       => $medicationsList,
+        'appointment_id'       => $appt['appointment_id'] ?? ('APT-' . ($appt['id'] ?? 1)),
+        'appointment_db_id'    => $apptDbId,
+        'date'                 => $resolvedDate,
+        'time'                 => $resolvedTime,
+        'patient_name'         => $resolvedPatientName,
+        'gender'               => $resolvedGender,
+        'age'                  => $resolvedAge,
+        'vitals'               => $decodeJsonField($prescRow['vitals'] ?? null, $parsedApptPresc['vitals'] ?? null),
+        'clinical_history'     => $decodeJsonField($prescRow['clinical_history'] ?? null, $parsedApptPresc['clinical_history'] ?? null),
+        'medical_history'      => $resolvedMedHistory,
+        'symptoms'             => $resolvedSymptoms,
+        'diagnosis'            => $resolvedDiagnosis,
+        'diagnosis_name'       => $diagVal,
+        'diagnosis_duration'   => $diagDur,
+        'diagnosis_type'       => $prescRow['diagnosis_type'] ?? ($parsedApptPresc['diagnosis_type'] ?? ''),
+        'medications'          => $medicationsList,
         'examination_findings' => $resolvedFindings,
-        'notes'             => $resolvedNotes,
-        'referred_doctor'   => $referralDoc,
-        'referred_specialty' => $referralSpec,
-        'support_phone'     => $referralPhone,
-        'support_email'     => $referralEmail,
-        'prescription_code' => $prescRow['prescription_code'] ?? ('RX-' . str_pad($prescRow['id'] ?? 0, 3, '0', STR_PAD_LEFT))
+        'investigations'       => $decodeJsonField($prescRow['investigations'] ?? null, $parsedApptPresc['investigations'] ?? []),
+        'procedures'           => $decodeJsonField($prescRow['procedures'] ?? null, $parsedApptPresc['procedures'] ?? []),
+        'advice'               => $decodeJsonField($prescRow['advice'] ?? null, $parsedApptPresc['advice'] ?? []),
+        'notes'                => $resolvedNotes,
+        'follow_up_date'       => $prescRow['follow_up_date'] ?? ($parsedApptPresc['follow_up_date'] ?? ''),
+        'follow_up_notes'      => $prescRow['follow_up_notes'] ?? ($parsedApptPresc['follow_up_notes'] ?? ''),
+        'referred_doctor'      => $referralDoc,
+        'referred_specialty'   => $referralSpec,
+        'doctor_reg_no'        => $prescRow['doctor_reg_no'] ?? ($parsedApptPresc['doctor_reg_no'] ?? ''),
+        'digital_signature'    => $prescRow['digital_signature'] ?? ($parsedApptPresc['digital_signature'] ?? ''),
+        'include_qr'           => isset($prescRow['include_qr']) ? (bool)$prescRow['include_qr'] : ($parsedApptPresc['include_qr'] ?? true),
+        'support_phone'        => $referralPhone,
+        'support_email'        => $referralEmail,
+        'prescription_code'    => $prescRow['prescription_code'] ?? ('RX-' . str_pad($prescRow['id'] ?? 0, 3, '0', STR_PAD_LEFT))
     ];
 }
 
