@@ -463,7 +463,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   renderAllCharts();
-  fetchDashboardData();
+  fetchDashboardData().then(() => {
+    setTimeout(() => {
+      fetchAndCheckUpcomingEvents(false);
+    }, 600);
+  });
 
   // Timeframe Dropdown Select Filter Handlers
   document.querySelectorAll('.metric-filter-select').forEach(select => {
@@ -1672,9 +1676,458 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ========================================================
+  // UPCOMING EVENTS (CONSULTATION & WORKSHOP) REMINDER MODAL
+  // ========================================================
+  const upcomingEventsModal = document.getElementById('upcomingEventsModal');
+  const closeUpcomingEventsModalBtn = document.getElementById('closeUpcomingEventsModalBtn');
+  const dismissUpcomingEventsModalBtn = document.getElementById('dismissUpcomingEventsModalBtn');
+  const ackUpcomingEventsModalBtn = document.getElementById('ackUpcomingEventsModalBtn');
+  const upcomingEventsList = document.getElementById('upcomingEventsList');
+  const upcomingBadgeText = document.getElementById('upcomingBadgeText');
+  const upcomingEventsModalTitle = document.getElementById('upcomingEventsModalTitle');
+  const upcomingEventsModalSubtitle = document.getElementById('upcomingEventsModalSubtitle');
+
+  const openUpcomingEventsModal = () => {
+    if (!upcomingEventsModal) return;
+    upcomingEventsModal.classList.add('active');
+    upcomingEventsModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeUpcomingEventsModal = (dismissForSession = false) => {
+    if (!upcomingEventsModal) return;
+    upcomingEventsModal.classList.remove('active');
+    upcomingEventsModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (dismissForSession) {
+      try {
+        sessionStorage.setItem('ocayur_upcoming_popup_dismissed', 'true');
+      } catch (e) {}
+    }
+  };
+
+  const bindUpcomingMeetActions = () => {
+    if (!upcomingEventsList) return;
+    const copyBtns = upcomingEventsList.querySelectorAll('.btn-copy-meet-modal');
+    copyBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const link = btn.getAttribute('data-link') || 'https://meet.google.com/abc-xyz-pqrs';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link)
+            .then(() => showToast('Google Meet link copied to clipboard!'))
+            .catch(() => showToast('Meeting link: ' + link));
+        } else {
+          showToast('Meeting link: ' + link);
+        }
+      });
+    });
+  };
+
+  const renderUpcomingEvents = (events) => {
+    if (!upcomingEventsList || !Array.isArray(events) || events.length === 0) return;
+
+    const hasConsultation = events.some(e => e.type === 'consultation');
+    const hasWorkshop = events.some(e => e.type === 'workshop');
+
+    if (upcomingBadgeText) {
+      if (hasConsultation && hasWorkshop) {
+        upcomingBadgeText.textContent = 'Upcoming Reminder';
+      } else if (hasConsultation) {
+        upcomingBadgeText.textContent = 'Consultation Alert';
+      } else {
+        upcomingBadgeText.textContent = 'Workshop Alert';
+      }
+    }
+
+    if (upcomingEventsModalTitle) {
+      if (hasConsultation && hasWorkshop) {
+        upcomingEventsModalTitle.textContent = 'You Have Upcoming Sessions!';
+      } else if (hasConsultation) {
+        upcomingEventsModalTitle.textContent = 'Upcoming Doctor Consultation!';
+      } else {
+        upcomingEventsModalTitle.textContent = 'Upcoming Live Workshop!';
+      }
+    }
+
+    if (upcomingEventsModalSubtitle) {
+      if (hasConsultation && hasWorkshop) {
+        upcomingEventsModalSubtitle.textContent = 'Here are the details for your upcoming consultation & workshop sessions:';
+      } else if (hasConsultation) {
+        upcomingEventsModalSubtitle.textContent = 'Your Ayurvedic doctor consultation is scheduled. Join your video call on time:';
+      } else {
+        upcomingEventsModalSubtitle.textContent = 'Your interactive live workshop is coming up. Here are your session details:';
+      }
+    }
+
+    upcomingEventsList.innerHTML = events.map(ev => {
+      const meetLink = ev.meetLink || ev.meet_link || 'https://meet.google.com/abc-xyz-pqrs';
+      const status = ev.status || (ev.type === 'workshop' ? 'Enrolled' : 'Confirmed');
+
+      if (ev.type === 'consultation') {
+        const docName = ev.doctorName || ev.doctor_name || 'Ayurvedic Consultant';
+        const docRole = ev.doctorRole || ev.doctor_role || ev.role || ev.expertise || 'Ayurveda Physician';
+        const date = ev.formattedDate || ev.formatted_date || ev.date || ev.appointment_date || 'Scheduled Soon';
+        const time = ev.time || ev.appointment_time || '10:30 AM';
+        const agenda = ev.agenda || ev.service_type || 'General Ayurvedic Consultation';
+
+        let initials = '';
+        const cleanName = docName.replace(/^(Dr\.|Dr)\s*/i, '').trim();
+        const parts = cleanName.split(/\s+/);
+        initials = parts.slice(0, 2).map(p => p[0]?.toUpperCase() || '').join('');
+        if (!initials) initials = 'DR';
+
+        return `
+          <div class="upcoming-event-card consultation-card">
+            <div class="upcoming-card-top">
+              <div class="event-pill consult-pill">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+                <span>Doctor Consultation</span>
+              </div>
+              <span class="event-status-badge status-confirmed">${escapeHtml(status)}</span>
+            </div>
+
+            <div class="upcoming-card-main">
+              <div class="upcoming-avatar-badge consult-avatar">
+                <span>${escapeHtml(initials)}</span>
+              </div>
+              <div class="upcoming-entity-info">
+                <h4 class="upcoming-entity-name">${escapeHtml(docName)}</h4>
+                <p class="upcoming-entity-role">${escapeHtml(docRole)}</p>
+                ${agenda ? `<p class="upcoming-agenda-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> ${escapeHtml(agenda)}</p>` : ''}
+              </div>
+            </div>
+
+            <div class="upcoming-datetime-strip">
+              <div class="datetime-strip-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span><strong>${escapeHtml(date)}</strong></span>
+              </div>
+              <div class="datetime-strip-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span><strong>${escapeHtml(time)}</strong></span>
+              </div>
+              <div class="datetime-strip-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <span>Online (Google Meet)</span>
+              </div>
+            </div>
+
+            <div class="upcoming-card-actions">
+              <a href="${escapeHtml(meetLink)}" target="_blank" rel="noopener noreferrer" class="btn-join-meet-modal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <span>Join Video Call</span>
+              </a>
+              <button type="button" class="btn-copy-meet-modal" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Link</span>
+              </button>
+              <a href="../consultation/consultation.html" class="btn-view-section-modal">
+                <span>View in Consultations &rarr;</span>
+              </a>
+            </div>
+          </div>
+        `;
+      } else {
+        // Workshop card
+        const wsTitle = ev.title || ev.workshopTitle || ev.ws_title || 'Ayurveda Interactive Workshop';
+        const speaker = (ev.speaker || ev.assign_speaker || ev.instructor || '').trim();
+        const speakerRole = (ev.speakerRole || ev.speaker_role || '').trim();
+        const date = ev.formattedDate || ev.formatted_date || ev.date || ev.ws_date || 'Upcoming';
+        const time = ev.time || ev.ws_time || '08:00 AM';
+        const duration = ev.duration || ev.duration_text || '90 mins';
+
+        let initials = '';
+        if (speaker) {
+          const cleanName = speaker.replace(/^(Dr\.|Dr)\s*/i, '').trim();
+          const parts = cleanName.split(/\s+/);
+          initials = parts.slice(0, 2).map(p => p[0]?.toUpperCase() || '').join('');
+        }
+        if (!initials) initials = 'WS';
+
+        return `
+          <div class="upcoming-event-card workshop-card">
+            <div class="upcoming-card-top">
+              <div class="event-pill ws-pill">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>Live Workshop</span>
+              </div>
+              <span class="event-status-badge status-enrolled">${escapeHtml(status)}</span>
+            </div>
+
+            <div class="upcoming-card-main">
+              <div class="upcoming-avatar-badge ws-avatar">
+                <span>${escapeHtml(initials)}</span>
+              </div>
+              <div class="upcoming-entity-info">
+                <h4 class="upcoming-entity-name">${escapeHtml(wsTitle)}</h4>
+                <p class="upcoming-entity-role">${speaker ? `Speaker: ${escapeHtml(speaker)}` : 'Expert Ayurvedic Workshop'}${speakerRole ? ` &bull; ${escapeHtml(speakerRole)}` : ''}</p>
+              </div>
+            </div>
+
+            <div class="upcoming-datetime-strip">
+              <div class="datetime-strip-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span><strong>${escapeHtml(date)}</strong></span>
+              </div>
+              <div class="datetime-strip-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span><strong>${escapeHtml(time)}</strong></span>
+              </div>
+              <div class="datetime-strip-item">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <span>Google Meet (${escapeHtml(duration)})</span>
+              </div>
+            </div>
+
+            <div class="upcoming-card-actions">
+              <a href="${escapeHtml(meetLink)}" target="_blank" rel="noopener noreferrer" class="btn-join-meet-modal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <span>Join Workshop</span>
+              </a>
+              <button type="button" class="btn-copy-meet-modal" data-link="${escapeHtml(meetLink)}" title="Copy Google Meet Link">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Link</span>
+              </button>
+              <a href="../courses/courses.html#my-workshops" class="btn-view-section-modal">
+                <span>View in My Workshops &rarr;</span>
+              </a>
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+
+    bindUpcomingMeetActions();
+  };
+
+  const fetchAndCheckUpcomingEvents = async (force = false) => {
+    try {
+      const params = new URLSearchParams();
+      if (cachedPhone) params.append('phone', cachedPhone);
+      if (cachedPatientId) params.append('patient_id', cachedPatientId);
+
+      const upcomingEvents = [];
+
+      // 1. Fetch consultations
+      try {
+        const consultUrl = `../api/consultations.php${params.toString() ? `?action=my_appointments&${params.toString()}` : '?action=my_appointments'}`;
+        const cRes = await fetch(consultUrl);
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          if (cData.success && Array.isArray(cData.my_appointments)) {
+            cData.my_appointments.forEach(app => {
+              if (app.is_upcoming !== false) {
+                upcomingEvents.push({
+                  type: 'consultation',
+                  id: app.id || app.appointment_id,
+                  doctorName: app.doctor_name,
+                  doctorRole: app.doctor_role || app.role || app.expertise,
+                  formattedDate: app.formatted_date || app.appointment_date,
+                  time: app.appointment_time,
+                  agenda: app.agenda || app.service_type,
+                  meetLink: app.meet_link,
+                  status: app.status || 'Confirmed'
+                });
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Notice: Consultations check error', err);
+      }
+
+      // 2. Fetch workshops
+      try {
+        const wsUrl = `../api/workshops.php${params.toString() ? `?action=my_workshops&${params.toString()}` : '?action=my_workshops'}`;
+        const wRes = await fetch(wsUrl);
+        if (wRes.ok) {
+          const wData = await wRes.json();
+          if (wData.success && Array.isArray(wData.workshops)) {
+            wData.workshops.forEach(ws => {
+              upcomingEvents.push({
+                type: 'workshop',
+                id: ws.id || ws.workshop_id,
+                title: ws.title || ws.ws_title,
+                speaker: ws.speaker || ws.assign_speaker || ws.instructor,
+                speakerRole: ws.speaker_role,
+                formattedDate: ws.formatted_date || ws.date,
+                time: ws.time,
+                duration: ws.duration_text || '90 mins',
+                meetLink: ws.meet_link,
+                status: 'Enrolled'
+              });
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Notice: Workshops check error', err);
+      }
+
+      if (upcomingEvents.length > 0) {
+        const isDismissed = sessionStorage.getItem('ocayur_upcoming_popup_dismissed') === 'true';
+        if (!isDismissed || force) {
+          renderUpcomingEvents(upcomingEvents);
+          openUpcomingEventsModal();
+        }
+      }
+      return upcomingEvents;
+    } catch (e) {
+      console.warn('fetchAndCheckUpcomingEvents error', e);
+      return [];
+    }
+  };
+
+  // Event Listeners for Upcoming Events Modal
+  if (upcomingEventsModal) {
+    upcomingEventsModal.addEventListener('click', (e) => {
+      if (e.target === upcomingEventsModal) closeUpcomingEventsModal();
+    });
+  }
+  if (closeUpcomingEventsModalBtn) {
+    closeUpcomingEventsModalBtn.addEventListener('click', () => closeUpcomingEventsModal());
+  }
+  if (dismissUpcomingEventsModalBtn) {
+    dismissUpcomingEventsModalBtn.addEventListener('click', () => closeUpcomingEventsModal(true));
+  }
+  if (ackUpcomingEventsModalBtn) {
+    ackUpcomingEventsModalBtn.addEventListener('click', () => closeUpcomingEventsModal(true));
+  }
+
+  // Keydown ESC handler
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && consultationModal && consultationModal.classList.contains('active')) {
-      closeBookingModal();
+    if (e.key === 'Escape') {
+      if (consultationModal && consultationModal.classList.contains('active')) {
+        closeBookingModal();
+      }
+      if (upcomingEventsModal && upcomingEventsModal.classList.contains('active')) {
+        closeUpcomingEventsModal();
+      }
     }
   });
+
+  // ========================================================
+  // SAMPLE & CONSOLE CONTROLLERS FOR UPCOMING EVENTS POPUP
+  // (Available in browser console for testing & preview)
+  // ========================================================
+  window.showUpcomingEventsPopup = (items) => {
+    if (Array.isArray(items) && items.length > 0) {
+      renderUpcomingEvents(items);
+      openUpcomingEventsModal();
+    } else {
+      window.showSampleCombinedPopup();
+    }
+  };
+
+  window.closeUpcomingEventsPopup = () => {
+    closeUpcomingEventsModal();
+  };
+
+  window.showSampleConsultationPopup = () => {
+    const sample = [{
+      type: 'consultation',
+      doctorName: 'Dr. Ananya Sharma',
+      doctorRole: 'Senior Ayurvedic Physician (BAMS, MD - Panchakarma)',
+      formattedDate: 'Today, 25 Nov 2026',
+      time: '11:30 AM',
+      agenda: 'Holistic Prakruti Evaluation & Lifestyle Consultation',
+      meetLink: 'https://meet.google.com/abc-dr-ananya',
+      status: 'Confirmed'
+    }];
+    renderUpcomingEvents(sample);
+    openUpcomingEventsModal();
+  };
+
+  window.showSampleWorkshopPopup = () => {
+    const sample = [{
+      type: 'workshop',
+      title: 'Pre-Pregnancy Ayurvedic Care & Garbha Sanskar',
+      speaker: 'Dr. Rajesh Iyer',
+      speakerRole: 'Ayurvedic Specialist & Women\'s Health Expert',
+      formattedDate: 'Saturday, 28 Nov 2026',
+      time: '08:00 AM',
+      duration: '90 mins',
+      meetLink: 'https://meet.google.com/ws-garbha-sanskar',
+      status: 'Enrolled'
+    }];
+    renderUpcomingEvents(sample);
+    openUpcomingEventsModal();
+  };
+
+  window.showSampleCombinedPopup = () => {
+    const sample = [
+      {
+        type: 'consultation',
+        doctorName: 'Dr. Ananya Sharma',
+        doctorRole: 'Senior Ayurvedic Physician (BAMS, MD - Panchakarma)',
+        formattedDate: 'Today, 25 Nov 2026',
+        time: '11:30 AM',
+        agenda: 'Holistic Prakruti Evaluation & Lifestyle Consultation',
+        meetLink: 'https://meet.google.com/abc-dr-ananya',
+        status: 'Confirmed'
+      },
+      {
+        type: 'workshop',
+        title: 'Pre-Pregnancy Ayurvedic Care & Garbha Sanskar',
+        speaker: 'Dr. Rajesh Iyer',
+        speakerRole: 'Ayurvedic Specialist & Women\'s Health Expert',
+        formattedDate: 'Saturday, 28 Nov 2026',
+        time: '08:00 AM',
+        duration: '90 mins',
+        meetLink: 'https://meet.google.com/ws-garbha-sanskar',
+        status: 'Enrolled'
+      }
+    ];
+    renderUpcomingEvents(sample);
+    openUpcomingEventsModal();
+  };
+
+  window.showSampleBothPopup = window.showSampleCombinedPopup;
+
+  window.checkAndShowUpcomingEventsPopup = (force = true) => {
+    return fetchAndCheckUpcomingEvents(force);
+  };
 });
