@@ -1690,6 +1690,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const openUpcomingEventsModal = () => {
     if (!upcomingEventsModal) return;
+    if (upcomingEventsList) upcomingEventsList.scrollTop = 0;
     upcomingEventsModal.classList.add('active');
     upcomingEventsModal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -1859,6 +1860,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = ev.formattedDate || ev.formatted_date || ev.date || ev.ws_date || 'Upcoming';
         const time = ev.time || ev.ws_time || '08:00 AM';
         const duration = ev.duration || ev.duration_text || '90 mins';
+        const about = ev.about || ev.subtitle || ev.ws_about || ev.ws_subtitle || '';
 
         let initials = '';
         if (speaker) {
@@ -1888,6 +1890,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="upcoming-entity-info">
                 <h4 class="upcoming-entity-name">${escapeHtml(wsTitle)}</h4>
                 <p class="upcoming-entity-role">${speaker ? `Speaker: ${escapeHtml(speaker)}` : 'Expert Ayurvedic Workshop'}${speakerRole ? ` &bull; ${escapeHtml(speakerRole)}` : ''}</p>
+                ${about ? `<p class="upcoming-agenda-note ws-about-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> ${escapeHtml(about)}</p>` : ''}
               </div>
             </div>
 
@@ -2082,17 +2085,32 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.showSampleWorkshopPopup = () => {
-    const sample = [{
-      type: 'workshop',
-      title: 'Pre-Pregnancy Ayurvedic Care & Garbha Sanskar',
-      speaker: 'Dr. Rajesh Iyer',
-      speakerRole: 'Ayurvedic Specialist & Women\'s Health Expert',
-      formattedDate: 'Saturday, 28 Nov 2026',
-      time: '08:00 AM',
-      duration: '90 mins',
-      meetLink: 'https://meet.google.com/ws-garbha-sanskar',
-      status: 'Enrolled'
-    }];
+    const sample = [
+      {
+        type: 'workshop',
+        title: 'Pre-Pregnancy Ayurvedic Care & Garbha Sanskar',
+        speaker: 'Dr. Rajesh Iyer',
+        speakerRole: 'Ayurvedic Specialist & Women\'s Health Expert',
+        about: 'Comprehensive guidance on Garbha Sanskar, maternal nutrition, and tridosha balance during pre-pregnancy.',
+        formattedDate: 'Saturday, 28 Nov 2026',
+        time: '08:00 AM',
+        duration: '90 mins',
+        meetLink: 'https://meet.google.com/ws-garbha-sanskar',
+        status: 'Enrolled'
+      },
+      {
+        type: 'workshop',
+        title: 'Ayurvedic Herbs, Rasayana & Daily Immunity Workshop',
+        speaker: 'Dr. Meera Nambiar',
+        speakerRole: 'Senior Dravyaguna & Herbal Medicine Specialist',
+        about: 'Practical masterclass on preparing herbal decoctions, kitchen rasayanas, and seasonal immune protection.',
+        formattedDate: 'Wednesday, 2 Dec 2026',
+        time: '06:00 PM',
+        duration: '75 mins',
+        meetLink: 'https://meet.google.com/ws-ayur-immunity',
+        status: 'Enrolled'
+      }
+    ];
     renderUpcomingEvents(sample);
     openUpcomingEventsModal();
   };
@@ -2114,6 +2132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         title: 'Pre-Pregnancy Ayurvedic Care & Garbha Sanskar',
         speaker: 'Dr. Rajesh Iyer',
         speakerRole: 'Ayurvedic Specialist & Women\'s Health Expert',
+        about: 'Comprehensive guidance on Garbha Sanskar, maternal nutrition, and tridosha balance during pre-pregnancy.',
         formattedDate: 'Saturday, 28 Nov 2026',
         time: '08:00 AM',
         duration: '90 mins',

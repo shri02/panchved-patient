@@ -6406,22 +6406,33 @@ body {
 /* ========================================================
    UPCOMING EVENTS (CONSULTATION & WORKSHOP) REMINDER MODAL
    ======================================================== */
+#upcomingEventsModal.modal-backdrop {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .upcoming-events-modal-box {
   background: #ffffff;
   border-radius: 20px;
   box-shadow: 0 25px 60px -12px rgba(15, 23, 42, 0.35);
   width: 100%;
   max-width: 620px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 32px 36px 28px;
+  max-height: min(88vh, 720px);
+  margin: auto;
+  padding: 28px 30px 22px;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   transform: translateY(20px) scale(0.97);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid rgba(226, 232, 240, 0.8);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .modal-backdrop.active .upcoming-events-modal-box {
@@ -6431,8 +6442,9 @@ body {
 .upcoming-modal-header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   padding-right: 28px;
+  flex-shrink: 0;
 }
 
 .upcoming-header-badge {
@@ -6492,9 +6504,33 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: 52vh;
-  overflow-y: auto;
-  padding-right: 4px;
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  max-height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  padding-right: 8px;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.upcoming-events-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.upcoming-events-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+.upcoming-events-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+
+.upcoming-events-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .upcoming-event-card {
@@ -6507,6 +6543,8 @@ body {
   position: relative;
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .upcoming-event-card.consultation-card {
@@ -6620,6 +6658,10 @@ body {
   font-weight: 500;
 }
 
+.upcoming-agenda-note.ws-about-note {
+  color: #b45309;
+}
+
 .upcoming-datetime-strip {
   display: flex;
   flex-wrap: wrap;
@@ -6709,8 +6751,9 @@ body {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  padding-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid #f1f5f9;
+  flex-shrink: 0;
 }
 
 .btn-upcoming-dismiss {
