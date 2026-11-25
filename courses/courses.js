@@ -1012,7 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navCourses.addEventListener('click', (e) => {
       if (workshopDetailSection && workshopDetailSection.style.display !== 'none') {
         e.preventDefault();
-        switchTab('my');
+        switchTab('all');
       }
     });
   }
@@ -1108,6 +1108,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       })
       .catch(() => {});
+  } else if (qTab === 'my' || qTab === 'my-workshops' || window.location.hash === '#my-workshops' || window.location.hash === '#my') {
+    switchTab('my');
   } else if (qTab === 'all' || qTab === 'all-workshops' || window.location.hash === '#all-workshops' || window.location.hash === '#all') {
     switchTab('all');
   } else if (window.location.hash === '#details') {
